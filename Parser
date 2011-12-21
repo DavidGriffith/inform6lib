@@ -6,14 +6,13 @@
 !  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
-Constant LibSerial "960912";
-Constant LibRelease "6/2";
+Constant LibSerial  = "961216";
+Constant LibRelease = "6/3";
+Constant Grammar__Version = 2;
+IFNDEF VN_1610;
+Message fatalerror "*** Library 6/3 needs Inform v6.10 or later to work ***";
+ENDIF;
 System_file;
-Constant MAX_TIMERS  64;
-Array  the_timers  -> MAX_TIMERS;
-Array  timer_flags -> MAX_TIMERS;
-Array  buffer          string 120;
-Array  parse           string 64;
 Include "linklpa";
 Fake_Action LetGo;
 Fake_Action Receive;
@@ -21,10 +20,11 @@ Fake_Action ThrownAt;
 Fake_Action Order;
 Fake_Action TheSame;
 Fake_Action PluralFound;
+Fake_Action ListMiscellany;
 Fake_Action Miscellany;
 Fake_Action Prompt;
 Fake_Action NotUnderstood;
-[ Main; PlayTheGame(); ];
+[ Main; InformLibrary.play(); ];
 
 IFDEF USE_MODULES;
 Link "parserm";

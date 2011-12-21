@@ -1,23 +1,23 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 960912
-!                                                                  Release 6/2
+!  Supplied for use with Inform 6                         Serial number 961216
+!                                                                  Release 6/3
 !  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
-
-System_file;
-
-Constant NULL $ffff;
-
-! ----------------------------------------------------------------------------
-!  Attribute and property definitions
-!  The compass, directions, darkness and player objects
-!  Definitions of fake actions
-!  Library global variables
-!  Private parser variables
-!  Keyboard reading
-!  Parser, level 0: outer shell, conversation, errors
+!  Inclusion of "linklpa"
+!                   (which defines properties and attributes)
+!  Global variables, constants and arrays
+!                1: outside of the parser
+!                2: used within the parser
+!  Inclusion of natural language definition file
+!                   (which creates a compass and direction-objects)
+!  Darkness and player objects
+!  Definition of grammar token numbering system used by Inform
+!
+!  The InformParser object
+!          keyboard reading
+!          level 0: outer shell, conversation, errors
 !                1: grammar lines
 !                2: tokens
 !                3: object lists
@@ -25,344 +25,548 @@ Constant NULL $ffff;
 !                5: object comparisons
 !                6: word comparisons
 !                7: reading words and moving tables about
-!  Main game loop
-!  Action processing
-!  Menus
-!  Time: timers and daemons
-!  Considering light
-!  Changing player personality
-!  Printing short names
+!          pronoun management
+!
+!  The InformLibrary object
+!          main game loop
+!          action processing
+!          end of turn sequence
+!          scope looping, before/after sequence, sending messages out
+!          timers, daemons, time of day, score notification
+!          light and darkness
+!          changing player personality
+!          tracing code (only present if DEBUG is set)
+!
+!  Status line printing, menu display
+!  Printing object names with articles
+!  Miscellaneous utility routines
+!  Game banner, "version" verb, run-time errors
 ! ----------------------------------------------------------------------------
+
+System_file;
+Constant NULL = $ffff;
 
 IFDEF MODULE_MODE;
-Include "linklpa";
 Constant DEBUG;
+Constant Grammar__Version 2;
+Include "linklpa";
 ENDIF;
 
-Object GameController "GameController";
-
+! ============================================================================
+!   Global variables and their associated Constant and Array declarations
 ! ----------------------------------------------------------------------------
-! Construct the compass - a dummy object containing the directions, which also
-! represent the walls in whatever room the player is in (these are given the
-! general-purpose "number" property for the programmer's convenience)
-! ----------------------------------------------------------------------------
+Global location = InformLibrary;     ! Must be first global defined
+Global sline1;                       ! Must be second
+Global sline2;                       ! Must be third
+                                     ! (for status line display)
+! ------------------------------------------------------------------------------
+!   Z-Machine and interpreter issues
+! ------------------------------------------------------------------------------
+Global top_object;                   ! Largest valid number of any tree object
+Global standard_interpreter;         ! The version number of the Z-Machine
+                                     ! Standard which the interpreter claims
+                                     ! to support, in form (upper byte).(lower)
+Global undo_flag;                    ! Can the interpreter provide "undo"?
+Global just_undone;                  ! Can't have two successive UNDOs
+Global transcript_mode;              ! true when game scripting is on
+IFDEF DEBUG;
+Global xcommsdir;                    ! true if command recording is on
+ENDIF;
+! ------------------------------------------------------------------------------
+!   Time and score
+! (for linkage reasons, the task_* arrays are created not here but in verblib.h)
+! ------------------------------------------------------------------------------
+Global turns = 1;                    ! Number of turns of play so far
+Global the_time = NULL;              ! Current time (in minutes since midnight)
+Global time_rate = 1;                ! How often time is updated
+Global time_step;                    ! By how much
 
-Object compass "compass" has concealed;
+Constant MAX_TIMERS  64;             ! Actually only 32 (it's counting in bytes)
+Array  the_timers  --> 32;
+Global active_timers;                ! Number of timers/daemons actives
 
-#IFNDEF WITHOUT_DIRECTIONS;
-Object n_obj "north wall" compass      
-  with name "n" "north" "wall",       article "the", door_dir n_to, number 0
-  has  scenery;
-Object s_obj "south wall" compass      
-  with name "s" "south" "wall",       article "the", door_dir s_to, number 0
-  has  scenery;
-Object e_obj "east wall" compass      
-  with name "e" "east" "wall",        article "the", door_dir e_to, number 0
-   has  scenery;
-Object w_obj "west wall" compass       
-  with name "w" "west" "wall",        article "the", door_dir w_to, number 0
-   has  scenery;
-Object ne_obj "northeast wall" compass 
-  with name "ne" "northeast" "wall",  article "the", door_dir ne_to, number 0
-  has  scenery;
-Object se_obj "southeast wall" compass
-  with name "se" "southeast" "wall",  article "the", door_dir se_to, number 0
-  has  scenery;
-Object nw_obj "northwest wall" compass
-  with name "nw" "northwest" "wall",  article "the", door_dir nw_to, number 0
-  has  scenery;
-Object sw_obj "southwest wall" compass
-  with name "sw" "southwest" "wall",  article "the", door_dir sw_to, number 0
-  has  scenery;
-Object u_obj "ceiling" compass         
-  with name "u" "up" "ceiling",       article "the", door_dir u_to, number 0
-   has  scenery;
-Object d_obj "floor" compass
-  with name "d" "down" "floor",       article "the", door_dir d_to, number 0
-   has  scenery;
-#ENDIF;
-Object out_obj "outside" compass
-  with                                article "the", door_dir out_to, number 0
-   has  scenery;
-Object in_obj "inside" compass
-  with                                article "the", door_dir in_to, number 0
-   has  scenery;
-! ----------------------------------------------------------------------------
-! The other dummy object is "Darkness", not really a place but it has to be
-! an object so that the name on the status line can be "Darkness":
-! we also create the player object
-! ----------------------------------------------------------------------------
+Global score;                        ! The current score
+Global last_score;                   ! Score last turn (for testing for changes)
+Global notify_mode = true;           ! Score notification
+Global places_score;                 ! Contribution to score made by visiting
+Global things_score;                 ! Contribution made by acquisition
+! ------------------------------------------------------------------------------
+!   The player
+! ------------------------------------------------------------------------------
+Global player;                       ! Which object the human is playing through
+Global deadflag;                     ! Normally 0, or false; 1 for dead;
+                                     ! 2 for victorious, and higher numbers
+                                     ! represent exotic forms of death
+! ------------------------------------------------------------------------------
+!   Light and room descriptions
+! ------------------------------------------------------------------------------
+Global lightflag = true;             ! Is there currently light to see by?
+Global real_location;                ! When in darkness, location = thedark
+                                     ! and this holds the real location
 
-Object thedark "Darkness"
+Global lookmode = 1;                 ! 1=brief, 2=standard, 3=verbose room descs
+Global print_player_flag;            ! If set, print something like "(as Fred)"
+                                     ! in room descriptions, to reveal whom
+                                     ! the human is playing through
+Global lastdesc;                     ! Value of location at time of most recent
+                                     ! room description printed out
+! ------------------------------------------------------------------------------
+!   List writing  (style bits are defined as Constants in "verblibm.h")
+! ------------------------------------------------------------------------------
+Global c_style;                      ! Current list-writer style
+Global lt_value;                     ! Common value of list_together
+Global listing_together;             ! Object number of one member of a group
+                                     ! being listed together
+Global listing_size;                 ! Size of such a group
+Global wlf_indent;                   ! Current level of indentation printed by
+                                     ! WriteListFrom routine
+
+Global inventory_stage = 1;          ! 1 or 2 according to the context in which
+                                     ! "invent" routines of objects are called
+Global inventory_style;              ! List-writer style currently used while
+                                     ! printing inventories
+! ------------------------------------------------------------------------------
+!   Menus and printing
+! ------------------------------------------------------------------------------
+Global pretty_flag = true;           ! Use character graphics, or plain text?
+Global menu_nesting;                 ! Level of nesting (0 = root menu)
+Global menu_item;                    ! These are used in communicating
+Global item_width = 8;               ! with the menu-creating routines
+Global item_name = "---";
+
+Global lm_n;                         ! Parameters used by LibraryMessages
+Global lm_o;                         ! mechanism
+
+IFDEF DEBUG;
+Global debug_flag;                   ! Bitmap of flags for tracing actions,
+                                     ! calls to object routines, etc.
+Global x_scope_count;                ! Used in printing a list of everything
+                                     ! in scope
+ENDIF;
+! ------------------------------------------------------------------------------
+!   Action processing
+! ------------------------------------------------------------------------------
+Global action;                       ! Action currently being asked to perform
+Global inp1;                         ! 0 (nothing), 1 (number) or first noun
+Global inp2;                         ! 0 (nothing), 1 (number) or second noun
+Global noun;                         ! First noun or numerical value
+Global second;                       ! Second noun or numerical value
+
+Global keep_silent;                  ! If true, attempt to perform the action
+                                     ! silently (e.g. for implicit takes,
+                                     ! implicit opening of unlocked doors)
+
+Global reason_code;                  ! Reason for calling a "life" rule
+                                     ! (an action or fake such as ##Kiss)
+
+Global receive_action;               ! Either ##PutOn or ##Insert, whichever
+                                     ! is action being tried when an object's
+                                     ! "before" rule is checking "Receive"
+! ==============================================================================
+!   Parser variables: first, for communication to the parser
+! ------------------------------------------------------------------------------
+Global parser_trace = 0;             ! Set this to 1 to make the parser trace
+                                     ! tokens and lines
+Global parser_action;                ! For the use of the parser when calling
+Global parser_one;                   ! user-supplied routines
+Global parser_two;                   !
+Array  inputobjs       --> 16;       ! For parser to write its results in
+Global parser_inflection;            ! A property (usually "name") to find
+                                     ! object names in
+! ------------------------------------------------------------------------------
+!   Parser output
+! ------------------------------------------------------------------------------
+Global actor;                        ! Person asked to do something
+Global actors_location;              ! Like location, but for the actor
+Global meta;                         ! Verb is a meta-command (such as "save")
+
+Array  multiple_object --> 64;       ! List of multiple parameters
+Global multiflag;                    ! Multiple-object flag
+Global toomany_flag;                 ! Flag for "multiple match too large"
+                                     ! (e.g. if "take all" took over 100 things)
+
+Global special_word;                 ! Dictionary address for "special" token
+Global special_number;               ! Number typed for "special" token
+Global parsed_number;                ! For user-supplied parsing routines
+Global consult_from;                 ! Word that a "consult" topic starts on
+Global consult_words;                ! ...and number of words in topic
+! ------------------------------------------------------------------------------
+!   Implicit taking
+! ------------------------------------------------------------------------------
+Global notheld_mode;                 ! To do with implicit taking
+Global onotheld_mode;                !     "old copy of notheld_mode", ditto
+Global not_holding;                  ! Object to be automatically taken as an
+                                     ! implicit command
+Array  kept_results --> 16;          ! Delayed command (while the take happens)
+! ------------------------------------------------------------------------------
+!   Error numbers when parsing a grammar line
+! ------------------------------------------------------------------------------
+Global etype;                        ! Error number on current line
+Global best_etype;                   ! Preferred error number so far
+Global nextbest_etype;               ! Preferred one, if ASKSCOPE_PE disallowed
+
+Constant STUCK_PE     = 1;
+Constant UPTO_PE      = 2;
+Constant NUMBER_PE    = 3;
+Constant CANTSEE_PE   = 4;
+Constant TOOLIT_PE    = 5;
+Constant NOTHELD_PE   = 6;
+Constant MULTI_PE     = 7;
+Constant MMULTI_PE    = 8;
+Constant VAGUE_PE     = 9;
+Constant EXCEPT_PE    = 10;
+Constant ANIMA_PE     = 11;
+Constant VERB_PE      = 12;
+Constant SCENERY_PE   = 13;
+Constant ITGONE_PE    = 14;
+Constant JUNKAFTER_PE = 15;
+Constant TOOFEW_PE    = 16;
+Constant NOTHING_PE   = 17;
+Constant ASKSCOPE_PE  = 18;
+! ------------------------------------------------------------------------------
+!   Pattern-matching against a single grammar line
+! ------------------------------------------------------------------------------
+Array pattern --> 32;                ! For the current pattern match
+Global pcount;                       ! and a marker within it
+Array pattern2 --> 32;               ! And another, which stores the best match
+Global pcount2;                      ! so far
+Constant PATTERN_NULL = $ffff;       ! Entry for a token producing no text
+
+Array  line_ttype-->32;              ! For storing an analysed grammar line
+Array  line_tdata-->32;
+Array  line_token-->32;
+
+Global parameters;                   ! Parameters (objects) entered so far
+Global nsns;                         ! Number of special_numbers entered so far
+Global special_number1;              ! First number, if one was typed
+Global special_number2;              ! Second number, if two were typed
+! ------------------------------------------------------------------------------
+!   Inferences and looking ahead
+! ------------------------------------------------------------------------------
+Global params_wanted;                ! Number of parameters needed
+                                     ! (which may change in parsing)
+
+Global inferfrom;                    ! The point from which the rest of the
+                                     ! command must be inferred
+Global inferword;                    ! And the preposition inferred
+Global dont_infer;                   ! Another dull flag
+
+Global action_to_be;                 ! (If the current line were accepted.)
+Global action_reversed;              ! (Parameters would be reversed in order.)
+Global advance_warning;              ! What a later-named thing will be
+! ------------------------------------------------------------------------------
+!   At the level of individual tokens now
+! ------------------------------------------------------------------------------
+Global found_ttype;                  ! Used to break up tokens into type
+Global found_tdata;                  ! and data (by AnalyseToken)
+Global token_filter;                 ! For noun filtering by user routines
+
+Global length_of_noun;               ! Set by NounDomain to no of words in noun
+Constant REPARSE_CODE = 10000;       ! Signals "reparse the text" as a reply
+                                     ! from NounDomain
+
+Global lookahead;                    ! The token after the one now being matched
+
+Global multi_mode;                   ! Multiple mode
+Global multi_wanted;                 ! Number of things needed in multitude
+Global multi_had;                    ! Number of things actually found
+Global multi_context;                ! What token the multi-obj was accepted for
+
+Global indef_mode;                   ! "Indefinite" mode - ie, "take a brick"
+                                     ! is in this mode
+Global indef_type;                   ! Bit-map holding types of specification
+Global indef_wanted;                 ! Number of items wanted (100 for all)
+Global indef_guess_p;                ! Plural-guessing flag
+Global indef_owner;                  ! Object which must hold these items
+Global indef_cases;                  ! Possible gender and numbers of them
+Global indef_possambig;              ! Has a possibly dangerous assumption
+                                     ! been made about meaning of a descriptor?
+Global allow_plurals;                ! Whether plurals presently allowed or not
+
+Global take_all_rule;                ! Slightly different rules apply to
+                                     ! "take all" than other uses of multiple
+                                     ! objects, to make adjudication produce
+                                     ! more pragmatically useful results
+                                     ! (Not a flag: possible values 0, 1, 2)
+
+Global dict_flags_of_noun;           ! Of the noun currently being parsed
+                                     ! (a bitmap in #dict_par1 format)
+Global pronoun_word;                 ! Records which pronoun ("it", "them", ...)
+                                     ! caused an error
+Global pronoun_obj;                  ! And what obj it was thought to refer to
+! ------------------------------------------------------------------------------
+!   Searching through scope and parsing "scope=Routine" grammar tokens
+! ------------------------------------------------------------------------------
+Constant PARSING_REASON       = 0;   ! Possible reasons for searching scope
+Constant TALKING_REASON       = 1;
+Constant EACH_TURN_REASON     = 2;
+Constant REACT_BEFORE_REASON  = 3;
+Constant REACT_AFTER_REASON   = 4;
+Constant LOOPOVERSCOPE_REASON = 5;
+Constant TESTSCOPE_REASON     = 6;
+
+Global scope_reason = PARSING_REASON; ! Current reason for searching scope
+
+Global scope_token;                  ! For "scope=Routine" grammar tokens
+Global scope_error;
+Global scope_stage;                  ! 1, 2 then 3
+
+Global ats_flag = 0;                 ! For AddToScope routines
+Global ats_hls;                      !
+
+Global placed_in_flag;               ! To do with PlaceInScope
+
+! ------------------------------------------------------------------------------
+!   The match list of candidate objects for a given token
+! ------------------------------------------------------------------------------
+Constant MATCH_LIST_SIZE = 128;
+Array  match_list    --> 64;         ! An array of matched objects so far
+Array  match_classes --> 64;         ! An array of equivalence classes for them
+Array  match_scores --> 64;          ! An array of match scores for them
+Global number_matched;               ! How many items in it?  (0 means none)
+Global number_of_classes;            ! How many equivalence classes?
+Global match_length;                 ! How many words long are these matches?
+Global match_from;                   ! At what word of the input do they begin?
+! ------------------------------------------------------------------------------
+!   Low level textual manipulation
+! ------------------------------------------------------------------------------
+Array  buffer    string 120;         ! Buffer for parsing main line of input
+Array  parse     string 64;          ! Parse table mirroring it
+Array  buffer2   string 120;         ! Buffers for supplementary questions
+Array  parse2    string 64;          !
+Array  parse3    string 64;          !
+
+Constant comma_word = 'comma,';      ! An "untypeable word" used to substitute
+                                     ! for commas in parse buffers
+
+Global wn;                           ! Word number within "parse" (from 1)
+Global num_words;                    ! Number of words typed
+Global verb_word;                    ! Verb word (eg, take in "take all" or
+                                     ! "dwarf, take all") - address in dict
+Global verb_wordnum;                 ! its number in typing order (eg, 1 or 3)
+Global usual_grammar_after;          ! Point from which usual grammar is parsed
+                                     ! (it may vary from the above if user's
+                                     ! routines match multi-word verbs)
+
+Global oops_from;                    ! The "first mistake" word number
+Global saved_oops;                   ! Used in working this out
+Array  oops_workspace --> 5;         ! Used temporarily by "oops" routine
+
+Global held_back_mode;               ! Flag: is there some input from last time
+Global hb_wn;                        ! left over?  (And a save value for wn.)
+                                     ! (Used for full stops and "then".)
+! ----------------------------------------------------------------------------
+Array PowersOfTwo_TB                 ! Used in converting case numbers to
+  --> $$100000000000                 ! case bitmaps
+      $$010000000000
+      $$001000000000
+      $$000100000000
+      $$000010000000
+      $$000001000000
+      $$000000100000
+      $$000000010000
+      $$000000001000
+      $$000000000100
+      $$000000000010
+      $$000000000001;
+! ============================================================================
+
+
+! ============================================================================
+!  Constants needed by the language definition file
+! ----------------------------------------------------------------------------
+Constant POSSESS_PK  = $100;
+Constant DEFART_PK   = $101;
+Constant INDEFART_PK = $102;
+! ----------------------------------------------------------------------------
+Include "language__";                !  The natural language definition,
+                                     !  whose filename is taken from the ICL
+                                     !  language_name variable
+! ------------------------------------------------------------------------------
+!   Pronouns support for the cruder (library 6/2 and earlier) version:
+!   only needed in English
+! ------------------------------------------------------------------------------
+#ifdef EnglishNaturalLanguage;
+Global itobj = NULL;                 ! The object which is currently "it"
+Global himobj = NULL;                ! The object which is currently "him"
+Global herobj = NULL;                ! The object which is currently "her"
+
+Global old_itobj = NULL;             ! The object which is currently "it"
+Global old_himobj = NULL;            ! The object which is currently "him"
+Global old_herobj = NULL;            ! The object which is currently "her"
+#endif;
+! ============================================================================
+
+
+! ============================================================================
+! "Darkness" is not really a place: but it has to be an object so that the
+!  location-name on the status line can be "Darkness".
+! ----------------------------------------------------------------------------
+Object thedark "(darkness object)"
   with initial 0,
-       short_name "Darkness",
-       description "It is pitch dark, and you can't see a thing.";
-
-Object selfobj "yourself"
-  with description "As good-looking as ever.", number 0,
-       before $ffff, after $ffff, life $ffff, each_turn $ffff,
-       time_out $ffff, describe $ffff, capacity 100,
-       parse_name 0, short_name 0, orders 0,
+       short_name DARKNESS__TX,
+       description
+       [;  return L__M(##Miscellany, 17);
+       ];
+Object selfobj "(self object)"
+  with short_name
+       [;  return L__M(##Miscellany, 18);
+       ],
+       description
+       [;  return L__M(##Miscellany, 19);
+       ],
+       before NULL,   after NULL,    life NULL,    each_turn NULL,
+       time_out NULL, describe NULL,
+       capacity 100, parse_name 0,
+       orders 0, number 0,
   has  concealed animate proper transparent;
 
-! ----------------------------------------------------------------------------
-! Globals: note that the first one defined gives the status line place, the
-! next two the score/turns
-! ----------------------------------------------------------------------------
-
-Global location = 1;
-Global sline1 = 0;
-Global sline2 = 0;
-
-Global the_time = NULL;
-Global time_rate = 1;
-Global time_step = 0;
-
-Global score = 0;
-Global turns = 1;
-Global player;
-
-Global lightflag = 1;
-Global real_location = thedark;
-Global print_player_flag = 0;
-Global deadflag = 0;
-
-Global transcript_mode = 0;
-
-Global last_score = 0;
-Global notify_mode = 1;       ! Score notification
-
-Global places_score = 0;
-Global things_score = 0;
-Global lookmode = 1;
-Global lastdesc = 0;
-
-Global top_object = 0;
-Global standard_interpreter = 0;
-
-! ----------------------------------------------------------------------------
-! Parser variables accessible to the rest of the game
+! ============================================================================
+!  The definition of the token-numbering system used by Inform.
 ! ----------------------------------------------------------------------------
 
-Array  inputobjs       --> 16;       ! To hold parameters
-Global toomany_flag    = 0;          ! Flag for "take all made too many"
-Global actor           = 0;          ! Person asked to do something
-Global actors_location = 0;          ! Like location, but for the actor
-Global action          = 0;          ! Thing he is asked to do
-Global inp1            = 0;          ! First parameter
-Global inp2            = 0;          ! Second parameter
-Global special_number1 = 0;          ! First number, if one was typed
-Global special_number2 = 0;          ! Second number, if two were typed
-Global noun            = 0;          ! First noun
-Global second          = 0;          ! Second noun
-Array  multiple_object --> 64;       ! List of multiple parameters
-Global special_word    = 0;          ! Dictionary address of "special"
-Global special_number  = 0;          ! The number, if a number was typed
-Global parsed_number   = 0;          ! For user-supplied parsing routines
-global multiflag;                    ! Multiple-object flag
-global notheld_mode  = 0;            ! To do with implicit taking
-global onotheld_mode = 0;            !
-global meta;                         ! Verb is a meta-command (such as "save")
-global reason_code;                  ! Reason for calling a life
-global consult_from;                 ! Word that "consult" topic starts on
-global consult_words;                ! ...and number of words in topic
+Constant ILLEGAL_TT        = 0;      ! Types of grammar token: illegal
+Constant ELEMENTARY_TT     = 1;      !     (one of those below)
+Constant PREPOSITION_TT    = 2;      !     e.g. 'into'
+Constant ROUTINE_FILTER_TT = 3;      !     e.g. noun=CagedCreature
+Constant ATTR_FILTER_TT    = 4;      !     e.g. edible
+Constant SCOPE_TT          = 5;      !     e.g. scope=Spells
+Constant GPR_TT            = 6;      !     a general parsing routine
 
-#IFV5;
-global undo_flag = 0;                ! Can the interpreter provide "undo"?
-#ENDIF;
+Constant NOUN_TOKEN        = 0;      ! The elementary grammar tokens, and
+Constant HELD_TOKEN        = 1;      ! the numbers compiled by Inform to
+Constant MULTI_TOKEN       = 2;      ! encode them
+Constant MULTIHELD_TOKEN   = 3;
+Constant MULTIEXCEPT_TOKEN = 4;
+Constant MULTIINSIDE_TOKEN = 5;
+Constant CREATURE_TOKEN    = 6;
+Constant SPECIAL_TOKEN     = 7;
+Constant NUMBER_TOKEN      = 8;
+Constant TOPIC_TOKEN       = 9;
 
-global parser_trace = 0;             ! Set this to 1 to make the parser trace
-                                     ! tokens and lines
-global debug_flag = 0;               ! For debugging information
-global lm_n;                         ! Parameters for LibraryMessages
-global lm_o;
+Constant GPR_FAIL          = -1;     ! Return values from General Parsing
+Constant GPR_PREPOSITION   = 0;      ! Routines
+Constant GPR_NUMBER        = 1;
+Constant GPR_REPARSE       = REPARSE_CODE;
+Constant GPR_NOUN          = $ff00;
+Constant GPR_HELD          = $ff01;
+Constant GPR_MULTI         = $ff02;
+Constant GPR_MULTIHELD     = $ff03;
+Constant GPR_MULTIEXCEPT   = $ff04;
+Constant GPR_MULTIINSIDE   = $ff05;
+Constant GPR_CREATURE      = $ff06;
 
-Constant REPARSE_CODE 10000;
+Constant ENDIT_TOKEN       = 15;     ! Value used to mean "end of grammar line"
 
-Constant PARSING_REASON        0;
-Constant TALKING_REASON        1;
-Constant EACH_TURN_REASON      2;
-Constant REACT_BEFORE_REASON   3;
-Constant REACT_AFTER_REASON    4;
-Constant LOOPOVERSCOPE_REASON  5;
-Constant TESTSCOPE_REASON      6;
+#Iftrue Grammar__Version == 1;
+[ AnalyseToken token m;
 
-! ----------------------------------------------------------------------------
-! The parser, beginning with variables private to itself:
-! ----------------------------------------------------------------------------
+    found_tdata = token;
 
-Array  buffer2   string 120;    ! Buffers for supplementary questions
-Array  parse2    string 64;     !
-Array  parse3    string 64;     !
+    if (token < 0)   { found_ttype = ILLEGAL_TT; return; }
+    if (token <= 8)  { found_ttype = ELEMENTARY_TT; return; }
+    if (token < 15)  { found_ttype = ILLEGAL_TT; return; }
+    if (token == 15) { found_ttype = ELEMENTARY_TT; return; }
+    if (token < 48)  { found_ttype = ROUTINE_FILTER_TT;
+                       found_tdata = token - 16;
+                       return; }
+    if (token < 80)  { found_ttype = GPR_TT;
+                       found_tdata = #preactions_table-->(token-48);
+                       return; }
+    if (token < 128) { found_ttype = SCOPE_TT;
+                       found_tdata = #preactions_table-->(token-80);
+                       return; }
+    if (token < 180) { found_ttype = ATTR_FILTER_TT;
+                       found_tdata = token - 128;
+                       return; }
 
-global wn;                      ! Word number (counts from 1)
-global num_words;               ! Number of words typed
-global verb_word;               ! Verb word (eg, take in "take all" or
-                                ! "dwarf, take all") - address in dictionary
-global verb_wordnum;            ! and the number in typing order (eg, 1 or 3)
-
-global multi_mode;              ! Multiple mode
-global multi_wanted;            ! Number of things needed in multitude
-global multi_had;               ! Number of things actually found
-global multi_context;           ! What token the multi-object was accepted for
-
-Array pattern --> 8;            ! For the current pattern match
-global pcount;                  ! and a marker within it
-Array pattern2 --> 8;           ! And another, which stores the best match
-global pcount2;                 ! so far
-
-global parameters;              ! Parameters (objects) entered so far
-global params_wanted;           ! Number needed (may change in parsing)
-
-global nsns;                    ! Number of special_numbers entered so far
-
-global inferfrom;               ! The point from which the rest of the
-                                ! command must be inferred
-global inferword;               ! And the preposition inferred
-
-global oops_from = 0;           ! The "first mistake" point, where oops acts
-global saved_oops = 0;          ! Used in working this out
-Array  oops_heap --> 5;         ! Used temporarily by "oops" routine
-
-Constant MATCH_LIST_SIZE 128;
-Array  match_list    -> 128;
-                                ! An array of matched objects so far
-Array  match_classes -> 128;
-                                ! An array of equivalence classes for them
-global number_matched;          ! How many items in it?  (0 means none)
-global number_of_classes;       ! How many equivalence classes?
-global match_length;            ! How many typed words long are these matches?
-global match_from;              ! At what word of the input do they begin?
-
-global parser_action;           ! For the use of the parser when calling
-global parser_one;              ! user-supplied routines
-global parser_two;              !
-
-global vague_word;              ! Records which vague word ("it", "them", ...)
-                                ! caused an error
-global vague_obj;               ! And what it was thought to refer to
-
-global itobj=0;                 ! The object which is currently "it"
-global himobj=0;                ! The object which is currently "him"
-global herobj=0;                ! The object which is currently "her"
-
-global lookahead;               ! The token after the object now being matched
-global indef_mode;              ! "Indefinite" mode - ie, "take a brick" is in
-                                ! this mode
-global indef_type;              ! Bit-map holding types of specification
-global indef_wanted;            ! Number of items wanted (100 for all)
-global indef_guess_p;           ! Plural-guessing flag
-global allow_plurals;           ! Whether they are presently allowed or not
-global not_holding;             ! Object to be automatically taken as an
-                                ! implicit command
-Array  kept_results --> 16;     ! The delayed command (while the take happens)
-
-global saved_wn;                ! These are temporary variables for Parser()
-global saved_token;             ! (which hasn't enough spare local variables)
-
-global held_back_mode = 0;      ! Flag: is there some input from last time
-global hb_wn = 0;               ! left over?  (And a save value for wn)
-
-global best_etype;              ! Error number used within parser
-global nextbest_etype;          ! Error number used within parser
-global etype;                   ! Error number used for individual lines
-
-global last_command_from;       ! For sorting out "then again"
-global last_command_to;         !
-
-global token_was;               ! For noun filtering by user routines
-
-global advance_warning;         ! What a later-named thing will be
-
-global placed_in_flag;          ! To do with PlaceInScope
-global length_of_noun;          ! Set by NounDomain to number of words in noun
-
-global action_to_be;            ! So the parser can "cheat" in one case
-global dont_infer;              ! Another dull flag
-
-global scope_reason = PARSING_REASON;   ! For "each_turn" and reactions
-
-global scope_token;             ! For scope:Routine tokens
-global scope_error;
-global scope_stage;
-
-global ats_flag = 0;            ! For AddToScope routines
-global ats_hls;                 !
-
-global take_all_rule = 1;
-global usual_grammar_after = 0;
-
-#IFV5;
-global just_undone = 0;         ! Can't have two successive UNDOs
-#ENDIF;
-
-Global pretty_flag=1;
-Global menu_nesting = 0;
-
-Global item_width=8;
-Global item_name="Nameless item";
-Global menu_item=0;
-
-Global active_timers = 0;
-
-! ----------------------------------------------------------------------------
-!  Variables for Verblib
-! ----------------------------------------------------------------------------
-
-global inventory_stage = 1;
-global c_style;
-global lt_value;
-global listing_together;
-global listing_size;
-global wlf_indent;
-global inventory_style;
-global keep_silent;
-global receive_action;
-#ifdef DEBUG;
-global xcommsdir;
-Global x_scope_count;
-#endif;
-
-! ----------------------------------------------------------------------------
-!  The comma_word is a special word, used to substitute commas in the input
-! ----------------------------------------------------------------------------
-
-Constant comma_word 'xcomma';
-
-! ----------------------------------------------------------------------------
-!  In Advanced games only, the DrawStatusLine routine does just that: this is
-!  provided explicitly so that it can be Replace'd to change the style, and
-!  as written it emulates the ordinary Standard game status line, which is
-!  drawn in hardware
-! ----------------------------------------------------------------------------
-
-#IFV5;
-[ DrawStatusLine i width posa posb;
-   @split_window 1; @set_window 1; @set_cursor 1 1; style reverse;
-   width = 0->33; posa = width-26; posb = width-13;
-   spaces (width-1);
-   @set_cursor 1 2;  PrintShortName(location);
-   if ((0->1)&2 == 0)
-   {   if (width > 76)
-       {   @set_cursor 1 posa; print "Score: ", sline1;
-           @set_cursor 1 posb; print "Moves: ", sline2;
-       }
-       if (width > 63 && width <= 76)
-       {   @set_cursor 1 posb; print sline1, "/", sline2;
-       }
-   }
-   else
-   {   @set_cursor 1 posa; print "Time: ";
-       i=sline1%12; if (i<10) print " ";
-       if (i==0) i=12;
-       print i, ":";
-       if (sline2<10) print "0";
-       print sline2;
-       if ((sline1/12) > 0) print " pm"; else print " am";
-   }
-   @set_cursor 1 1; style roman; @set_window 0;
+    found_ttype = PREPOSITION_TT;
+    m=#adjectives_table;
+    for (::)
+    {   if (token==m-->1) { found_tdata = m-->0; return; }
+        m=m+4;
+    }
+    m=#adjectives_table; RunTimeError(1);
+    found_tdata = m;
 ];
-#ENDIF;
+[ UnpackGrammarLine line_address i m;
+  for (i = 0 : i < 32 : i++)
+  {   line_token-->i = ENDIT_TOKEN;
+      line_ttype-->i = ELEMENTARY_TT;
+      line_tdata-->i = ENDIT_TOKEN;
+  }
+  for (i = 0: i <= 5 :i++)
+  {   line_token-->i = line_address->(i+1);
+      AnalyseToken(line_token-->i);
+      if ((found_ttype == ELEMENTARY_TT) && (found_tdata == NOUN_TOKEN)
+          && (m == line_address->0))
+      {   line_token-->i = ENDIT_TOKEN;
+          break;
+      }
+      line_ttype-->i = found_ttype;
+      line_tdata-->i = found_tdata;
+      if (found_ttype ~= PREPOSITION_TT) m++;
+  }
+  action_to_be = line_address->7;
+  action_reversed = false;
+  params_wanted = line_address->0;
+  return line_address + 8;
+];
+#Ifnot;
+[ AnalyseToken token;
+
+    if (token == ENDIT_TOKEN)
+    {   found_ttype = ELEMENTARY_TT;
+        found_tdata = ENDIT_TOKEN;
+        return;
+    }
+
+    found_ttype = (token->0) & $$1111;
+    found_tdata = (token+1)-->0;
+];
+[ UnpackGrammarLine line_address i;
+  for (i = 0 : i < 32 : i++)
+  {   line_token-->i = ENDIT_TOKEN;
+      line_ttype-->i = ELEMENTARY_TT;
+      line_tdata-->i = ENDIT_TOKEN;
+  }
+  action_to_be = 256*(line_address->0) + line_address->1;
+  action_reversed = ((action_to_be & $400) ~= 0);
+  action_to_be = action_to_be & $3ff;
+  line_address--;
+  params_wanted = 0;
+  for (i=0::i++)
+  {   line_address = line_address + 3;
+      if (line_address->0 == ENDIT_TOKEN) break;
+      line_token-->i = line_address;
+      AnalyseToken(line_token-->i);
+      if (found_ttype ~= PREPOSITION_TT) params_wanted++;
+      line_ttype-->i = found_ttype;
+      line_tdata-->i = found_tdata;
+  }
+  return line_address + 1;
+];
+#Endif;
+
+! ============================================================================
+!  The InformParser object abstracts the front end of the parser.
+!
+!  InformParser.parse_input(results)
+!  returns only when a sensible request has been made, and puts into the
+!  "results" buffer:
+!
+!  --> 0 = The action number
+!  --> 1 = Number of parameters
+!  --> 2, 3, ... = The parameters (object numbers), but
+!                  0 means "put the multiple object list here"
+!                  1 means "put one of the special numbers here"
+!
+! ----------------------------------------------------------------------------
+
+Object InformParser "(Inform Parser)"
+  with parse_input
+       [ results; Parser__parse(results);
+       ], has proper;
 
 ! ----------------------------------------------------------------------------
 !  The Keyboard routine actually receives the player's words,
@@ -384,7 +588,7 @@ Constant comma_word 'xcomma';
 !  Save the start of the table, in case "oops" needs to restore it
 !  to the previous time's table
 
-    for (i=0:i<10:i++) oops_heap->i = a_table->i;
+    for (i=0:i<10:i++) oops_workspace->i = a_table->i;
 
 !  In case of an array entry corruption that shouldn't happen, but would be
 !  disastrous if it did:
@@ -405,15 +609,15 @@ Constant comma_word 'xcomma';
     if (nw == 0)
     { L__M(##Miscellany,10); jump FreshInput; }
 
-!  Unless the opening word was "oops" or its abbreviation "o", return
+!  Unless the opening word was "oops", return
 
     w=a_table-->1;
-    if (w == #n$o or 'oops') jump DoOops;
+    if (w == OOPS1__WD or OOPS2__WD or OOPS3__WD) jump DoOops;
 
 #IFV5;
 !  Undo handling
 
-    if ((w == 'undo')&&(parse->1==1))
+    if ((w == UNDO1__WD or UNDO2__WD or UNDO3__WD) && (parse->1==1))
     {   if (turns==1)
         {   L__M(##Miscellany,11); jump FreshInput;
         }
@@ -467,7 +671,7 @@ Constant comma_word 'xcomma';
 !  with the correction one.
 !
     x1=a_table-->3; x2=a_table-->4;
-    for (i=0:i<10:i++) a_table->i = oops_heap->i;
+    for (i=0:i<10:i++) a_table->i = oops_workspace->i;
     w=2*oops_from - 1;
     a_table-->w = x1;
     a_table-->(w+1) = x2;
@@ -475,50 +679,16 @@ Constant comma_word 'xcomma';
     return nw;
 ];
 
-Constant STUCK_PE     1;
-Constant UPTO_PE      2;
-Constant NUMBER_PE    3;
-Constant CANTSEE_PE   4;
-Constant TOOLIT_PE    5;
-Constant NOTHELD_PE   6;
-Constant MULTI_PE     7;
-Constant MMULTI_PE    8;
-Constant VAGUE_PE     9;
-Constant EXCEPT_PE    10;
-Constant ANIMA_PE     11;
-Constant VERB_PE      12;
-Constant SCENERY_PE   13;
-Constant ITGONE_PE    14;
-Constant JUNKAFTER_PE 15;
-Constant TOOFEW_PE    16;
-Constant NOTHING_PE   17;
-Constant ASKSCOPE_PE  18;
-
 ! ----------------------------------------------------------------------------
-!  The Parser routine is the heart of the parser.
-!
-!  It returns only when a sensible request has been made, and puts into the
-!  "results" buffer:
-!
-!  Word 0 = The action number
-!  Word 1 = Number of parameters
-!  Words 2, 3, ... = The parameters (object numbers), but
-!                    00 means "multiple object list goes here"
-!                    01 means "special word goes here"
-!
-!  (Some of the global variables above are really local variables for this
-!  routine, because the Z-machine only allows up to 15 local variables per
-!  routine, and Parser runs out.)
-!
-!  To simplify the picture a little, a rough map of this routine is:
+!  To simplify the picture a little, a rough map of the main routine:
 !
 !  (A)    Get the input, do "oops" and "again"
 !  (B)    Is it a direction, and so an implicit "go"?  If so go to (K)
 !  (C)    Is anyone being addressed?
 !  (D)    Get the verb: try all the syntax lines for that verb
-!  (E)        Go through each token in the syntax line
-!  (F)           Check (or infer) an adjective
-!  (G)            Check to see if the syntax is finished, and if so return
+!  (E)    Break down a syntax line into analysed tokens
+!  (F)    Look ahead for advance warning for multiexcept/multiinside
+!  (G)    Parse each token in turn (calling ParseToken to do most of the work)
 !  (H)    Cheaply parse otherwise unrecognised conversation and return
 !  (I)    Print best possible error message
 !  (J)    Retry the whole lot
@@ -527,11 +697,10 @@ Constant ASKSCOPE_PE  18;
 !  The strategic points (A) to (K) are marked in the commentary.
 !
 !  Note that there are three different places where a return can happen.
-!
 ! ----------------------------------------------------------------------------
 
-[ Parser  results   syntax line num_lines line_address i j
-                    token l m;
+[ Parser__parse  results   syntax line num_lines line_address i j k
+                           token l m;
 
 !  **** (A) ****
 
@@ -546,8 +715,7 @@ Constant ASKSCOPE_PE  18;
 
     if (held_back_mode==1)
     {   held_back_mode=0;
-        for (i=0:i<64:i++) parse->i=parse2->i;
-        new_line;
+        @tokenise buffer parse;
         jump ReParse;
     }
 
@@ -557,26 +725,43 @@ Constant ASKSCOPE_PE  18;
 
   .ReParse;
 
+    parser_inflection = name;
+
 !  Initially assume the command is aimed at the player, and the verb
 !  is the first word
 
     num_words=parse->1;
     wn=1;
+#ifdef LanguageReword;
+    LanguageReword();
+#ifv5;
+!   Re-tokenise:
+    @tokenise buffer parse;
+#endif;
+#endif;
+
     BeforeParsing();
     num_words=parse->1;
+
+    k=0;
 #ifdef DEBUG;
-    if (parser_trace>=4)
-    {   print "[ ", num_words, " to parse: ";
-        for (i=1:i<=num_words:i++)
-        {   j=parse-->((i-1)*2+1);
-            if (j == 0) print "? ";
+    if (parser_trace>=2)
+    {   print "[ ";
+        for (i=0:i<num_words:i++)
+        {   j=parse-->(i*2 + 1);
+            k=WordAddress(i+1);
+            l=WordLength(i+1);
+            print "~"; for (m=0:m<l:m++) print (char) k->m; print "~ ";
+
+            if (j == 0) print "?";
             else
             {   if (UnsignedCompare(j, 0-->4)>=0
                     && UnsignedCompare(j, 0-->2)<0) print (address) j;
-                else print j; print " ";
+                else print j;
             }
+            if (i ~= num_words-1) print " / ";
         }
-        print "]^";
+        print " ]^";
     }
 #endif;
     verb_wordnum=1;
@@ -585,7 +770,6 @@ Constant ASKSCOPE_PE  18;
 
   .AlmostReParse;
 
-    token_was = 0; ! In case we're still in "user-filter" mode from last round
     scope_token = 0;
     action_to_be = NULL;
 
@@ -605,29 +789,28 @@ Constant ASKSCOPE_PE  18;
 !  don't allow "again" if nothing has previously been typed;
 !  simply copy the previous parse table and ReParse with that
 
-    if (verb_word==#n$g) verb_word='again';
-    if (verb_word=='again')
+    if (verb_word==AGAIN2__WD or AGAIN3__WD) verb_word=AGAIN1__WD;
+    if (verb_word==AGAIN1__WD)
     {   if (actor~=player)
-        {   print "To repeat a command like ~frog, jump~, just say \
-             ~again~, not ~frog, again~.^"; jump ReType; }
+        {   L__M(##Miscellany,20); jump ReType; }
         if (parse3->1==0)
-        {   print "You can hardly repeat that.^"; jump ReType; }
+        {   L__M(##Miscellany,21); jump ReType; }
         for (i=0:i<64:i++) parse->i=parse3->i;
         jump ReParse;
     }
 
 !  Save the present parse table in case of an "again" next time
 
-    if (verb_word~='again')
+    if (verb_word~=AGAIN1__WD)
         for (i=0:i<64:i++)
             parse3->i=parse->i;
 
     if (usual_grammar_after==0)
     {   i = RunRoutines(actor, grammar);
-#ifdef DEBUG;
+        #ifdef DEBUG;
         if (parser_trace>=2 && actor.grammar~=0 or NULL)
             print " [Grammar property returned ", i, "]^";
-#endif;
+        #endif;
         if (i<0) { usual_grammar_after = verb_wordnum; i=-i; }
         if (i==1)
         {   results-->0 = action;
@@ -646,7 +829,6 @@ Constant ASKSCOPE_PE  18;
 
 !  If the first word is not listed as a verb, it must be a direction
 !  or the name of someone to talk to
-!  (NB: better avoid having a Mr Take or Mrs Inventory around...)
 
     if (verb_word==0 || ((verb_word->#dict_par1) & 1) == 0)
     {   
@@ -654,7 +836,7 @@ Constant ASKSCOPE_PE  18;
 !  So is the first word an object contained in the special object "compass"
 !  (i.e., a direction)?  This needs use of NounDomain, a routine which
 !  does the object matching, returning the object number, or 0 if none found,
-!  or REPARSE_CODE if it has restructured the parse table so that the whole parse
+!  or REPARSE_CODE if it has restructured the parse table so the whole parse
 !  must be begun again...
 
         wn=verb_wordnum;
@@ -693,38 +875,35 @@ Constant ASKSCOPE_PE  18;
 
       .Conversation;
         j=wn-1;
-        if (j==1) { print "You can't begin with a comma.^"; jump ReType; }
+        if (j==1) { L__M(##Miscellany,22); jump ReType; }
 
 !  Use NounDomain (in the context of "animate creature") to see if the
 !  words make sense as the name of someone held or nearby
 
-        wn=1; lookahead=1;
+        wn=1; lookahead=HELD_TOKEN;
         scope_reason = TALKING_REASON;
         l=NounDomain(player,actors_location,6);
         scope_reason = PARSING_REASON;
         if (l==REPARSE_CODE) jump ReParse;
 
-        if (l==0) { print "You seem to want to talk to someone, \
-                         but I can't see whom.^"; jump ReType; }
+        if (l==0) { L__M(##Miscellany,23); jump ReType; }
 
 !  The object addressed must at least be "talkable" if not actually "animate"
 !  (the distinction allows, for instance, a microphone to be spoken to,
 !  without the parser thinking that the microphone is human).
 
         if (l hasnt animate && l hasnt talkable)
-        {   print "You can't talk to "; DefArt(l); print ".^"; jump ReType; }
+        {   L__M(##Miscellany, 24, l); jump ReType; }
 
 !  Check that there aren't any mystery words between the end of the person's
 !  name and the comma (eg, throw out "dwarf sdfgsdgs, go north").
 
         if (wn~=j)
-        {   print "To talk to someone, try ~someone, hello~ or some such.^";
-            jump ReType;
-        }
+        {   L__M(##Miscellany, 25); jump ReType; }
 
 !  The player has now successfully named someone.  Adjust "him", "her", "it":
 
-        ResetVagueWords(l);
+        PronounNotice(l);
 
 !  Set the global variable "actor", adjust the number of the first word,
 !  and begin parsing again from there.
@@ -733,11 +912,11 @@ Constant ASKSCOPE_PE  18;
         actors_location=l;
         while (parent(actors_location)~=0)
             actors_location=parent(actors_location);
-#ifdef DEBUG;
+        #ifdef DEBUG;
         if (parser_trace>=1)
             print "[Actor is ", (the) actor, " in ",
                 (name) actors_location, "]^";
-#endif;
+        #endif;
         jump BeginCommand;
     }
 
@@ -772,37 +951,49 @@ Constant ASKSCOPE_PE  18;
     num_lines=(syntax->0)-1;
 
 !  ...and now go through them all, one by one.
-!  To prevent vague_word 0 being misunderstood,
+!  To prevent pronoun_word 0 being misunderstood,
 
-   vague_word='it'; vague_obj=itobj;
+   pronoun_word=NULL; pronoun_obj=NULL;
 
-#ifdef DEBUG;
+   #ifdef DEBUG;
    if (parser_trace>=1)
    {    print "[Parsing for the verb '", (address) verb_word,
               "' (", num_lines+1, " lines)]^";
    }
-#endif;
+   #endif;
 
-   best_etype=STUCK_PE; nextbest_etype=best_etype;
+   best_etype=STUCK_PE; nextbest_etype=STUCK_PE;
+
 !  "best_etype" is the current failure-to-match error - it is by default
-!  the least informative one, "don't understand that sentence"
+!  the least informative one, "don't understand that sentence".
+!  "nextbest_etype" remembers the best alternative to having to ask a
+!  scope token for an error message (i.e., the best not counting ASKSCOPE_PE).
 
 
 !  **** (E) ****
 
-    for (line=0:line<=num_lines:line++)
-    {   line_address = syntax+1+line*8;
+    line_address = syntax + 1;
 
-#ifdef DEBUG;
-        if (parser_trace>=1)
-        {   print "[Line ", line, ": ", line_address->0, " parameters: ";
-            for (pcount=1:pcount<=6:pcount++)
-            {   token=line_address->pcount;
-                print token, " ";
-            }
-            print " -> action ", line_address->7, "]^";
+    for (line=0:line<=num_lines:line++)
+    {   
+        for (i = 0 : i < 32 : i++)
+        {   line_token-->i = ENDIT_TOKEN;
+            line_ttype-->i = ELEMENTARY_TT;
+            line_tdata-->i = ENDIT_TOKEN;
         }
-#endif;
+
+!  Unpack the syntax line from Inform format into three arrays; ensure that
+!  the sequence of tokens ends in an ENDIT_TOKEN.
+
+        line_address = UnpackGrammarLine(line_address);
+            
+        #ifdef DEBUG;
+        if (parser_trace >= 1)
+        {   if (parser_trace >= 2) new_line;
+            print "[line ", line; DebugGrammarLine();
+            print "]^";
+        }
+        #endif;
 
 !  We aren't in "not holding" or inferring modes, and haven't entered
 !  any parameters on the line yet, or any special numbers; the multiple
@@ -811,62 +1002,76 @@ Constant ASKSCOPE_PE  18;
         not_holding=0;
         inferfrom=0;
         parameters=0;
-        params_wanted = line_address->0;
         nsns=0; special_word=0; special_number=0;
         multiple_object-->0 = 0;
         multi_context = 0;
         etype=STUCK_PE;
-        action_to_be = line_address->7;
 
 !  Put the word marker back to just after the verb
 
         wn=verb_wordnum+1;
 
-!  An individual "line" contains six tokens...  There's a preliminary pass
-!  first, to parse late tokens early if necessary (because of mi or me).
-!  We also check to see whether the line contains any "multi"s.
+!  **** (F) ****
+!  There are two special cases where parsing a token now has to be
+!  affected by the result of parsing another token later, and these
+!  two cases (multiexcept and multiinside tokens) are helped by a quick
+!  look ahead, to work out the future token now.  We can only carry this
+!  out in the simple (but by far the most common) case:
+!
+!      multiexcept <one or more prepositions> noun
+!
+!  and similarly for multiinside.
 
-        advance_warning=-1; indef_mode=0;
-        for (i=0,m=0,pcount=1:pcount<=6:pcount++)
-        {   scope_token=0;
-            token=line_address->pcount;
-            if (token==2) m++;
-            if (token<180) i++;
-            if (token==4 or 5 && i==1)
-            {
-#ifdef DEBUG;
-                if (parser_trace>=2) print " [Trying look-ahead]^";
-#endif;
-                pcount++;
-                while (pcount<=6 && line_address->pcount>=180) pcount++;
-                token=line_address->(pcount-1);
-                if (token>=180)
-                {   j=AdjectiveAddress(token);
+        advance_warning = NULL; indef_mode = false;
+        for (i=0,m=false,pcount=0:line_token-->pcount ~= ENDIT_TOKEN:pcount++)
+        {   scope_token = 0;
 
-                    !  Now look for word with j, move wn, parse next
-                    !  token...
-                    while (wn <= num_words)
-                    {   if (NextWord()==j)
-                        {   l = NounDomain(actors_location,actor,token);
-#ifdef DEBUG;
-                            if (parser_trace>=2)
-                            {   print " [Forward token parsed: ";
-                                if (l==REPARSE_CODE) print "re-parse request]^";
-                                if (l==1) print "but multiple found]^";
-                                if (l==0) print "hit error ", etype, "]^";
-                            }
-#endif;
-                            if (l==REPARSE_CODE) jump ReParse;
-                            if (l>=2)
-                            {   advance_warning = l;
-#ifdef DEBUG;
-                                if (parser_trace>=3)
-                                {   DefArt(l); print "]^";
+            if (line_ttype-->pcount ~= PREPOSITION_TT) i++;
+
+            if (line_ttype-->pcount == ELEMENTARY_TT)
+            {   if (line_tdata-->pcount == MULTI_TOKEN) m=true;
+                if (line_tdata-->pcount
+                    == MULTIEXCEPT_TOKEN or MULTIINSIDE_TOKEN  && i==1)
+                {   !   First non-preposition is "multiexcept" or
+                    !   "multiinside", so look ahead.
+
+                    #ifdef DEBUG;
+                    if (parser_trace>=2) print " [Trying look-ahead]^";
+                    #endif;
+
+                    !   We need this to be followed by 1 or more prepositions.
+
+                    pcount++;
+                    if (line_ttype-->pcount == PREPOSITION_TT)
+                    {   while (line_ttype-->pcount == PREPOSITION_TT)
+                            pcount++;
+
+                        if ((line_ttype-->pcount == ELEMENTARY_TT)
+                            && (line_tdata-->pcount == NOUN_TOKEN))
+                        {
+                            !  Advance past the last preposition
+
+                            while (wn <= num_words)
+                            {   if (NextWord() == line_tdata-->(pcount-1))
+                                {   l = NounDomain(actors_location, actor,
+                                            NOUN_TOKEN);
+                                    #ifdef DEBUG;
+                                    if (parser_trace>=2)
+                                    {   print " [Advanced to ~noun~ token: ";
+                                        if (l==REPARSE_CODE)
+                                            print "re-parse request]^";
+                                        if (l==1) print "but multiple found]^";
+                                        if (l==0) print "error ", etype, "]^";
+                                        if (l>=2) print (the) l, "]^";
+                                    }
+                                    #endif;
+                                    if (l==REPARSE_CODE) jump ReParse;
+                                    if (l>=2) advance_warning = l;
                                 }
-#endif;
                             }
                         }
                     }
+                    break;
                 }
             }
         }
@@ -876,10 +1081,13 @@ Constant ASKSCOPE_PE  18;
 !  nothing to take.
 
         take_all_rule = 0;
-        if (m==1 && params_wanted==1 && action_to_be==##Take)
+        if (m && params_wanted==1 && action_to_be==##Take)
             take_all_rule = 1;
 
 !  And now start again, properly, forearmed or not as the case may be.
+!  As a precaution, we clear all the variables again (they may have been
+!  disturbed by the call to NounDomain, which may have called outside
+!  code, which may have done anything!).
 
         not_holding=0;
         inferfrom=0;
@@ -887,107 +1095,58 @@ Constant ASKSCOPE_PE  18;
         nsns=0; special_word=0; special_number=0;
         multiple_object-->0 = 0;
         etype=STUCK_PE;
-        action_to_be = line_address->7;
         wn=verb_wordnum+1;
 
+!  **** (G) ****
 !  "Pattern" gradually accumulates what has been recognised so far,
 !  so that it may be reprinted by the parser later on
 
-        for (pcount=1:pcount<=6:pcount++)
-        {   pattern-->pcount=0; scope_token=0;
+        for (pcount=1::pcount++)
+        {   pattern-->pcount = PATTERN_NULL; scope_token=0;
 
-            token=line_address->pcount;
+            token = line_token-->(pcount-1);
+            lookahead = line_token-->pcount;
 
-#ifdef DEBUG;
-            if (parser_trace>=2)
-            {   print " [Token ",pcount, " is ", token, ": ";
-                if (token<16)
-                {   if (token==0) print "<noun> or null";
-                    if (token==1) print "<held>";
-                    if (token==2) print "<multi>";
-                    if (token==3) print "<multiheld>";
-                    if (token==4) print "<multiexcept>";
-                    if (token==5) print "<multiinside>";
-                    if (token==6) print "<creature>";
-                    if (token==7) print "<special>";
-                    if (token==8) print "<number>";
+            #ifdef DEBUG;
+            if (parser_trace >= 2)
+               print " [line ", line, " token ", pcount, " word ", wn, " : ",
+                     (DebugToken) token, "]^";
+            #endif;
+
+            if (token ~= ENDIT_TOKEN)
+            {   scope_reason = PARSING_REASON;
+                l = ParseToken(results, pcount-1);
+                scope_reason = PARSING_REASON;
+
+                #ifdef DEBUG;
+                if (parser_trace >= 3)
+                {   print "  [token resulted in ";
+                    if (l==REPARSE_CODE) print " re-parse request]^";
+                    if (l==0) print " failure with error type ", etype, "]^";
+                    if (l==1) print " success]^";
                 }
-                if (token>=16 && token<48)
-                    print "<noun filter by routine ",token-16, ">";
-                if (token>=48 && token<80)
-                    print "<general parse by routine ",token-48, ">";
-                if (token>=80 && token<128)
-                    print "<scope parse by routine ",token-80, ">";
-                if (token>=128 && token<180)
-                    print "<noun filter by attribute ",token-128, ">";
-                if (token>180)
-                {   print "<adjective ",255-token, " '",
-                    (address) AdjectiveAddress(token), "'>";
-                }
-                print " at word number ", wn, "]^";
+                #endif;
+
+                if (l==REPARSE_CODE) jump ReParse;
+                if (l==0)    break;
             }
-#endif;
+            else
+            {
 
-!  Lookahead is set to the token after this one, or 8 if there isn't one.
-!  (Complicated because the line is padded with 0's.)
-
-            m=pcount+1; lookahead=8;
-            if (m<=6) lookahead=line_address->m;
-            if (lookahead==0)
-            {   m=parameters; if (token<=7) m++;
-                if (m>=params_wanted) lookahead=8;
-            }
-
-!  **** (F) ****
-
-!  When the token is a large number, it must be an adjective:
-!  remember the adjective number in the "pattern".
-
-            if (token>180)
-            {   pattern-->pcount = REPARSE_CODE+token;
-
-!  If we've run out of the player's input, but still have parameters to
-!  specify, we go into "infer" mode, remembering where we are and the
-!  adjective we are inferring...
-
-                if (wn > num_words)
-                {   if (inferfrom==0 && parameters<params_wanted)
-                    { inferfrom=pcount; inferword=token; }
-
-!  Otherwise, this line must be wrong.
-
-                    if (inferfrom==0) break;
-                }
-
-!  Whereas, if the player has typed something here, see if it is the
-!  required adjective... if it's wrong, the line must be wrong,
-!  but if it's right, the token is passed (jump to finish this token).
-
-                if (wn <= num_words && token~=AdjectiveWord()) break;
-                jump TokenPassed;
-            }
-
-!  **** (G) ****
-!  Check now to see if the player has entered enough parameters...
-!  (since params_wanted is the number of them)
-
-            if (parameters == params_wanted)
-            {  
-
-!  If the player has entered enough parameters already but there's still
+!  If the player has entered enough already but there's still
 !  text to wade through: store the pattern away so as to be able to produce
 !  a decent error message if this turns out to be the best we ever manage,
 !  and in the mean time give up on this line
 
-!  However, if the superfluous text begins with a comma, "and" or "then" then
+!  However, if the superfluous text begins with a comma or "then" then
 !  take that to be the start of another instruction
 
                 if (wn <= num_words)
                 {   l=NextWord();
-                    if (l=='then' or comma_word)
+                    if (l==THEN1__WD or THEN2__WD or THEN3__WD or comma_word)
                     {   held_back_mode=1; hb_wn=wn-1; }
                     else
-                    {   for (m=0:m<8:m++) pattern2-->m=pattern-->m;
+                    {   for (m=0:m<32:m++) pattern2-->m=pattern-->m;
                         pcount2=pcount;
                         etype=UPTO_PE; break;
                     }
@@ -1012,33 +1171,40 @@ Constant ASKSCOPE_PE  18;
                 {   best_etype = NOTHING_PE; jump GiveError;
                 }
 
-#ifdef DEBUG;
+                #ifdef DEBUG;
                 if (parser_trace>=1)
                     print "[Line successfully parsed]^";
-#endif;
+                #endif;
 
-!  At this point the line has worked out perfectly, and it's a matter of
-!  sending the results back...
-!  ...pausing to explain any inferences made (using the pattern)...
+!  The line has successfully matched the text.  Declare the input error-free...
+
+                oops_from = 0;
+
+!  ...explain any inferences made (using the pattern)...
 
                 if (inferfrom~=0)
                 {   print "("; PrintCommand(inferfrom,1); print ")^";
                 }
 
-!  ...and to copy the action number, and the number of parameters...
+!  ...copy the action number, and the number of parameters...
 
-                results-->1 = params_wanted;
-                results-->0 = line_address->7;
+                results-->0 = action_to_be;
+                results-->1 = parameters;
+
+!  ...reverse first and second parameters if need be...
+
+                if (action_reversed && parameters==2)
+                {   i = results-->2; results-->2 = results-->3;
+                    results-->3 = i;
+                    i = special_number1; special_number1=special_number2;
+                    special_number2=i;
+                }
 
 !  ...and to reset "it"-style objects to the first of these parameters, if
 !  there is one (and it really is an object)...
 
                 if (parameters > 0 && results-->2 >= 2)
-                    ResetVagueWords(results-->2);
-
-!  ...and declare the user's input to be error free...
-
-                oops_from = 0;
+                    PronounNotice(results-->2);
 
 !  ...and worry about the case where an object was allowed as a parameter
 !  even though the player wasn't holding it and should have been: in this
@@ -1052,52 +1218,26 @@ Constant ASKSCOPE_PE  18;
                     results-->0 = ##Take;
                     results-->1 = 1;
                     results-->2 = not_holding;
-                    print "(first taking "; DefArt(not_holding); print ")^";
+                    L__M(##Miscellany, 26, not_holding);
                 }
 
 !  (Notice that implicit takes are only generated for the player, and not
 !  for other actors.  This avoids entirely logical, but misleading, text
 !  being printed.)
 
-!  ...and finish.
+!  ...and return from the parser altogether, having successfully matched
+!  a line.
 
                 if (held_back_mode==1) { wn=hb_wn; jump LookForMore; }
                 rtrue;
             }
-
-!  Otherwise, the player still has at least one parameter to specify: an
-!  object of some kind is expected, and this we hand over to POL.
-
-            if (token==6 && (action_to_be==##Answer or ##Ask or ##AskFor
-                             || action_to_be==##Tell))
-                scope_reason=TALKING_REASON;
-            l=ParseObjectList(results,token);
-            scope_reason=PARSING_REASON;
-#ifdef DEBUG;
-            if (parser_trace>=3)
-            {   print "  [Parse object list replied with";
-                if (l==REPARSE_CODE) print " re-parse request]^";
-                if (l==0) print " token failed, error type ", etype, "]^";
-                if (l==1) print " token accepted]^";
-            }
-#endif;
-            if (l==REPARSE_CODE) jump ReParse;
-            if (l==0)    break;
-
-!  The token has been successfully passed; we are ready for the next.
-
-            .TokenPassed;
         }
 
-!  But if we get here it means that the line failed somewhere, so we continue
-!  the outer for loop and try the next line...
+!  The line has failed to match.
+!  We continue the outer "for" loop, trying the next line in the grammar.
 
-        if (etype>best_etype)
-        {   best_etype=etype;
-        }
-        if (etype~=ASKSCOPE_PE && etype>nextbest_etype)
-        {   nextbest_etype=etype;
-        }
+        if (etype>best_etype) best_etype=etype;
+        if (etype~=ASKSCOPE_PE && etype>nextbest_etype) nextbest_etype=etype;
 
 !  ...unless the line was something like "take all" which failed because
 !  nothing matched the "all", in which case we stop and give an error now.
@@ -1105,7 +1245,7 @@ Constant ASKSCOPE_PE  18;
         if (take_all_rule == 2 && etype==NOTHING_PE) break;
    }
 
-!  So that if we get here, each line for the specified verb has failed.
+!  The grammar is exhausted: every line has failed to match.
 
 !  **** (H) ****
 
@@ -1124,7 +1264,7 @@ Constant ASKSCOPE_PE  18;
         }
         wn=verb_wordnum;
         special_word=NextWord();
-        if (special_word=='xcomma')
+        if (special_word==comma_word)
         {   special_word=NextWord();
             verb_wordnum++;
         }
@@ -1144,57 +1284,32 @@ Constant ASKSCOPE_PE  18;
 
     if (ParserError(etype)~=0) jump ReType;
 
-    if (etype==STUCK_PE)
-             {   print "I didn't understand that sentence.^"; oops_from=1; }
-    if (etype==UPTO_PE)
-             {   print "I only understood you as far as wanting to ";
-                 for (m=0:m<8:m++) pattern-->m = pattern2-->m;
-                 pcount=pcount2; PrintCommand(0,1); print ".^";
-             }
-    if (etype==NUMBER_PE)
-                 print "I didn't understand that number.^";
-    if (etype==CANTSEE_PE)
-             {   print "You can't see any such thing.^";
-                 oops_from=saved_oops; }
-    if (etype==TOOLIT_PE)
-                 print "You seem to have said too little!^";
-    if (etype==NOTHELD_PE)
-             {   print "You aren't holding that!^";
-                 oops_from=saved_oops; }
-    if (etype==MULTI_PE)
-                 print "You can't use multiple objects with that verb.^";
-    if (etype==MMULTI_PE)
-                 print "You can only use multiple objects once on a line.^";
-    if (etype==VAGUE_PE)
-             {   print "I'm not sure what ~", (address) vague_word,
-                       "~ refers to.^"; }
-    if (etype==EXCEPT_PE)
-                 print "You excepted something not included anyway!^";
-    if (etype==ANIMA_PE)
-                 print "You can only do that to something animate.^";
-    if (etype==VERB_PE)
-                 print "That's not a verb I recognise.^";
-    if (etype==SCENERY_PE)
-                 print "That's not something you need to refer to \
-                        in the course of this game.^";
-    if (etype==ITGONE_PE)
-             {   print "You can't see ~", (address) vague_word,
-                       "~ ("; DefArt(vague_obj); print ") at the moment.^"; }
-    if (etype==JUNKAFTER_PE)
-                 print "I didn't understand the way that finished.^";
-    if (etype==TOOFEW_PE)
-             {   if (multi_had==0) print "None";
-                 else { print "Only "; EnglishNumber(multi_had); }
-                 print " of those ";
-                 if (multi_had==1) print "is"; else print "are";
-                 print " available.^"; }
-    if (etype==NOTHING_PE)
-             {   if (multi_wanted==100) print "Nothing to do!^";
-                 else print "There are none at all available!^";  }
+    if (etype==STUCK_PE)   { L__M(##Miscellany, 27); oops_from=1; }
+    if (etype==UPTO_PE)    { L__M(##Miscellany, 28);
+                             for (m=0:m<32:m++) pattern-->m = pattern2-->m;
+                             pcount=pcount2; PrintCommand(0,1); print ".^";
+                           }
+    if (etype==NUMBER_PE)  L__M(##Miscellany, 29);
+    if (etype==CANTSEE_PE) { L__M(##Miscellany, 30); oops_from=saved_oops; }
+    if (etype==TOOLIT_PE)  L__M(##Miscellany, 31);
+    if (etype==NOTHELD_PE) { L__M(##Miscellany, 32); oops_from=saved_oops; }
+    if (etype==MULTI_PE)   L__M(##Miscellany, 33);
+    if (etype==MMULTI_PE)  L__M(##Miscellany, 34);
+    if (etype==VAGUE_PE)   L__M(##Miscellany, 35);
+    if (etype==EXCEPT_PE)  L__M(##Miscellany, 36);
+    if (etype==ANIMA_PE)   L__M(##Miscellany, 37);
+    if (etype==VERB_PE)    L__M(##Miscellany, 38);
+    if (etype==SCENERY_PE) L__M(##Miscellany, 39);
+    if (etype==ITGONE_PE)  L__M(##Miscellany, 40);
+    if (etype==JUNKAFTER_PE) L__M(##Miscellany, 41);
+    if (etype==TOOFEW_PE)  L__M(##Miscellany, 42, multi_had);
+    if (etype==NOTHING_PE) { if (multi_wanted==100) L__M(##Miscellany, 43);
+                             else L__M(##Miscellany, 44);  }
+
     if (etype==ASKSCOPE_PE)
-    {            scope_stage=3;
-                 if (indirect(scope_error)==-1)
-                 {   best_etype=nextbest_etype; jump GiveError;  }
+    {   scope_stage=3;
+        if (indirect(scope_error)==-1)
+        {   best_etype=nextbest_etype; jump GiveError;  }
     }
 
 !  **** (J) ****
@@ -1217,67 +1332,15 @@ Constant ASKSCOPE_PE  18;
    if (wn>num_words) rtrue;
 
    i=NextWord();
-   if (i=='then' || i==comma_word)
+   if (i==THEN1__WD or THEN2__WD or THEN3__WD or comma_word)
    {   if (wn>num_words)
-       { parse2->1=(parse2->1)-1; held_back_mode = 0; rtrue; }
-       if (actor==player) j=0; else j=verb_wordnum-1;
-       last_command_from = j+1; last_command_to = wn-2;
-       i=NextWord();
-       if (i=='again' or #n$g)
-       {   for (i=0: i<j: i++)
-           {   parse2-->(2*i+1) = parse-->(2*i+1);
-               parse2-->(2*i+2) = parse-->(2*i+2);
-           }
-           for (i=last_command_from:i<=last_command_to:i++, j++)
-           {   parse2-->(2+2*j) = parse-->(2*i);
-               parse2-->(1+2*j) = parse-->(2*i-1);
-           }
-           for (i=wn:i<=num_words:i++, j++)
-           {   parse2-->(2+2*j) = parse-->(2*i);
-               parse2-->(1+2*j) = parse-->(2*i-1);
-           }
-           parse2->1=j; held_back_mode = 1; rtrue;
-       }
-       else wn--;
-       for (i=0: i<j: i++)
-       {   parse2-->(2*i+1) = parse-->(2*i+1);
-           parse2-->(2*i+2) = parse-->(2*i+2);
-       }
-       for (i=wn:i<=num_words:i++, j++)
-       {   parse2-->(2+2*j) = parse-->(2*i);
-           parse2-->(1+2*j) = parse-->(2*i-1);
-       }
-       parse2->1=j; held_back_mode = 1; rtrue;
+       {   held_back_mode = false; return; }
+       i = WordAddress(verb_wordnum);
+       j = WordAddress(wn);
+       for (:i<j:i++) i->0 = ' ';
+       @tokenise buffer parse; held_back_mode = true; return;
    }
    best_etype=UPTO_PE; jump GiveError;
-];
-
-! ----------------------------------------------------------------------------
-!  NumberWord - fairly self-explanatory
-! ----------------------------------------------------------------------------
-
-[ NumberWord o;
-  if (o=='one') return 1;
-  if (o=='two') return 2;
-  if (o=='three') return 3;
-  if (o=='four') return 4;
-  if (o=='five') return 5;
-  if (o=='six') return 6;
-  if (o=='seven') return 7;
-  if (o=='eight') return 8;
-  if (o=='nine') return 9;
-  if (o=='ten') return 10;
-  if (o=='eleven') return 11;
-  if (o=='twelve') return 12;
-  if (o=='thirteen') return 13;
-  if (o=='fourteen') return 14;
-  if (o=='fifteen') return 15;
-  if (o=='sixteen') return 16;
-  if (o=='seventeen') return 17;
-  if (o=='eighteen') return 18;
-  if (o=='nineteen') return 19;
-  if (o=='twenty') return 20;
-  return 0;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -1291,60 +1354,71 @@ Constant ASKSCOPE_PE  18;
 !  Returns error number, or 0 if no error occurred
 ! ----------------------------------------------------------------------------
 
-Constant OTHER_BIT    1;     !  These will be used in Adjudicate()
-Constant MY_BIT       2;     !  to disambiguate choices
-Constant THAT_BIT     4;
-Constant PLURAL_BIT   8;
-Constant ITS_BIT     16;
-Constant HIS_BIT     32;
-Constant LIT_BIT     64;
-Constant UNLIT_BIT  128;
+Constant OTHER_BIT  =   1;     !  These will be used in Adjudicate()
+Constant MY_BIT     =   2;     !  to disambiguate choices
+Constant THAT_BIT   =   4;
+Constant PLURAL_BIT =   8;
+Constant LIT_BIT    =  16;
+Constant UNLIT_BIT  =  32;
 
-[ Descriptors context  o flag n;
-
+[ ResetDescriptors;
    indef_mode=0; indef_type=0; indef_wanted=0; indef_guess_p=0;
+   indef_possambig = false;
+   indef_owner = nothing;
+   indef_cases = $$111111111111;
+];
 
-   for (flag=1:flag==1:)
-   {   o=NextWord(); flag=0;
-       if (o=='the') flag=1;
-       if (o==#n$a or 'an' or 'any' || o=='either' or 'anything')
-                            { indef_mode=1; flag=1; }
-       if (o=='another' or 'other')
+[ Descriptors allow_multiple  o x flag cto type n;
+
+   ResetDescriptors();
+   if (wn > num_words) { indef_mode = true; return 0; }
+
+   for (flag=true:flag:)
+   {   o=NextWordStopped(); flag=false;
+
+       for (x=1:x<=LanguageDescriptors-->0:x=x+4)
+           if (o == LanguageDescriptors-->x)
+           {   flag = true;
+               type = LanguageDescriptors-->(x+2);
+               if (type ~= DEFART_PK) indef_mode = true;
+               indef_possambig = true;
+               indef_cases = indef_cases & (LanguageDescriptors-->(x+1));
+
+               if (type == POSSESS_PK)
+               {   cto = LanguageDescriptors-->(x+3);
+                   switch(cto)
+                   {  0: indef_type = indef_type | MY_BIT;
+                      1: indef_type = indef_type | THAT_BIT;
+                      default: indef_owner = PronounValue(cto);
+                   }
+               }
+
+               if (type == light)
+                   indef_type = indef_type | LIT_BIT;
+               if (type == -light)
+                   indef_type = indef_type | UNLIT_BIT;
+           }
+
+       if (o==OTHER1__WD or OTHER2__WD or OTHER3__WD)
                             { indef_mode=1; flag=1;
                               indef_type = indef_type | OTHER_BIT; }
-       if (o=='my' or 'this' or 'these')
-                            { indef_mode=1; flag=1;
-                              indef_type = indef_type | MY_BIT; }
-       if (o=='that' or 'those')
-                            { indef_mode=1; flag=1;
-                              indef_type = indef_type | THAT_BIT; }
-       if (o=='its')
-                            { indef_mode=1; flag=1;
-                              indef_type = indef_type | ITS_BIT; }
-       if (o=='his' or 'your')
-                            { indef_mode=1; flag=1;
-                              indef_type = indef_type | HIS_BIT; }
-       if (o=='lit' or 'lighted')
-                            { indef_mode=1; flag=1;
-                              indef_type = indef_type | LIT_BIT; }
-       if (o=='unlit')
-                            { indef_mode=1; flag=1;
-                              indef_type = indef_type | UNLIT_BIT; }
-       if (o=='all' or 'each' or 'every' || o=='everything')
+       if (o==ALL1__WD or ALL2__WD or ALL3__WD or ALL4__WD or ALL5__WD)
                             { indef_mode=1; flag=1; indef_wanted=100;
                               if (take_all_rule == 1)
                                   take_all_rule = 2;
                               indef_type = indef_type | PLURAL_BIT; }
-       if (allow_plurals==1)
+       if (allow_plurals)
        {   n=NumberWord(o);
            if (n>1)         { indef_guess_p=1;
                               indef_mode=1; flag=1; indef_wanted=n;
                               indef_type = indef_type | PLURAL_BIT; }
        }
-       if (flag==1 && NextWord() ~= 'of') wn--;  ! Skip 'of' after these
+       if (flag==1
+           && NextWordStopped() ~= OF1__WD or OF2__WD or OF3__WD or OF4__WD)
+           wn--;  ! Skip 'of' after these
    }
    wn--;
-   if ((indef_wanted > 0) && (context<2 || context>5)) return MULTI_PE;
+   if ((indef_wanted > 0) && (~~allow_multiple)) return MULTI_PE;
    return 0;
 ];
 
@@ -1355,39 +1429,213 @@ Constant UNLIT_BIT  128;
 [ CreatureTest obj;
   if (obj has animate) rtrue;
   if (obj hasnt talkable) rfalse;
-  if (action_to_be==##Ask or ##Answer or ##Tell
-      || action_to_be==##AskFor) rtrue;
+  if (action_to_be == ##Ask or ##Answer or ##Tell or ##AskFor) rtrue;
   rfalse;
 ];
 
+[ PrepositionChain wd index;
+  if (line_tdata-->index == wd) return wd;
+  if ((line_token-->index)->0 & $20 == 0) return -1;
+  do
+  {   if (line_tdata-->index == wd) return wd;
+      index++;
+  }
+  until (((line_token-->index)->0 & $10) == 0);
+  return -1;
+];
+
 ! ----------------------------------------------------------------------------
-!  ParseObjectList: Parses tokens 0 to 179, from the current word number wn
+!  ParseToken: Parses the given token, from the current word number wn
 !
 !  Returns:
 !    REPARSE_CODE for "reconstructed input, please re-parse from scratch"
 !    1            for "token accepted"
 !    0            for "token failed"
 !
-!  (A)            Preliminaries and special/number tokens
-!  (B)            Actual object names (mostly subcontracted!)
-!  (C)            and/but and so on
-!  (D)            Returning an accepted token
-!
+!  (A)            Analyse the token; handle all tokens not involving
+!                 object lists and break down others into elementary tokens
+!  (B)            Begin parsing an object list
+!  (C)            Parse descriptors (articles, pronouns, etc.) in the list
+!  (D)            Parse an object name
+!  (E)            Parse connectives ("and", "but", etc.) and go back to (C)
+!  (F)            Return the conclusion of parsing an object list
 ! ----------------------------------------------------------------------------
 
-[ ParseObjectList results token  l o i j k
-                                 and_parity single_object desc_wn many_flag;
+[ ParseToken results token_n token
+             l o i j k and_parity single_object desc_wn many_flag
+             token_allows_multiple;
 
-    many_flag=0; and_parity=1; dont_infer=0;
+   token = line_token-->token_n;
+   AnalyseToken(token);
 
 !  **** (A) ****
+
+   token_filter = 0;
+   parser_inflection = name;
+
+   switch(found_ttype)
+   {   ELEMENTARY_TT:
+           switch(found_tdata)
+           {   SPECIAL_TOKEN:
+                   l=TryNumber(wn);
+                   special_word=NextWord();
+                   #ifdef DEBUG;
+                   if (l~=-1000)
+                       if (parser_trace>=3)
+                           print "  [Read special as the number ", l, "]^";
+                   #endif;
+                   if (l==-1000)
+                   {   #ifdef DEBUG;
+                       if (parser_trace>=3)
+                         print "  [Read special word at word number ", wn, "]^";
+                       #endif;
+                       l = special_word;
+                   }
+                   special_number=l;
+                   if (nsns==0) special_number1=l; else special_number2=l;
+                   nsns++;
+                   single_object=1; jump PassToken;
+
+               NUMBER_TOKEN:
+                   l=TryNumber(wn++);
+                   if (l==-1000) { etype=NUMBER_PE; rfalse; }
+                   #ifdef DEBUG;
+                   if (parser_trace>=3) print "  [Read number as ", l, "]^";
+                   #endif;
+                   if (nsns++==0) special_number1=l; else special_number2=l;
+                   single_object=1; jump PassToken;
+
+               CREATURE_TOKEN:
+                   if (action_to_be==##Answer or ##Ask or ##AskFor or ##Tell)
+                       scope_reason = TALKING_REASON;
+
+               TOPIC_TOKEN:
+                   consult_from = wn;
+                   if ((line_ttype-->(token_n+1) ~= PREPOSITION_TT)
+                       && (line_token-->(token_n+1) ~= ENDIT_TOKEN))
+                       RunTimeError(13);
+                   do o=NextWordStopped();
+                   until (o==-1 || PrepositionChain(o, token_n+1) >= 0);
+                   wn--;
+                   consult_words = wn-consult_from;
+                   if (consult_words==0) return 1;
+                   if (action_to_be==##Ask or ##Answer or ##Tell)
+                   {   o=wn; wn=consult_from; parsed_number=NextWord();
+                       if (parsed_number=='the' && consult_words>1)
+                           parsed_number=NextWord();
+                       wn=o;
+                       if (nsns++==0) special_number1 = parsed_number;
+                       else special_number2 = parsed_number;
+                       single_object = 1; jump PassToken;
+                   }
+                   return 1;
+           }
+
+       PREPOSITION_TT:
+           #Iffalse Grammar__Version==1;
+!  Is it an unnecessary alternative preposition, when a previous choice
+!  has already been matched?
+           if ((token->0) & $10) return 1;
+           #Endif;
+
+!  If we've run out of the player's input, but still have parameters to
+!  specify, we go into "infer" mode, remembering where we are and the
+!  preposition we are inferring...
+
+           if (wn > num_words)
+           {   if (inferfrom==0 && parameters<params_wanted)
+               {   inferfrom = pcount; inferword = token;
+                   pattern-->pcount = REPARSE_CODE + Dword__No(found_tdata);
+               }
+
+!  Otherwise, this line must be wrong.
+
+               if (inferfrom==0) return 0;
+               return 1;
+           }
+
+           o = NextWord();
+
+           pattern-->pcount = REPARSE_CODE + Dword__No(o);
+
+!  Whereas, if the player has typed something here, see if it is the
+!  required preposition... if it's wrong, the line must be wrong,
+!  but if it's right, the token is passed (jump to finish this token).
+
+           if (o == found_tdata) return 1;
+           #Iffalse Grammar__Version==1;
+           l = PrepositionChain(o, token_n);
+           if (l >= 0)
+           {   return 1;
+           }
+           #Endif;
+           return 0;
+
+       GPR_TT:
+           l=indirect(found_tdata);
+           #ifdef DEBUG;
+           if (parser_trace>=3)
+               print "  [Outside parsing routine returned ", l, "]^";
+           #endif;
+           if (l<-200) { found_tdata = l + 256; break; }
+           if (l<0) rfalse;
+           if (l==GPR_PREPOSITION)
+           {   params_wanted--; rtrue; }
+           if (l==GPR_NUMBER)
+           {   if (nsns==0) special_number1=parsed_number;
+               else special_number2=parsed_number;
+               nsns++;
+           }
+           if (l==GPR_REPARSE) return l;
+           single_object=l; jump PassToken;
+
+       SCOPE_TT:
+           scope_token = found_tdata;
+           scope_stage = 1;
+           l = indirect(scope_token);
+           #ifdef DEBUG;
+           if (parser_trace>=3)
+               print "  [Scope routine returned multiple-flag of ", l, "]^";
+           #endif;
+           if (l==1) found_tdata = MULTI_TOKEN; else found_tdata = NOUN_TOKEN;
+
+       ATTR_FILTER_TT:
+           token_filter = 1 + found_tdata;
+           found_tdata = NOUN_TOKEN;
+
+       ROUTINE_FILTER_TT:
+           token_filter = found_tdata;
+           found_tdata = NOUN_TOKEN;
+   }
+
+   token = found_tdata;
+
+!  **** (B) ****
+
+!  There are now three possible ways we can be here:
+!      parsing an elementary token other than "special" or "number";
+!      parsing a scope token;
+!      parsing a noun-filter token (either by routine or attribute).
+!
+!  In each case, token holds the type of elementary parse to
+!  perform in matching one or more objects, and
+!  token_filter is 0 (default), an attribute + 1 for an attribute filter
+!  or a routine address for a routine filter.
+
+   token_allows_multiple = false;
+   if (token == MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
+                or MULTIINSIDE_TOKEN) token_allows_multiple = true;
+
+   many_flag = false; and_parity = true; dont_infer = false;
+
+!  **** (C) ****
 !  We expect to find a list of objects next in what the player's typed.
 
   .ObjectList;
 
-#ifdef DEBUG;
+   #ifdef DEBUG;
    if (parser_trace>=3) print "  [Object list from word ", wn, "]^";
-#endif;
+   #endif;
 
 !  Take an advance look at the next word: if it's "it" or "them", and these
 !  are unset, set the appropriate error number and give up on the line
@@ -1395,163 +1643,117 @@ Constant UNLIT_BIT  128;
 !  that they still refer to something in scope)
 
     o=NextWord(); wn--;
-    if (o=='it' or 'them')
-    {   vague_word=o; vague_obj=itobj;
-        if (itobj==0) { etype=VAGUE_PE; return 0; }
-    }
-    if (o=='him')
-    {   vague_word=o; vague_obj=himobj;
-        if (himobj==0) { etype=VAGUE_PE; return 0; }
-    }
-    if (o=='her')
-    {   vague_word=o; vague_obj=herobj;
-        if (herobj==0) { etype=VAGUE_PE; return 0; }
-    }
-    if (o=='me' or 'myself' or 'self')
-    {   vague_word=o; vague_obj=player;
-    }
 
-!  Firstly, get rid of tokens 7 and 8 ("special" and "number"), and
-!  tokens which are entirely handed out to outside routines
+    pronoun_word = NULL; pronoun_obj = NULL;
+    l = PronounValue(o);
+    if (l ~= 0)
+    {   pronoun_word = o; pronoun_obj = l;
+        if (l == NULL)
+        {   !   Don't assume this is a use of an unset pronoun until the
+            !   descriptors have been checked, because it might be an
+            !   article (or some such) instead
 
-    if (token==7)
-    {   l=TryNumber(wn);
-        if (l~=-1000)
-        {   if (nsns==0) special_number1=l; else special_number2=l;
-            special_number=l;
-            nsns++;
-#ifdef DEBUG;
-            if (parser_trace>=3)
-                print "  [Read special as the number ", l, "]^";
-#endif;
+            for (l=1:l<=LanguageDescriptors:l=l+4)
+                if (o == LanguageDescriptors-->l) jump AssumeDescriptor;
+            etype=VAGUE_PE; return 0;
         }
-#ifdef DEBUG;
-        if (parser_trace>=3)
-            print "  [Read special word at word number ", wn, "]^";
-#endif;
-        special_word=NextWord(); single_object=1; jump PassToken;
-    }
-    if (token==8)
-    {   l=TryNumber(wn++);
-        if (l==-1000) { etype=NUMBER_PE; rfalse; }
-#ifdef DEBUG;
-        if (parser_trace>=3) print "  [Read number as ", l, "]^";
-#endif;
-        if (nsns++==0) special_number1=l; else special_number2=l;
-        single_object=1; jump PassToken;
     }
 
-    if (token>=48 && token<80)
-    {   l=indirect(#preactions_table-->(token-48));
-#ifdef DEBUG;
-        if (parser_trace>=3)
-            print "  [Outside parsing routine returned ", l, "]^";
-#endif;
-        if (l<0) rfalse;
-        if (l==0) { params_wanted--; rtrue; }  ! An adjective after all...
-        if (l==1)
-        {   if (nsns==0) special_number1=parsed_number;
-            else special_number2=parsed_number;
-            nsns++;
-        }
-        if (l==REPARSE_CODE) return l;
-        single_object=l; jump PassToken;
+    .AssumeDescriptor;
+
+    if (o==ME1__WD or ME2__WD or ME3__WD)
+    {   pronoun_word = o; pronoun_obj = player;
     }
 
-    if (token>=80 && token<128)
-    {   scope_token = #preactions_table-->(token-80);
-        scope_stage = 1;
-        l=indirect(scope_token);
-#ifdef DEBUG;
-        if (parser_trace>=3)
-            print "  [Scope routine returned multiple-flag of ", l, "]^";
-#endif;
-        if (l==1) token=2; else token=0;
-    }
+    allow_plurals = true; desc_wn = wn;
 
-    token_was=0;
-    if (token>=16)
-    {   token_was = token;
-        token=0;
-    }
-
-!  Otherwise, we have one of the tokens 0 to 6, all of which really do mean
-!  that objects are expected.
-
-!  So now we parse any descriptive words
-
-    allow_plurals = 1; desc_wn = wn;
     .TryAgain;
+!   First, we parse any descriptive words (like "the", "five" or "every"):
+    l = Descriptors(token_allows_multiple); if (l~=0) { etype=l; return 0; }
 
-    l=Descriptors(token); if (l~=0) { etype=l; return 0; }
+    .TryAgain2;
 
-!  **** (B) ****
+!  **** (D) ****
 
 !  This is an actual specified object, and is therefore where a typing error
 !  is most likely to occur, so we set:
 
-    oops_from=wn;
+    oops_from = wn;
+
+!  So, two cases.  Case 1: token not equal to "held" (so, no implicit takes)
+!  but we may well be dealing with multiple objects
 
 !  In either case below we use NounDomain, giving it the token number as
 !  context, and two places to look: among the actor's possessions, and in the
 !  present location.  (Note that the order depends on which is likeliest.)
 
-!  So, two cases.  Case 1: token not equal to "held" (so, no implicit takes)
-!  but we may well be dealing with multiple objects
-
-    if (token~=1)
+    if (token ~= HELD_TOKEN)
     {   i=multiple_object-->0;
-#ifdef DEBUG;
+        #ifdef DEBUG;
         if (parser_trace>=3)
             print "  [Calling NounDomain on location and actor]^";
-#endif;
+        #endif;
         l=NounDomain(actors_location, actor, token);
-        if (l==REPARSE_CODE) return l;                    ! Reparse after Q&A
+        if (l==REPARSE_CODE) return l;                  ! Reparse after Q&A
         if (l==0) { etype=CantSee(); jump FailToken; }  ! Choose best error
-#ifdef DEBUG;
+
+        #ifdef DEBUG;
         if (parser_trace>=3)
         {   if (l>1)
-            {   print "  [ND returned "; DefArt(l); print "]^"; }
+                print "  [ND returned ", (the) l, "]^";
             else
             {   print "  [ND appended to the multiple object list:^";
                 k=multiple_object-->0;
                 for (j=i+1:j<=k:j++)
-                {   print "  Entry ", j, ": "; CDefArt(multiple_object-->j);
-                    print " (", multiple_object-->j, ")^";
-                }
+                    print "  Entry ", j, ": ", (The) multiple_object-->j,
+                          " (", multiple_object-->j, ")^";
                 print "  List now has size ", k, "]^";
             }
         }
-#endif;
+        #endif;
+
         if (l==1)
-        {   if (many_flag==0)
-            {   many_flag=1;
+        {   if (~~many_flag)
+            {   many_flag = true;
             }
             else                                  ! Merge with earlier ones
             {   k=multiple_object-->0;            ! (with either parity)
                 multiple_object-->0 = i;
                 for (j=i+1:j<=k:j++)
-                {   if (and_parity==1) MultiAdd(multiple_object-->j);
+                {   if (and_parity) MultiAdd(multiple_object-->j);
                     else MultiSub(multiple_object-->j);
                 }
-#ifdef DEBUG;
-        if (parser_trace>=3)
-            print "  [Merging ", k-i, " new objects to the ", i, " old ones]^";
-#endif;
+                #ifdef DEBUG;
+                if (parser_trace>=3)
+                    print "  [Merging ", k-i, " new objects to the ",
+                        i, " old ones]^";
+                #endif;
             }
         }
         else
-        {   if (token==6 && CreatureTest(l)==0)   ! Animation is required
-            {   etype=ANIMA_PE; jump FailToken; } ! for token 6
-            if (many_flag==0)
+        {   ! A single object was indeed found
+
+            if (match_length == 0 && indef_possambig)
+            {   !   So the answer had to be inferred from no textual data,
+                !   and we know that there was an ambiguity in the descriptor
+                !   stage (such as a word which could be a pronoun being
+                !   parsed as an article or possessive).  It's worth having
+                !   another go.
+
+                ResetDescriptors(); wn = desc_wn; jump TryAgain2;
+            }
+        
+            if (token==CREATURE_TOKEN && CreatureTest(l)==0)
+            {   etype=ANIMA_PE; jump FailToken; } !  Animation is required
+
+            if (~~many_flag)
                 single_object = l;
             else
-            {   if (and_parity==1) MultiAdd(l); else MultiSub(l);
-#ifdef DEBUG;
+            {   if (and_parity) MultiAdd(l); else MultiSub(l);
+                #ifdef DEBUG;
                 if (parser_trace>=3)
-                {   print "  [Combining "; DefArt(l); print " with list]^";
-                }
-#endif;
+                    print "  [Combining ", (the) l, " with list]^";
+                #endif;
             }
         }
     }
@@ -1559,7 +1761,8 @@ Constant UNLIT_BIT  128;
 !  Case 2: token is "held" (which fortunately can't take multiple objects)
 !  and may generate an implicit take
 
-    if (token==1)
+    else
+
     {   l=NounDomain(actor,actors_location,token);       ! Same as above...
         if (l==REPARSE_CODE) return l;
         if (l==0) { etype=CantSee(); return l; }
@@ -1584,11 +1787,10 @@ Constant UNLIT_BIT  128;
             {   saved_oops=oops_from; etype=NOTHELD_PE; jump FailToken;
             }
             not_holding = l;
-#ifdef DEBUG;
+            #ifdef DEBUG;
             if (parser_trace>=3)
-            {   print "  [Allowing object "; DefArt(l); print " for now]^";
-            }
-#endif;
+                print "  [Allowing object ", (the) l, " for now]^";
+            #endif;
         }
         single_object = l;
     }
@@ -1597,7 +1799,7 @@ Constant UNLIT_BIT  128;
 
     wn = oops_from + match_length;
 
-!  **** (C) ****
+!  **** (E) ****
 
 !  Object(s) specified now: is that the end of the list, or have we reached
 !  "and", "but" and so on?  If so, create a multiple-object list if we
@@ -1607,41 +1809,41 @@ Constant UNLIT_BIT  128;
 
     o=NextWord();
 
-    if (o=='and' or 'but' or 'except' || o==comma_word)
+    if (o==AND1__WD or AND2__WD or AND3__WD or BUT1__WD or BUT2__WD or BUT3__WD
+           or comma_word)
     {
-#ifdef DEBUG;
-        if (parser_trace>=3)
-        {   print "  [Read '", (address) o, "']^";
+        #ifdef DEBUG;
+        if (parser_trace>=3) print "  [Read connective '", (address) o, "']^";
+        #endif;
+
+        if (~~token_allows_multiple)
+        {   etype=MULTI_PE; jump FailToken;
         }
-#endif;
-        if (token<2 || token>=6) { etype=MULTI_PE; jump FailToken; }
 
-        if (o=='but' or 'except') and_parity = 1-and_parity;
+        if (o==BUT1__WD or BUT2__WD or BUT3__WD) and_parity = 1-and_parity;
 
-        if (many_flag==0)
+        if (~~many_flag)
         {   multiple_object-->0 = 1;
             multiple_object-->1 = single_object;
-            many_flag=1;
-#ifdef DEBUG;
+            many_flag = true;
+            #ifdef DEBUG;
             if (parser_trace>=3)
-            {   print "  [Making new list from ";
-                DefArt(single_object); print "]^";
-            }
-#endif;
+                print "  [Making new list from ", (the) single_object, "]^";
+            #endif;
         }
-        dont_infer = 1; inferfrom=0;              ! Don't print (inferences)
+        dont_infer = true; inferfrom=0;           ! Don't print (inferences)
         jump ObjectList;                          ! And back around
     }
 
     wn--;   ! Word marker back to first not-understood word
 
-!  **** (D) ****
+!  **** (F) ****
 
 !  Happy or unhappy endings:
 
     .PassToken;
 
-    if (many_flag==1)
+    if (many_flag)
     {   single_object = 0;
         multi_context = token;
     }
@@ -1665,8 +1867,8 @@ Constant UNLIT_BIT  128;
 !  allowing singulars (so that words like "six" are not swallowed up as
 !  Descriptors)
 
-    if (allow_plurals==1 && indef_guess_p==1)
-    {   allow_plurals=0; wn=desc_wn; jump TryAgain;
+    if (allow_plurals && indef_guess_p==1)
+    {   allow_plurals=false; wn=desc_wn; jump TryAgain;
     }
     return 0;
 ];
@@ -1680,7 +1882,7 @@ Constant UNLIT_BIT  128;
 !   0    if no match at all could be made,
 !   1    if a multiple object was made,
 !   k    if object k was the one decided upon,
-!   REPARSE_CODE if it asked a question of the player and consequently rewrote all
+!   REPARSE_CODE if it asked a question of the player and consequently rewrote
 !        the player's input, so that the whole parser should start again
 !        on the rewritten input.
 !
@@ -1691,11 +1893,30 @@ Constant UNLIT_BIT  128;
 !   hand (not by MultiAdd, because we want to allow duplicates).
 ! ----------------------------------------------------------------------------
 
-[ NounDomain domain1 domain2 context  first_word i j k l oldw
-                                      answer_words marker;
+[ NounDomain domain1 domain2 context    first_word i j k l oldw
+                                        answer_words marker;
 
 #ifdef DEBUG;
-  if (parser_trace>=4) print "   [NounDomain called at word ", wn, "^";
+  if (parser_trace>=4)
+  {   print "   [NounDomain called at word ", wn, "^";
+      print "   ";
+      if (indef_mode)
+      {   print "seeking indefinite object: ";
+          if (indef_type & OTHER_BIT)  print "other ";
+          if (indef_type & MY_BIT)     print "my ";
+          if (indef_type & THAT_BIT)   print "that ";
+          if (indef_type & PLURAL_BIT) print "plural ";
+          if (indef_type & LIT_BIT)    print "lit ";
+          if (indef_type & UNLIT_BIT)  print "unlit ";
+          if (indef_owner ~= 0) print "owner:", (name) indef_owner;
+          new_line;
+          print "   number wanted: ";
+          if (indef_wanted == 100) print "all"; else print indef_wanted;
+          new_line;
+          print "   most likely GNAs of names: ", indef_cases, "^";
+      }
+      else print "seeking definite object^";
+  }
 #endif;
 
   match_length=0; number_matched=0; match_from=wn; placed_in_flag=0;
@@ -1721,31 +1942,16 @@ Constant UNLIT_BIT  128;
   {   if (number_matched==1) { i=match_list-->0; return i; }
 
 !  ...now suppose that there was more typing to come, i.e. suppose that
-!  the user entered something beyond this noun.  Use the lookahead token
-!  to check that if an adjective comes next, it is the right one.  (If
-!  not then there must be a mistake like "press red buttno" where "red"
-!  has been taken for the noun in the mistaken belief that "buttno" is
-!  some preposition or other.)
-!
-!  If nothing ought to follow, then similarly there must be a mistake,
-!  (unless what does follow is just a full stop, and or comma)
+!  the user entered something beyond this noun.  If nothing ought to follow,
+!  then there must be a mistake, (unless what does follow is just a full
+!  stop, and or comma)
 
       if (wn<=num_words)
       {   i=NextWord(); wn--;
-          if ((i~='and' or comma_word or 'then')
-              && (i~='but' or 'except'))
-          {   if (lookahead==8) rfalse;
-              if (lookahead>8)
-              {   if (lookahead~=AdjectiveWord())
-                  { wn--;
-#ifdef DEBUG;
-                    if (parser_trace>=3)
-                    print "   [ND failed at lookahead at word ", wn, "]^";
-#endif;
-                    rfalse;
-                  }
-                  wn--;
-              }
+          if (i ~=  AND1__WD or AND2__WD or AND3__WD or comma_word
+                 or THEN1__WD or THEN2__WD or THEN3__WD
+                 or BUT1__WD or BUT2__WD or BUT3__WD)
+          {   if (lookahead==ENDIT_TOKEN) rfalse;
           }
       }
   }
@@ -1772,7 +1978,7 @@ Constant UNLIT_BIT  128;
 !  (Except, we don't note which of a pile of identical objects.)
 
   if (i~=0)
-  {   if (dont_infer==1) return i;
+  {   if (dont_infer) return i;
       if (inferfrom==0) inferfrom=pcount;
       pattern-->pcount = i;
       return i;
@@ -1789,8 +1995,9 @@ Constant UNLIT_BIT  128;
 !  Now we print up the question, using the equivalence classes as worked
 !  out by Adjudicate() so as not to repeat ourselves on plural objects...
 
-  if (context==6) print "Who"; else print "Which";
-  print " do you mean, ";
+  if (context==CREATURE_TOKEN)
+      L__M(##Miscellany, 45); else L__M(##Miscellany, 46);
+
   j=number_of_classes; marker=0;
   for (i=1:i<=number_of_classes:i++)
   {   
@@ -1798,10 +2005,10 @@ Constant UNLIT_BIT  128;
              && ((match_classes-->marker) ~= -i)) marker++;
       k=match_list-->marker;
 
-      if (match_classes-->marker > 0) DefArt(k); else InDefArt(k);
+      if (match_classes-->marker > 0) print (the) k; else print (a) k;
 
       if (i<j-1)  print ", ";
-      if (i==j-1) print " or ";
+      if (i==j-1) print (string) OR__TX;
   }
   print "?^";
 
@@ -1815,10 +2022,10 @@ Constant UNLIT_BIT  128;
 !  Take care of "all", because that does something too clever here to do
 !  later on:
 
-  if ((first_word=='all' or 'both' or 'everything')
-      || (first_word=='every' or 'each'))
+  if (first_word == ALL1__WD or ALL2__WD or ALL3__WD or ALL4__WD or ALL5__WD)
   {   
-      if (context>=2 && context<=5)
+      if (context == MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
+                     or MULTIINSIDE_TOKEN)
       {   l=multiple_object-->0;
           for (i=0:i<number_matched && l+i<63:i++)
           {   k=match_list-->i;
@@ -1827,7 +2034,7 @@ Constant UNLIT_BIT  128;
           multiple_object-->0 = i+l;
           rtrue;
       }
-      print "Sorry, you can only have one item here.  Which one exactly?^";
+      L__M(##Miscellany, 47);
       jump WhichOne;
   }
 
@@ -1838,11 +2045,13 @@ Constant UNLIT_BIT  128;
 !  not themselves verbs - thus, "north" as a reply to "Which, the north
 !  or south door" is not treated as a fresh command but as an answer.)
 
-  j=first_word->#dict_par1;
-  if (0~=j&1)
-  {   CopyBuffer(buffer, buffer2);
-      CopyBuffer(parse, parse2);
-      return REPARSE_CODE;
+  if (first_word ~= 0)
+  {   j=first_word->#dict_par1;
+      if (0~=j&1)
+      {   CopyBuffer(buffer, buffer2);
+          CopyBuffer(parse, parse2);
+          return REPARSE_CODE;
+      }
   }
 
 !  Now we insert the answer into the original typed command, as
@@ -1852,17 +2061,15 @@ Constant UNLIT_BIT  128;
 !       > music
 !  becomes "take music red button".  The parser will thus have three
 !  words to work from next time, not two.)
-!
-!  To do this we use MoveWord which copies in a word.
 
-  oldw=parse->1;
-  parse->1 = answer_words+oldw;
-
-  for (k=oldw+answer_words : k>match_from : k--)
-      MoveWord(k, parse, k-answer_words);
-
-  for (k=1:k<=answer_words:k++)
-      MoveWord(match_from+k-1, parse2, k);
+  k = WordAddress(match_from) - buffer; l=buffer2->1+1;
+  for (j=buffer + buffer->0 - 1: j>= buffer+k+l: j--)
+      j->0 = 0->(j-l);
+  for (i=0:i<l:i++) buffer->(k+i) = buffer2->(2+i);
+  buffer->(k+l-1) = ' ';
+  buffer->1 = buffer->1 + l;
+  if (buffer->1 >= (buffer->0 - 1)) buffer->1 = buffer->0;
+  @tokenise buffer parse;
 
 !  Having reconstructed the input, we warn the parser accordingly
 !  and get out.
@@ -1875,10 +2082,9 @@ Constant UNLIT_BIT  128;
 
   .Incomplete;
 
-  if (context==6) print "Whom"; else print "What";
-  print " do you want";
-  if (actor~=player) { print " "; DefArt(actor); }
-  print " to "; PrintCommand(0,1); print "?^";
+  if (context==CREATURE_TOKEN)
+      L__M(##Miscellany, 48); else L__M(##Miscellany, 49);
+  PrintCommand(0,1); print "?^";
 
   answer_words=Keyboard(buffer2, parse2);
 
@@ -1887,17 +2093,21 @@ Constant UNLIT_BIT  128;
 !  Once again, if the reply looks like a command, give it to the
 !  parser to get on with and forget about the question...
 
-  j=first_word->#dict_par1;
-  if (0~=j&1)
-  {   CopyBuffer(buffer, buffer2);
-      CopyBuffer(parse, parse2);
-      return REPARSE_CODE;
+  if (first_word ~= 0)
+  {   j=first_word->#dict_par1;
+      if (0~=j&1)
+      {   CopyBuffer(buffer, buffer2);
+          CopyBuffer(parse, parse2);
+          return REPARSE_CODE;
+      }
   }
 
 !  ...but if we have a genuine answer, then we adjoin the words
 !  typed onto the expression.  But if we've just inferred something
 !  which wasn't actually there, we must adjoin that as well.  (Note
-!  the sneaky use of "it" to match an object inferred this time round.)
+!  the sneaky use of pronouns to create text which matches an object
+!  we only inferred this time round, and thus have no textual representation
+!  of.)
 
   oldw=parse->1;
   if (inferfrom==0)
@@ -1909,9 +2119,14 @@ Constant UNLIT_BIT  128;
           MoveWord(oldw+k+j, parse2, k);
       for (j=inferfrom:j<pcount:j++)
       {   if (pattern-->j >= 2 && pattern-->j < REPARSE_CODE)
-          {   parse2-->1 = 'it'; itobj = pattern-->j;
+          {   PronounNotice(pattern-->j);
+              for (i=0: i<=LanguagePronouns: i=i+3)
+                  if (pattern-->j == LanguagePronouns-->(i+2))
+                  {   parse2-->1 = LanguagePronouns-->i;
+                      break;
+                  }
           }
-          else parse2-->1 = AdjectiveAddress((pattern-->j) - REPARSE_CODE);
+          else parse2-->1 = No__Dword(pattern-->j - REPARSE_CODE);
           MoveWord(oldw+1+j-inferfrom, parse2, 1);
           answer_words++;
       }
@@ -1954,38 +2169,74 @@ Constant UNLIT_BIT  128;
 
 #ifdef DEBUG;
   if (parser_trace>=4)
-      print "   [Adjudicating match list of size ", number_matched, "^";
+  {   print "   [Adjudicating match list of size ", number_matched,
+          " in context ", context, "^";
+      print "   ";
+      if (indef_mode)
+      {   print "indefinite type: ";
+          if (indef_type & OTHER_BIT)  print "other ";
+          if (indef_type & MY_BIT)     print "my ";
+          if (indef_type & THAT_BIT)   print "that ";
+          if (indef_type & PLURAL_BIT) print "plural ";
+          if (indef_type & LIT_BIT)    print "lit ";
+          if (indef_type & UNLIT_BIT)  print "unlit ";
+          if (indef_owner ~= 0) print "owner:", (name) indef_owner;
+          new_line;
+          print "   number wanted: ";
+          if (indef_wanted == 100) print "all"; else print indef_wanted;
+          new_line;
+          print "   most likely GNAs of names: ", indef_cases, "^";
+      }
+      else print "definite object^";
+  }
 #endif;
 
   j=number_matched-1; good_ones=0; last=match_list-->0;
   for (i=0:i<=j:i++)
   {   n=match_list-->i;
-      if (n hasnt concealed)
-      {   ultimate=n;
-          do
-              ultimate=parent(ultimate);
-          until (ultimate==actors_location or actor or 0);
+      match_scores-->i = good_ones;
 
-          if (context==0 && ultimate==actors_location &&
-              (token_was==0 || UserFilter(n)==1)) { good_ones++; last=n; }
-          if (context==1 && parent(n)==actor)     { good_ones++; last=n; }
-          if (context==2 && ultimate==actors_location) 
-                                                  { good_ones++; last=n; }
-          if (context==3 && parent(n)==actor)     { good_ones++; last=n; }
+      ultimate=n;
+      do
+          ultimate=parent(ultimate);
+      until (ultimate==actors_location or actor or 0);
 
-          if (context==4 or 5)
-          {   if (advance_warning==-1)
-              {   if (parent(n)==actor) { good_ones++; last=n; }
+      if (context==NOUN_TOKEN && ultimate==actors_location &&
+          (token_filter==0 || UserFilter(n)==1)) { good_ones++; last=n; }
+      if (context==HELD_TOKEN && parent(n)==actor)
+      {   good_ones++; last=n; }
+      if (context==MULTI_TOKEN && ultimate==actors_location) 
+      {   good_ones++; last=n; }
+      if (context==MULTIHELD_TOKEN && parent(n)==actor)
+      {   good_ones++; last=n; }
+
+      if (context==MULTIEXCEPT_TOKEN or MULTIINSIDE_TOKEN)
+      {   if (advance_warning==-1)
+          {   if (context==MULTIEXCEPT_TOKEN)
+              {   good_ones++; last=n;
               }
-              else
-              {   if (context==4 && parent(n)==actor && n~=advance_warning)
-                  { good_ones++; last=n; }
-                  if (context==5 && parent(n)==actor && n in advance_warning)
-                  { good_ones++; last=n; }
+              if (context==MULTIINSIDE_TOKEN)
+              {   if (parent(n)~=actor) { good_ones++; last=n; }
               }
           }
-          if (context==6 && CreatureTest(n)==1)   { good_ones++; last=n; }
+          else
+          {   if (context==MULTIEXCEPT_TOKEN && n~=advance_warning)
+              {   good_ones++; last=n; }
+              if (context==MULTIINSIDE_TOKEN && n in advance_warning)
+              {   good_ones++; last=n; }
+          }
       }
+      if (context==CREATURE_TOKEN && CreatureTest(n)==1)
+      {   good_ones++; last=n; }
+
+      match_scores-->i = 1000*(good_ones - match_scores-->i);
+
+      #ifdef DEBUG;
+      if (parser_trace>=4)
+      {   print "   ML: ", (name) n, " ";
+          print " initial score ", match_scores-->i, "^";
+      }
+      #endif;
   }
   if (good_ones==1) return last;
 
@@ -1993,16 +2244,23 @@ Constant UNLIT_BIT  128;
   ! animate as required, then return anything; higher up in the parser
   ! a suitable error will be given.  (This prevents a question being asked.)
   !
-  if (context==6 && good_ones==0) return match_list-->0;
+  if (context==CREATURE_TOKEN && good_ones==0) return match_list-->0;
+
+  if (indef_mode==0) indef_type=0;
+
+  ScoreMatchL();
 
   if (indef_mode==1 && indef_type & PLURAL_BIT ~= 0)
-  {   if (context<2 || context>5) { etype=MULTI_PE; return -1; }
-      i=0; number_of_classes=1; offset=multiple_object-->0;
+  {   if (context ~= MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
+                     or MULTIINSIDE_TOKEN)
+      {   etype=MULTI_PE; return -1; }
+      i=0; offset=multiple_object-->0;
       for (j=BestGuess():j~=-1 && i<indef_wanted
            && i+offset<63:j=BestGuess())
       {   flag=0;
           if (j hasnt concealed && j hasnt worn) flag=1;
-          if (context==3 or 4 && parent(j)~=actor) flag=0;
+          if (context==MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
+              && parent(j)~=actor) flag=0;
           k=ChooseObjects(j,flag);
           if (k==1) flag=1; else { if (k==2) flag=0; }
           if (flag==1)
@@ -2046,19 +2304,16 @@ Constant UNLIT_BIT  128;
               }
           if (flag==1) match_classes-->i = 1-n;
       }
-  n--;
+  n--; number_of_classes = n;
 
 #ifdef DEBUG;
   if (parser_trace>=4)
   {   print "   Difficult adjudication with ", n, " equivalence classes:^";
       for (i=0:i<number_matched:i++)
-      {   print "   "; CDefArt(match_list-->i);
-          print " (", match_list-->i, ")  ---  ",match_classes-->i, "^";
-      }
+          print "   ", (The) match_list-->i,
+                " (", match_list-->i, ")  ---  ",match_classes-->i, "^";
   }
 #endif;
-
-  number_of_classes = n;
 
   if (n>1 && indef_mode==0)
   {   j=0; good_ones=0;
@@ -2087,9 +2342,7 @@ Constant UNLIT_BIT  128;
 !  most recently acquired, or if the player has none of them, then
 !  the one most recently put where it is.
 
-  if (indef_mode==0) indef_type=0;
-  if (n==1) dont_infer = 1;
-
+  if (n==1) dont_infer = true;
   return BestGuess();
 ];
 
@@ -2108,17 +2361,19 @@ Constant UNLIT_BIT  128;
             " with 2nd ", (name) second_p, "^";
 #endif;
 
-  if (multi_context==4 or 5)
+  if (multi_context==MULTIEXCEPT_TOKEN or MULTIINSIDE_TOKEN)
   {   for (i=1, low=0:i<=multiple_object-->0:i++)
-      {   if ( (multi_context==4 && multiple_object-->i ~= second_p)
-               || (multi_context==5 && multiple_object-->i in second_p))
+      {   if ( (multi_context==MULTIEXCEPT_TOKEN
+                && multiple_object-->i ~= second_p)
+               || (multi_context==MULTIINSIDE_TOKEN
+                   && multiple_object-->i in second_p))
           {   low++; multiple_object-->low = multiple_object-->i;
           }
       }
       multiple_object-->0 = low;
   }
 
-  if (multi_context==2)
+  if (multi_context==MULTI_TOKEN && action_to_be == ##Take)
   {   for (i=1, low=0:i<=multiple_object-->0:i++)
           if (parent(multiple_object-->i)==parent(actor)) low++;
 #ifdef DEBUG;
@@ -2149,22 +2404,20 @@ Constant UNLIT_BIT  128;
 !  player has vaguely asked for.  Points are awarded for conforming with
 !  requirements like "my", and so on.  If the score is less than the
 !  threshold, block out the entry to -1.
-!  The scores are put in the match_classes array, which we can safely
-!  reuse by now.
 ! ----------------------------------------------------------------------------
 
 [ ScoreMatchL  its_owner its_score obj i threshold a_s l_s;
 
-  if (indef_type & OTHER_BIT ~= 0) threshold=40;
-  if (indef_type & MY_BIT ~= 0)    threshold=threshold+40;
-  if (indef_type & THAT_BIT ~= 0)  threshold=threshold+40;
-  if (indef_type & ITS_BIT ~= 0)   threshold=threshold+40;
-  if (indef_type & HIS_BIT ~= 0)   threshold=threshold+40;
-  if (indef_type & LIT_BIT ~= 0)   threshold=threshold+40;
-  if (indef_type & UNLIT_BIT ~= 0) threshold=threshold+40;
+!  if (indef_type & OTHER_BIT ~= 0) threshold=45;
+  if (indef_type & MY_BIT ~= 0)    threshold=threshold+45;
+  if (indef_type & THAT_BIT ~= 0)  threshold=threshold+45;
+  if (indef_type & LIT_BIT ~= 0)   threshold=threshold+45;
+  if (indef_type & UNLIT_BIT ~= 0) threshold=threshold+45;
+  if (indef_owner ~= nothing)      threshold=threshold+45;
 
 #ifdef DEBUG;
-  if (parser_trace>=4) print "   Scoring match list with type ", indef_type,
+  if (parser_trace>=4) print "   Scoring match list: indef mode ", indef_mode,
+      " type ", indef_type,
       ", threshold ", threshold, ":^";
 #endif;
 
@@ -2173,42 +2426,64 @@ Constant UNLIT_BIT  128;
 
   for (i=0:i<number_matched:i++)
   {   obj = match_list-->i; its_owner = parent(obj); its_score=0;
-      if (its_owner==actor)   its_score=a_s;
-      if (its_owner==actors_location) its_score=l_s;
-      if (its_score==0 && its_owner~=compass) its_score=10;
 
-      if (indef_type & OTHER_BIT ~=0
-          &&  obj~=itobj or himobj or herobj)
-          its_score=its_score+40;
+!      if (indef_type & OTHER_BIT ~=0
+!          &&  obj~=itobj or himobj or herobj)
+!          its_score=its_score+45;
       if (indef_type & MY_BIT ~=0  &&  its_owner==actor)
-          its_score=its_score+40;
+          its_score=its_score+45;
       if (indef_type & THAT_BIT ~=0  &&  its_owner==actors_location)
-          its_score=its_score+40;
+          its_score=its_score+45;
       if (indef_type & LIT_BIT ~=0  &&  obj has light)
-          its_score=its_score+40;
+          its_score=its_score+45;
       if (indef_type & UNLIT_BIT ~=0  &&  obj hasnt light)
-          its_score=its_score+40;
-      if (indef_type & ITS_BIT ~=0  &&  its_owner==itobj)
-          its_score=its_score+40;
-      if (indef_type & HIS_BIT ~=0  &&  its_owner has animate
-          && GetGender(its_owner)==1)
-          its_score=its_score+40;
+          its_score=its_score+45;
+      if (indef_owner~=0 && its_owner == indef_owner)
+          its_score=its_score+45;
 
-      its_score=its_score + ChooseObjects(obj,2);
-
-      if (its_score < threshold) match_list-->i=-1;
-      else
-      {   match_classes-->i=its_score;
+      if (its_score < threshold)
+      {
 #ifdef DEBUG;
           if (parser_trace >= 4)
-          {   print "   "; CDefArt(match_list-->i);
-              print " (", match_list-->i, ") in "; DefArt(its_owner);
-              print " scores ",its_score, "^";
-          }
+              print "   ", (The) match_list-->i,
+                    " (", match_list-->i, ") in ", (the) its_owner,
+                    " is rejected (doesn't match descriptors)^";
+#endif;
+          match_list-->i=-1;
+      }
+      else
+      {   !   Now forget all of that: the object passes descriptors
+          !   and we can score it properly.
+
+          its_score = 0;
+          if (obj hasnt concealed) its_score=50;
+
+          if (its_owner==actor)   its_score = its_score+a_s;
+          else
+          if (its_owner==actors_location) its_score = its_score+l_s;
+          else
+          if (its_score==0 && its_owner~=compass) its_score = its_score+10;
+
+          !   The entry point "ChooseObjects" can contribute 0 to 9 points
+          !   to refine the score
+          its_score = its_score + ChooseObjects(obj,2);
+
+          !   A small bonus for having the correct GNA,
+          !   for sorting out ambiguous articles and the like.
+
+          its_score = 2*its_score;
+          if (indef_cases & (PowersOfTwo_TB-->(GetGNAOfObject(obj))))
+              its_score++;
+
+          match_scores-->i = match_scores-->i + its_score;
+#ifdef DEBUG;
+          if (parser_trace >= 4)
+              print "   ", (The) match_list-->i,
+                    " (", match_list-->i, ") in ", (the) its_owner,
+                    " scores ", match_scores-->i, "^";
 #endif;
       }
   }
-  number_of_classes=2;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -2220,12 +2495,10 @@ Constant UNLIT_BIT  128;
 
 [ BestGuess  earliest its_score best i;
 
-  if (number_of_classes~=1) ScoreMatchL();
-
   earliest=0; best=-1;
   for (i=0:i<number_matched:i++)
   {   if (match_list-->i >= 0)
-      {   its_score=match_classes-->i;
+      {   its_score=match_scores-->i;
           if (its_score>best) { best=its_score; earliest=i; }
       }
   }
@@ -2234,9 +2507,8 @@ Constant UNLIT_BIT  128;
   {   if (best<0)
           print "   Best guess ran out of choices^";
       else
-      {   print "   Best guess "; DefArt(match_list-->earliest);
-          print  " (", match_list-->earliest, ")^";
-      }
+          print "   Best guess ", (the) match_list-->earliest,
+                " (", match_list-->earliest, ")^";
   }
 #endif;
   if (best<0) return -1;
@@ -2251,8 +2523,6 @@ Constant UNLIT_BIT  128;
 ! ----------------------------------------------------------------------------
 
 [ Identical o1 o2 p1 p2 n1 n2 i j flag;
-
-!  print "Id on ", o1, " (", object o1, ") and ", o2, " (", object o2, ")^";
 
   if (o1==o2) rtrue;  ! This should never happen, but to be on the safe side
   if (o1==0 || o2==0) rfalse;  ! Similarly
@@ -2318,47 +2588,26 @@ Constant UNLIT_BIT  128;
 !  of a word (in a V3 game), we have to hand-code the longer words needed.
 !
 !  (Recall that pattern entries are 0 for "multiple object", 1 for "special
-!  word", 2 to 999 are object numbers and REPARSE_CODE+n means the preposition n)
+!  word", 2 to REPARSE_CODE-1 are object numbers and REPARSE_CODE+n means the
+!  preposition n)
 ! ----------------------------------------------------------------------------
 
 [ PrintCommand from emptyf i j k f;
   if (from==0)
   {   i=verb_word; from=1; f=1;
-#IFV3;
-      if (i=='inventory') { print "take an inventory"; jump VerbPrinted; }
-      if (i=='examine')   { print "examine";           jump VerbPrinted; }
-      if (i=='discard')   { print "discard";           jump VerbPrinted; }
-      if (i=='swallow')   { print "swallow";           jump VerbPrinted; }
-      if (i=='embrace')   { print "embrace";           jump VerbPrinted; }
-      if (i=='squeeze')   { print "squeeze";           jump VerbPrinted; }
-      if (i=='purchase')  { print "purchase";          jump VerbPrinted; }
-      if (i=='unscrew')   { print "unscrew";           jump VerbPrinted; }
-      if (i=='describe')  { print "describe";          jump VerbPrinted; }
-      if (i=='uncover')   { print "uncover";           jump VerbPrinted; }
-      if (i=='discard')   { print "discard";           jump VerbPrinted; }
-      if (i=='transfer')  { print "transfer";          jump VerbPrinted; }
-#ENDIF;
-      if (i==#n$l)         { print "look";              jump VerbPrinted; }
-      if (i==#n$z)         { print "wait";              jump VerbPrinted; }
-      if (i==#n$x)         { print "examine";           jump VerbPrinted; }
-      if (i==#n$i or 'inv') { print "inventory";        jump VerbPrinted; }
-      if (PrintVerb(i)==0) print (address) i;
+      if (LanguageVerb(i) == 0)
+          if (PrintVerb(i)==0)
+              print (address) i;
   }
-  .VerbPrinted;
   j=pcount-emptyf;
   for (k=from:k<=j:k++)
-  {   if (f==1) print (char) ' ';
+  {   if (pattern-->k == PATTERN_NULL) continue;
+      if (f==1) print (char) ' ';
       i=pattern-->k;
-      if (i==0) { print "those things"; jump TokenPrinted; }
-      if (i==1) { print "that"; jump TokenPrinted; }
-      if (i>=REPARSE_CODE)
-      {   i=AdjectiveAddress(i-REPARSE_CODE);
-#IFV3;
-          if (i=='against') { print "against";      jump TokenPrinted; }
-#ENDIF;
-          print (address) i;
-      }
-      else DefArt(i);
+      if (i==0) { print (string) THOSET__TX; jump TokenPrinted; }
+      if (i==1) { print (string) THAT__TX; jump TokenPrinted; }
+      if (i>=REPARSE_CODE) print (address) No__Dword(i-REPARSE_CODE);
+      else print (the) i;
       .TokenPrinted;
       f=1;
   }
@@ -2385,7 +2634,7 @@ Constant UNLIT_BIT  128;
 
     wn--; w=NextWord();
     e=CANTSEE_PE;
-    if (w==vague_word) e=ITGONE_PE;
+    if (w==pronoun_word) e=ITGONE_PE;
     i=parent(actor);
     if (i has visited && Refers(i,w)==1) e=SCENERY_PE;
     if (etype>e) return etype;
@@ -2451,12 +2700,12 @@ Constant UNLIT_BIT  128;
 
 [ UserFilter obj;
 
-  if (token_was>=128)
-  {   if (obj has (token_was-128)) rtrue;
+  if (token_filter < 49)
+  {   if (obj has (token_filter-1)) rtrue;
       rfalse;
   }
-  noun=obj;
-  return (indirect(#preactions_table-->(token_was-16)));
+  noun = obj;
+  return indirect(token_filter);
 ];
 
 ! ----------------------------------------------------------------------------
@@ -2484,9 +2733,9 @@ Constant UNLIT_BIT  128;
 
 #ifdef DEBUG;
   if (scope_reason==PARSING_REASON
-      && (verb_word == 'purloin' or 'tree' or 'abstract'
-          || verb_word == 'gonear' or 'scope'))
-  {   for (i=selfobj+1:i<=top_object:i++) PlaceInScope(i);
+      && verb_word == 'purloin' or 'tree' or 'abstract'
+                       or 'gonear' or 'scope' or 'showobj')
+  {   for (i=selfobj:i<=top_object:i++) PlaceInScope(i);
       rtrue;
   }
 #endif;
@@ -2507,7 +2756,7 @@ Constant UNLIT_BIT  128;
 !  then go through those.  (This ensures the actor's possessions are in
 !  scope even in Darkness.)
 
-  if (context==5 && advance_warning ~= -1)
+  if (context==MULTIINSIDE_TOKEN && advance_warning ~= -1)
   {   if (IsSeeThrough(advance_warning)==1)
           ScopeWithin(advance_warning, 0, context);
   }
@@ -2593,23 +2842,23 @@ Constant UNLIT_BIT  128;
 
    if (domain==0) rtrue;
 
-!  multiexcept doesn't have second parameter in scope
-   if (context==4 && domain==advance_warning) rtrue;
-
 !  Special rule: the directions (interpreted as the 12 walls of a room) are
 !  always in context.  (So, e.g., "examine north wall" is always legal.)
 !  (Unless we're parsing something like "all", because it would just slow
 !  things down then, or unless the context is "creature".)
 
    if (indef_mode==0 && domain==actors_location
-       && scope_reason==PARSING_REASON && context~=6) ScopeWithin(compass);
+       && scope_reason==PARSING_REASON && context~=CREATURE_TOKEN)
+           ScopeWithin(compass);
 
 !  Look through the objects in the domain
-
    objectloop (domain in domain) ScopeWithin_O(domain, nosearch, context);
 ];
 
 [ ScopeWithin_O domain nosearch context i ad n;
+
+!  multiexcept doesn't have second parameter in scope
+   if (context==MULTIEXCEPT_TOKEN && domain==advance_warning) jump DontAccept;
 
 !  If the scope reason is unusual, don't parse.
 
@@ -2622,10 +2871,9 @@ Constant UNLIT_BIT  128;
       if (match_from > num_words)
       {   i=parser_trace; parser_trace=0;
 #ifdef DEBUG;
-          if (i>=5) { print "     Out of text: matching "; DefArt(domain);
-                      new_line; }
+          if (i>=5) print "     Out of text: matching ", (the) domain, "^";
 #endif;
-          MakeMatch(domain,1);
+          MakeMatch(domain,0);  ! Used to be quality 1 -- GN
           parser_trace=i; jump DontAccept;
       }
 
@@ -2635,10 +2883,10 @@ Constant UNLIT_BIT  128;
 
       wn=match_from;
       i=NounWord();
-      if (i==1 && itobj==domain)   MakeMatch(itobj,1);
-      if (i==2 && himobj==domain)  MakeMatch(himobj,1);
-      if (i==3 && herobj==domain)  MakeMatch(herobj,1);
-      if (i==4 && player==domain)  MakeMatch(player,1);
+      if (i==1 && player==domain)  MakeMatch(domain, 1);
+
+      if (i>=2 && i<128 && (LanguagePronouns-->i == domain))
+          MakeMatch(domain, 1);
 
 !  Construing the current word as the start of a noun, can it refer to the
 !  object?
@@ -2700,11 +2948,11 @@ Constant UNLIT_BIT  128;
 
 [ MakeMatch obj quality i;
 #ifdef DEBUG;
-   if (parser_trace>=5) print "    Match with quality ",quality,"^";
+   if (parser_trace>=6) print "    Match with quality ",quality,"^";
 #endif;
-   if (token_was~=0 && UserFilter(obj)==0)
+   if (token_filter~=0 && UserFilter(obj)==0)
    {   #ifdef DEBUG;
-       if (parser_trace>=5) print "    Match filtered out^";
+       if (parser_trace>=6) print "    Match filtered out^";
        #endif;
        rtrue;
    }
@@ -2717,7 +2965,7 @@ Constant UNLIT_BIT  128;
    }
    match_list-->number_matched++ = obj;
 #ifdef DEBUG;
-   if (parser_trace>=5) print "    Match added to list^";
+   if (parser_trace>=6) print "    Match added to list^";
 #endif;
 ];
 
@@ -2731,33 +2979,54 @@ Constant UNLIT_BIT  128;
 
 #ifdef DEBUG;
    if (parser_trace>=5)
-   {   print "    Trying "; DefArt(obj);
-       print " (", obj, ") at word ", wn, "^";
-   }
+       print "    Trying ", (the) obj, " (", obj, ") at word ", wn, "^";
 #endif;
+
+   dict_flags_of_noun = 0;
 
 !  If input has run out and we're in indefinite mode, then always match,
 !  with only quality 0 (this saves time).
 
-   if (indef_mode ~=0 && wn > parse->1) { MakeMatch(obj,0); rfalse; }
+   if (indef_mode ~=0 && wn > num_words)
+   {   dict_flags_of_noun = $$01110000;  ! Reject "plural" bit
+       MakeMatch(obj,0);
+       #ifdef DEBUG;
+       if (parser_trace>=5)
+       print "    Matched (0)^";
+       #endif;
+       rfalse;
+   }
 
 !  Ask the object to parse itself if necessary, sitting up and taking notice
 !  if it says the plural was used:
 
    if (obj.parse_name~=0)
-   {   parser_action=-1; j=wn;
+   {   parser_action = NULL; j=wn;
        k=RunRoutines(obj,parse_name);
        if (k>0)
        {   wn=j+k;
            .MMbyPN;
+
            if (parser_action == ##PluralFound)
-           {   if (allow_plurals == 0) jump NoWordsMatch;
-               if (indef_mode==0)
-               {   indef_mode=1; indef_type=0; indef_wanted=0; }
-               indef_type=indef_type | PLURAL_BIT;
-               if (indef_wanted==0) indef_wanted=100;
+               dict_flags_of_noun = dict_flags_of_noun | 4;
+
+           if (dict_flags_of_noun & 4)
+           {   if (~~allow_plurals) k=0;
+               else
+               {   if (indef_mode==0)
+                   {   indef_mode=1; indef_type=0; indef_wanted=0; }
+                   indef_type = indef_type | PLURAL_BIT;
+                   if (indef_wanted==0) indef_wanted=100;
+               }
            }
-           MakeMatch(obj,k); rfalse;
+
+           #ifdef DEBUG;
+               if (parser_trace>=5)
+               {   print "    Matched (", k, ")^";
+               }
+           #endif;
+           MakeMatch(obj,k);
+           rfalse;
        }
        if (k==0) jump NoWordsMatch;
    }
@@ -2765,12 +3034,15 @@ Constant UNLIT_BIT  128;
 !  The default algorithm is simply to count up how many words pass the
 !  Refers test:
 
+   parser_action = NULL;
+
    w = NounWord();
-   if ((w==1 && obj==itobj)
-       || (w==2 && obj==himobj)
-       || (w==3 && obj==herobj)
-       || (w==4 && obj==player)) { MakeMatch(obj,1); rfalse; }
-  
+
+   if (w==1 && player==obj) { k=1; jump MMbyPN; }
+
+   if (w>=2 && w<128 && (LanguagePronouns-->w == obj))
+   {   k=1; jump MMbyPN; }
+
    j=--wn;
    threshold = ParseNoun(obj);
 #ifdef DEBUG;
@@ -2782,92 +3054,82 @@ Constant UNLIT_BIT  128;
 
    if (threshold==0 || Refers(obj,w)==0)
    {   .NoWordsMatch;
-       if (indef_mode~=0) MakeMatch(obj,0);
+       if (indef_mode~=0)
+       {   k=0; parser_action=NULL; jump MMbyPN;
+       }
        rfalse;
    }
 
    if (threshold<0)
-   {   threshold=1; while (0~=Refers(obj,NextWord())) threshold++;
+   {   threshold=1;
+       dict_flags_of_noun = (w->#dict_par1) & $$01110100;
+       while (0~=Refers(obj, (w = NextWord())))
+       {   threshold++;
+           dict_flags_of_noun = dict_flags_of_noun
+                               | ((w->#dict_par1) & $$01110100);
+       }
    }
 
-   MakeMatch(obj,threshold);
-
-#ifdef DEBUG;
-   if (parser_trace>=5) print "    Matched^";
-#endif;
+   k = threshold; jump MMbyPN;
 ];
 
 ! ----------------------------------------------------------------------------
 !  Refers works out whether the word with dictionary address wd can refer to
-!  the object obj, by seeing if wd is listed in the "names" property of obj.
+!  the object obj, by seeing if wd is listed in the "names" property of obj
+!  (or possibly another property, according to the current inflection, used
+!  to handle cases such as the dative in non-English languages).
 ! ----------------------------------------------------------------------------
 
 [ Refers obj wd   k l m;
     if (obj==0) rfalse;
-    k=obj.&1; l=(obj.#1)/2-1;
+    if (parser_inflection >= 256)
+    {   k = indirect(parser_inflection, obj, wd);
+        if (k>=0) return k;
+        m = -k;
+    } else m = parser_inflection;
+    k=obj.&m; l=(obj.#m)/2-1;
     for (m=0:m<=l:m++)
         if (wd==k-->m) rtrue;
     rfalse;
 ];
 
+[ WordInProperty wd obj prop k l m;
+    k=obj.&prop; l=(obj.#prop)/2-1;
+    for (m=0:m<=l:m++)
+        if (wd==k-->m) rtrue;
+    rfalse;
+];
+
+[ DictionaryLookup b l i;
+  for (i=0:i<l:i++) buffer2->(2+i) = b->i;
+  buffer2->1 = l;
+  @tokenise buffer2 parse2;
+  return parse2-->1;
+];
+
 ! ----------------------------------------------------------------------------
 !  NounWord (which takes no arguments) returns:
 !
-!   1  if the next word is "it" or "them",
-!   2  if the next word is "him",
-!   3  if the next word is "her",
-!   4  if "me", "myself", "self"
 !   0  if the next word is unrecognised or does not carry the "noun" bit in
 !      its dictionary entry,
-!   or the address in the dictionary if it is a recognised noun.
+!   1  if a word meaning "me",
+!   the index in the pronoun table (plus 2) of the value field of a pronoun,
+!      if the word is a pronoun,
+!   the address in the dictionary if it is a recognised noun.
 !
 !  The "current word" marker moves on one.
 ! ----------------------------------------------------------------------------
 
-[ NounWord i;
+[ NounWord i j s;
    i=NextWord();
-   if (i=='it' or 'them') return 1;
-   if (i=='him') return 2;
-   if (i=='her') return 3;
-   if (i=='me' or 'myself' or 'self') return 4;
    if (i==0) rfalse;
+   if (i==ME1__WD or ME2__WD or ME3__WD) return 1;
+   s = LanguagePronouns-->0;
+   for (j=1 : j<=s : j=j+3)
+       if (i == LanguagePronouns-->j)
+           return j+2;
    if ((i->#dict_par1)&128 == 0) rfalse;
    return i;
-];
-
-! ----------------------------------------------------------------------------
-!  AdjectiveWord (which takes no arguments) returns:
-!
-!   0  if the next word is listed in the dictionary as possibly an adjective,
-!   or its adjective number if it is.
-!
-!  The "current word" marker moves on one.
-! ----------------------------------------------------------------------------
-
-[ AdjectiveWord i j;
-   j=NextWord();
-   if (j==0) rfalse;
-   i=j->#dict_par1;
-   if (i&8 == 0) rfalse;
-   return(j->#dict_par3);
-];
-
-! ----------------------------------------------------------------------------
-!  AdjectiveAddress works out the address in the dictionary of the word
-!  corresponding to the given adjective number.
-!
-!  It should never produce the given error (which would mean that Inform
-!  had set up the adjectives table incorrectly).
-! ----------------------------------------------------------------------------
-
-[ AdjectiveAddress n m;
-   m=#adjectives_table;
-   for (::)
-   {   if (n==m-->1) return m-->0;
-       m=m+4;
-   }
-   m=#adjectives_table; RunTimeError(1);
-   return m;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -2889,7 +3151,7 @@ Constant UNLIT_BIT  128;
    if (j==0)
    {   k=wn*4-3; i=buffer->(parse->k);
        if (i==',') j=comma_word;
-       if (i=='.') j='then';
+       if (i=='.') j=THEN1__WD;
    }
    return j;
 ];   
@@ -2963,18 +3225,6 @@ Constant UNLIT_BIT  128;
 ];
 
 ! ----------------------------------------------------------------------------
-!  ResetVagueWords does, assuming that i was the object last referred to
-! ----------------------------------------------------------------------------
-
-[ ResetVagueWords i;
-   if (i has animate && i~=player)
-   {   if (GetGender(i)==1) himobj=i;
-       else herobj=i;
-   }
-   else itobj=i;
-];
-
-! ----------------------------------------------------------------------------
 !  GetGender returns 0 if the given animate object is female, and 1 if male
 !  (not all games will want such a simple decision function!)
 ! ----------------------------------------------------------------------------
@@ -2983,6 +3233,28 @@ Constant UNLIT_BIT  128;
    if (person hasnt female) rtrue;
    rfalse;
 ];
+
+[ GetGNAOfObject obj case gender;
+   if (obj hasnt animate) case = 6;
+   if (obj has male) gender = male;
+   if (obj has female) gender = female;
+   if (obj has neuter) gender = neuter;
+   if (gender == 0)
+   {   if (case == 0) gender = LanguageAnimateGender;
+       else gender = LanguageInanimateGender;
+   }
+   if (gender == female) case = case + 1;
+   if (gender == neuter) case = case + 2;
+   if (obj has pluralname) case = case + 3;
+   return case;
+];
+
+! ----------------------------------------------------------------------------
+!  Converting between dictionary addresses and entry numbers
+! ----------------------------------------------------------------------------
+
+[ Dword__No w; return (w-(0-->4 + 7))/9; ];
+[ No__Dword n; return 0-->4 + 7 + 9*n; ];
 
 ! ----------------------------------------------------------------------------
 !  For copying buffers
@@ -2994,205 +3266,197 @@ Constant UNLIT_BIT  128;
 ];
 
 ! ----------------------------------------------------------------------------
-!  Useful routine: unsigned comparison (for addresses in Z-machine)
-!    Returns 1 if x>y, 0 if x=y, -1 if x<y
-!  ZRegion(addr) returns 1 if object num, 2 if in code area, 3 if in strings
+!  Provided for use by language definition files
 ! ----------------------------------------------------------------------------
 
-[ UnsignedCompare x y u v;
-  if (x==y) return 0;
-  if (x<0 && y>=0) return 1;
-  if (x>=0 && y<0) return -1;
-  u = x&$7fff; v= y&$7fff;
-  if (u>v) return 1;
-  return -1;
+[ LTI_Insert i ch  y;
+
+  !   Insert character ch into buffer at point i.
+
+  !   Being careful not to let the buffer possibly overflow:
+
+      y = buffer->1;
+      if (y > buffer->0) y = buffer->0;
+
+  !   Move the subsequent text along one character:
+
+      for (y=y+2: y>i : y--) buffer->y = buffer->(y-1);
+
+      buffer->i = ch;
+
+  !   And the text is now one character longer:
+      if (buffer->1 < buffer->0)
+          (buffer->1)++;
 ];
 
-[ ZRegion addr;
-  if (addr==0) return 0;
-  if (addr>=1 && addr<=top_object) return 1;
-  if (UnsignedCompare(addr, #strings_offset)>=0) return 3;
-  if (UnsignedCompare(addr, #code_offset)>=0) return 2;
+! ============================================================================
+
+[ PronounsSub x y c d;
+
+  L__M(##Pronouns, 1);
+
+  c = (LanguagePronouns-->0)/3;
+  if (player ~= selfobj) c++;
+
+  if (c==0) return L__M(##Pronouns, 4);
+
+  for (x = 1, d = 0 : x <= LanguagePronouns-->0: x = x+3)
+  {   print "~", (address) LanguagePronouns-->x, "~ ";
+      y = LanguagePronouns-->(x+2);
+      if (y == NULL) L__M(##Pronouns, 3);
+      else { L__M(##Pronouns, 2); print (the) y; }
+      d++;
+      if (d < c-1) print ", ";
+      if (d == c-1) print (string) AND__TX;
+  }
+  if (player ~= selfobj)
+  {   print "~", (address) ME1__WD, "~ "; L__M(##Pronouns, 2);
+      c = player; player = selfobj;
+      print (the) c; player = c;
+  }
+  ".";
+];
+
+[ SetPronoun dword value x;
+  for (x = 1 : x <= LanguagePronouns-->0: x = x+3)
+      if (LanguagePronouns-->x == dword)
+      {   LanguagePronouns-->(x+2) == value; return;
+      }
+  RunTimeError(14);
+];
+
+[ PronounValue dword x;
+  for (x = 1 : x <= LanguagePronouns-->0: x = x+3)
+      if (LanguagePronouns-->x == dword)
+          return LanguagePronouns-->(x+2);
   return 0;
 ];
 
-[ PrintOrRun obj prop flag a;
-  if (obj.#prop > 2) return RunRoutines(obj,prop);
-  if (obj.prop==NULL) rfalse;
-  a=ZRegion(obj.prop);
-  if (a==0 or 1) return RunTimeError(2,obj,prop);
-  if (a==3) { print (string) obj.prop; if (flag==0) new_line; rtrue; }
-  return RunRoutines(obj,prop);
+[ ResetVagueWords obj; PronounNotice(obj); ];
+[ PronounNotice obj x bm;
+
+   if (obj == player) return;
+
+   bm = PowersOfTwo_TB-->(GetGNAOfObject(obj));
+
+   for (x = 1 : x <= LanguagePronouns-->0: x = x+3)
+       if (bm & (LanguagePronouns-->(x+1)) ~= 0)
+           LanguagePronouns-->(x+2) = obj;
+
+#ifdef EnglishNaturalLanguage;
+   if (itobj ~= old_itobj)   SetPronoun('it', itobj);
+   if (himobj ~= old_himobj) SetPronoun('him', himobj);
+   if (herobj ~= old_herobj) SetPronoun('her', herobj);
+
+   old_itobj = itobj; old_himobj = himobj; old_herobj = herobj;
+#endif;
 ];
 
-[ ValueOrRun obj prop a;
-  a=ZRegion(obj.prop);
-  if (a==2) return RunRoutines(obj,prop);
-  return obj.prop;
-];
-
-#IFDEF DEBUG;
-[ NameTheProperty prop;
-  if (#identifiers_table-->prop == 0)
-  {   print "property ", prop; return;
-  }
-  print (string) #identifiers_table-->prop;
-];
-#ENDIF;
-
-[ RunRoutines obj prop i j k l m ssv;
-
-   if (obj==thedark && prop~=initial) obj=real_location;
-   if (obj.prop==NULL or 0) rfalse;
-
-#IFDEF DEBUG;
-   if (debug_flag & 1 ~= 0 && prop~=short_name)
-   {   print "[Running ", (NameTheProperty) prop,
-          " for ", (name) obj,"]^";
-   }
-#ENDIF;
-
-   j=obj.&prop; k=obj.#prop; m=self; self=obj;
-   ssv=sw__var;
-   if (prop==life) sw__var=reason_code;
-   else sw__var=action;
-!   if (prop~=life or orders)
-!   {   noun=inp1; second=inp2;
-!   }
-   for (i=0:i<k/2:i++)
-   {   if (j-->i == NULL) { self=m; sw__var=ssv; rfalse; }
-       l=ZRegion(j-->i);
-       if (l==2)
-       {   l=indirect(j-->i);
-           if (l~=0) { self=m; sw__var=ssv; return l; }
-       }
-       else
-       {   if (l==3) { print (address) j-->i; new_line; }
-           else RunTimeError(3,obj,prop);
-       }
-   }
-   self=m; sw__var=ssv;
-   rfalse;
-];
-
-! ----------------------------------------------------------------------------
+! ============================================================================
 !  End of the parser proper: the remaining routines are its front end.
 ! ----------------------------------------------------------------------------
 
-[ DisplayStatus;
-   if (the_time==NULL)
-   {   sline1=score; sline2=turns; }
-   else
-   {   sline1=the_time/60; sline2=the_time%60; }
-];
+Object InformLibrary "(Inform Library 6/3)"
+  with play
+       [ i j k l;
+       standard_interpreter = $32-->0;
+    
+       ChangeDefault(cant_go, CANTGO__TX);
+       
+       real_location = thedark;
+       player = selfobj;
+    
+       top_object = #largest_object-255;
+       selfobj.capacity = MAX_CARRIED;
+    
+       j=Initialise();
+       last_score = score;
+       move player to location;
+       while (parent(location)~=0) location=parent(location);
+       objectloop (i in player) give i moved ~concealed;
+    
+       if (j~=2) Banner();
+    
+       lightflag=OffersLight(parent(player));
+       if (lightflag==0) { real_location=location; location=thedark; }
+       <Look>;
+    
+       for (i=1:i<=100:i++) j=random(i);
+    
+       while (~~deadflag)
+       {   if (score ~= last_score)
+           {   if (notify_mode==1) NotifyTheScore(); last_score=score; }
 
-[ SetTime t s;
-   the_time=t; time_rate=s; time_step=0;
-   if (s<0) time_step=0-s;
-];
+           #ifdef EnglishNaturalLanguage;
+               old_itobj = PronounValue('it');
+               old_himobj = PronounValue('him');
+               old_herobj = PronounValue('her');
+           #endif;
 
-[ NotifyTheScore i;
-  print "^[Your score has just gone ";
-  if (last_score > score) { i=last_score-score; print "down"; }
-  else { i=score-last_score; print "up"; }
-  print " by "; EnglishNumber(i); print " point";
-  if (i>1) print "s"; print ".]^";
-];
+          .late__error;
 
-[ PlayTheGame i j k l;
+           inputobjs-->0 = 0; inputobjs-->1 = 0;
+           inputobjs-->2 = 0; inputobjs-->3 = 0; meta=false;
+    
+           !  The Parser writes its results into inputobjs and meta,
+           !  a flag indicating a "meta-verb".  This can only be set for
+           !  commands by the player, not for orders to others.
+    
+           InformParser.parse_input(inputobjs);
+    
+           action=inputobjs-->0;
 
-   standard_interpreter = $32-->0;
+           !  --------------------------------------------------------------
 
-   player = selfobj;
-   top_object = #largest_object-255;
-   selfobj.capacity = MAX_CARRIED;
+           !  Reverse "give fred biscuit" into "give biscuit to fred"
+    
+           if (action==##GiveR or ##ShowR)
+           {   i=inputobjs-->2; inputobjs-->2=inputobjs-->3; inputobjs-->3=i;
+               if (action==##GiveR) action=##Give; else action=##Show;
+           }
+    
+           !  Convert "P, tell me about X" to "ask P about X"
+    
+           if (action==##Tell && inputobjs-->2==player && actor~=player)
+           {   inputobjs-->2=actor; actor=player; action=##Ask;
+           }
+    
+           !  Convert "ask P for X" to "P, give X to me"
+    
+           if (action==##AskFor && inputobjs-->2~=player && actor==player)
+           {   actor=inputobjs-->2; inputobjs-->2=inputobjs-->3;
+               inputobjs-->3=player; action=##Give;
+           }
+    
+           !  For old, obsolete code: special_word contains the topic word
+           !  in conversation
+    
+           if (action==##Ask or ##Tell or ##Answer)
+               special_word = special_number1;
 
-   self = GameController; sender = GameController;
+           !  --------------------------------------------------------------
+    
+           multiflag=false; onotheld_mode=notheld_mode; notheld_mode=false;
+           !  For implicit taking and multiple object detection
+    
+          .begin__action;
+           inp1 = 0; inp2 = 0; i=inputobjs-->1;
+           if (i>=1) inp1=inputobjs-->2;
+           if (i>=2) inp2=inputobjs-->3;
+    
+           !  inp1 and inp2 hold: object numbers, or 0 for "multiple object",
+           !  or 1 for "a number or dictionary address"
+    
+           if (inp1 == 1) noun = special_number1; else noun = inp1;
+           if (inp2 == 1)
+           {   if (inp1 == 1) second = special_number2;
+               else second = special_number1;
+           } else second = inp2;
 
-   j=Initialise();
-
-   last_score = score;
-   move player to location;
-   while (parent(location)~=0) location=parent(location);
-   objectloop (i in player) give i moved ~concealed;
-
-   if (j~=2) Banner();
-
-   lightflag=OffersLight(parent(player));
-   if (lightflag==0) { real_location=location; location=thedark; }
-   <Look>;
-
-   for (i=1:i<=100:i++) j=random(i);
-
-   while (deadflag==0)
-   {   self = GameController; sender = GameController;
-       if (score ~= last_score)
-       {   if (notify_mode==1) NotifyTheScore(); last_score=score; }
-
-      .late__error;
-
-       inputobjs-->0 = 0; inputobjs-->1 = 0;
-       inputobjs-->2 = 0; inputobjs-->3 = 0; meta=0;
-
-       !  The Parser writes its results into inputobjs and meta,
-       !  a flag indicating a "meta-verb".  This can only be set for
-       !  commands by the player, not for orders to others.
-
-       Parser(inputobjs);
-
-       noun=0; second=0; action=0; multiflag=0;
-       onotheld_mode=notheld_mode; notheld_mode=0;
-
-       !  The notheld_mode variables are for implicit taking.
-
-       action=inputobjs-->0;
-
-       !  Reverse "give fred biscuit" into "give biscuit to fred"
-
-       if (action==##GiveR or ##ShowR)
-       {   i=inputobjs-->2; inputobjs-->2=inputobjs-->3; inputobjs-->3=i;
-           if (action==##GiveR) action=##Give; else action=##Show;
-       }
-
-       !  Convert "P, tell me about X" to "ask P about X"
-
-       if (action==##Tell && inputobjs-->2==player && actor~=player)
-       {   inputobjs-->2=actor; actor=player; action=##Ask;
-       }
-
-       !  Convert "ask P for X" to "P, give X to me"
-
-       if (action==##AskFor && inputobjs-->2~=player && actor==player)
-       {   actor=inputobjs-->2; inputobjs-->2=inputobjs-->3;
-           inputobjs-->3=player; action=##Give;
-       }
-
-       !  For old, obsolete code: special_word contains the topic word
-       !  in conversation
-
-       if (action==##Ask or ##Tell or ##Answer)
-           special_word = special_number1;
-
-      .begin__action;
-       inp1=0; inp2=0; i=inputobjs-->1;
-       if (i>=1) inp1=inputobjs-->2;
-       if (i>=2) inp2=inputobjs-->3;
-
-       !  inp1 and inp2 hold: object numbers, or 0 for "multiple object",
-       !  or 1 for "a number or dictionary address"
-
-       noun=inp1; second=inp2;
-       if (inp1==1) noun=special_number1;
-       if (inp2==1)
-       {   if (inp1==1) second=special_number2;
-           else second=special_number1;
-       }
-
-       !  noun and second equal inp1 and inp2, except that in place of 1
-       !  they substitute the actual number or dictionary address
-
-       if (actor~=player)
-       {   
+           !  --------------------------------------------------------------
+    
+           if (actor~=player)
+           {   
            !  The player's "orders" property can refuse to allow conversation
            !  here, by returning true.  If not, the order is sent to the
            !  other person's "orders" property.  If that also returns false,
@@ -3201,226 +3465,224 @@ Constant UNLIT_BIT  128;
            !  "say grrr to floyd").  If it was a good command, it is finally
            !  offered to the Order: part of the other person's "life"
            !  property, the old-fashioned way of dealing with conversation.
-
-           j=RunRoutines(player,orders);
-           if (j==0)
-           {   j=RunRoutines(actor,orders);
+    
+               j=RunRoutines(player,orders);
                if (j==0)
-               {   if (action==##NotUnderstood)
-                   {   inputobjs-->3=actor; actor=player; action=##Answer;
-                       jump begin__action;
+               {   j=RunRoutines(actor,orders);
+                   if (j==0)
+                   {   if (action==##NotUnderstood)
+                       {   inputobjs-->3=actor; actor=player; action=##Answer;
+                           jump begin__action;
+                       }
+                       if (RunLife(actor,##Order)==0) L__M(##Order,1,actor);
                    }
-                   if (RunLife(actor,##Order)==0) L__M(##Order,1,actor);
                }
+               jump turn__end;
            }
-           jump turn__end;
-       }
 
-       !  So now we must have an ordinary parser-generated action, unless
-       !  inp1 is a "multiple object", in which case we: (a) check the
-       !  multiple list isn't empty; (b) warn the player if it has been
-       !  cut short because of excessive size, and (c) generate a sequence
-       !  of actions from the list (stopping on death or movement away).
+           !  --------------------------------------------------------------
+           !  Generate the action...
 
-       if (i==0 || inp1~=0) Process();
-       else
-       {   multiflag=1;
+           if ((i==0)
+               || (i==1 && inp1 ~= 0)
+               || (i==2 && inp1 ~= 0 && inp2 ~= 0))
+           {   self.begin_action(action, noun, second, 0);
+               jump turn__end;
+           }
+
+           !  ...unless a multiple object must be substituted.  First:
+           !  (a) check the multiple list isn't empty;
+           !  (b) warn the player if it has been cut short because too long;
+           !  (c) generate a sequence of actions from the list
+           !      (stopping in the event of death or movement away).
+
+           multiflag = true;
            j=multiple_object-->0;
            if (j==0) { L__M(##Miscellany,2); jump late__error; }
-           if (toomany_flag==1)
-           {   toomany_flag=0; L__M(##Miscellany,1); }
+           if (toomany_flag)
+           {   toomany_flag = false; L__M(##Miscellany,1); }
            i=location;
            for (k=1:k<=j:k++)
-           {   if (deadflag~=0) break;
-               if (location~=i)
-               {   print "(Since something dramatic has happened, \
-                          your list of commands has been cut short.)^";
+           {   if (deadflag) break;
+               if (location ~= i)
+               {   L__M(##Miscellany, 51);
                    break;
                }
-               l=multiple_object-->k; ResetVagueWords(l);
-               PrintShortName(l); print ": ";
-               inp1=l; noun=l; Process(); inp1=0; noun=0;
+               l = multiple_object-->k;
+               PronounNotice(l);
+               print (name) l, ": ";
+               if (inp1 == 0)
+               {   inp1 = l; self.begin_action(action, l, second, 0); inp1 = 0;
+               }
+               else
+               {   inp2 = l; self.begin_action(action, noun, l, 0); inp2 = 0;
+               }
            }
+
+           !  --------------------------------------------------------------
+    
+           .turn__end;
+    
+           !  No time passes if either (i) the verb was meta, or
+           !  (ii) we've only had the implicit take before the "real"
+           !  action to follow.
+    
+           if (notheld_mode==1) continue;
+           if (meta) continue;
+           if (~~deadflag) self.end_turn_sequence();
        }
 
-       .turn__end;
+           if (deadflag~=2) AfterLife();
+           if (deadflag==0) jump late__error;
+    
+           print "^^    ";
+           #IFV5; style bold; #ENDIF;
+           print "***";
+           if (deadflag==1) L__M(##Miscellany,3);
+           if (deadflag==2) L__M(##Miscellany,4);
+           if (deadflag>2)  { print " "; DeathMessage(); print " "; }
+           print "***";
+           #IFV5; style roman; #ENDIF;
+           print "^^^";
+           ScoreSub();
+           DisplayStatus();
+    
+           .RRQPL;
+           L__M(##Miscellany,5);
+           .RRQL;
+           print "> ";
+           #IFV3; read buffer parse; #ENDIF;
+           temp_global=0;
+           #IFV5; read buffer parse DrawStatusLine; #ENDIF;
+           i=parse-->1;
+           if (i==QUIT1__WD or QUIT2__WD) quit;
+           if (i==RESTART__WD)      @restart;
+           if (i==RESTORE__WD)      { RestoreSub(); jump RRQPL; }
+           if (i==FULLSCORE1__WD or FULLSCORE2__WD && TASKS_PROVIDED==0)
+           {   new_line; FullScoreSub(); jump RRQPL; }
+           if (deadflag==2 && i==AMUSING__WD && AMUSING_PROVIDED==0)
+           {   new_line; Amusing(); jump RRQPL; }
+           #IFV5;
+           if (i==UNDO1__WD or UNDO2__WD or UNDO3__WD)
+           {   if (undo_flag==0)
+               {   L__M(##Miscellany,6);
+                   jump RRQPL;
+               }
+               if (undo_flag==1) jump UndoFailed2;
+               @restore_undo i;
+               if (i==0)
+               {   .UndoFailed2; L__M(##Miscellany,7);
+               }
+               jump RRQPL;
+           }
+           #ENDIF;
+           L__M(##Miscellany,8);
+           jump RRQL;
+       ],
 
-       !  No time passes if either (i) the verb was meta, or
-       !  (ii) we've only had the implicit take before the "real"
-       !  action to follow.
+       end_turn_sequence
+       [ i j;
 
-       if (notheld_mode==1) meta=1;
-       if (deadflag==0 && meta==0) EndTurnSequence();
-   }
+           turns++;
+           if (the_time~=NULL)
+           {   if (time_rate>=0) the_time=the_time+time_rate;
+               else
+               {   time_step--;
+                   if (time_step==0)
+                   {   the_time++;
+                       time_step = -time_rate;
+                   }
+               }
+               the_time=the_time % 1440;
+           }
 
-   if (deadflag~=2) AfterLife();
-   if (deadflag==0) jump late__error;
+           #IFDEF DEBUG;
+           if (debug_flag & 4 ~= 0)
+           {   for (i=0: i<active_timers: i++)
+               {   j=the_timers-->i;
+                   if (j~=0)
+                   {   print (name) (j&$7fff), ": ";
+                       if (j & $8000) print "daemon";
+                       else
+                       {   print "timer with ",
+                                 j.time_left, " turns to go"; }
+                       new_line;
+                   }
+               }
+           }
+           #ENDIF;
 
-   print "^^    ";
-   #IFV5; style bold; #ENDIF;
-   print "***";
-   if (deadflag==1) L__M(##Miscellany,3);
-   if (deadflag==2) L__M(##Miscellany,4);
-   if (deadflag>2)  { print " "; DeathMessage(); print " "; }
-   print "***";
-   #IFV5; style roman; #ENDIF;
-   print "^^^";
-   ScoreSub();
-   DisplayStatus();
+           for (i=0: i<active_timers: i++)
+           {   if (deadflag) return;
+               j=the_timers-->i;
+               if (j~=0)
+               {   if (j & $8000) RunRoutines(j&$7fff,daemon);
+                   else
+                   {   if (j.time_left==0)
+                       {   StopTimer(j);
+                           RunRoutines(j,time_out);
+                       }
+                       else
+                           j.time_left=j.time_left-1;
+                   }
+               }
+           }
+           if (deadflag) return;
 
-   .RRQPL;
-   L__M(##Miscellany,5);
-   .RRQL;
-   print "> ";
-   #IFV3; read buffer parse; #ENDIF;
-   temp_global=0;
-   #IFV5; read buffer parse DrawStatusLine; #ENDIF;
-   i=parse-->1;
-   if (i=='quit' or #n$q) quit;
-   if (i=='restart')      @restart;
-   if (i=='restore')      { RestoreSub(); jump RRQPL; }
-   if (i=='fullscore' or 'full' && TASKS_PROVIDED==0)
-   {   new_line; FullScoreSub(); jump RRQPL; }
-   if (deadflag==2 && i=='amusing' && AMUSING_PROVIDED==0)
-   {   new_line; Amusing(); jump RRQPL; }
-#IFV5;
-   if (i=='undo')
-   {   if (undo_flag==0)
-       {   L__M(##Miscellany,6);
-           jump RRQPL;
-       }
-       if (undo_flag==1) jump UndoFailed2;
-       @restore_undo i;
-       if (i==0)
-       {   .UndoFailed2; L__M(##Miscellany,7);
-       }
-       jump RRQPL;
-   }
-#ENDIF;
-   L__M(##Miscellany,8);
-   jump RRQL;
+           scope_reason=EACH_TURN_REASON; verb_word=0;
+           DoScopeAction(location); SearchScope(location,player,0);
+           scope_reason=PARSING_REASON;
+
+           if (deadflag) return;
+
+           TimePasses();
+
+           if (deadflag) return;
+
+           AdjustLight();
+
+           if (deadflag) return;
+
+           objectloop (i in player && i hasnt moved)
+           {   give i moved;
+               if (i has scored)
+               {   score = score + OBJECT_SCORE;
+                   things_score = things_score + OBJECT_SCORE;
+               }
+           }
+       ],
+
+       begin_action
+       [ a n s source   sa sn ss r;
+           sa = action; sn = noun; ss = second;
+           action = a; noun = n; second = s;
+           #IFDEF DEBUG;
+           if (debug_flag & 2 ~= 0) TraceAction(source);
+           #IFNOT;
+           source = 0;
+           #ENDIF;
+           #IFTRUE Grammar__Version == 1;
+           if ((meta || BeforeRoutines()==false) && action<256)
+           {   indirect(#actions_table-->action); r = false;
+           }
+           else r = true;
+           #IFNOT;
+           if ((meta || BeforeRoutines()==false) && action<4096)
+           {   indirect(#actions_table-->action); r = false;
+           }
+           else r = true;
+           #ENDIF;
+           action = sa; noun = sn; second = ss;
+       ],
+  has  proper;
+       
+[ R_Process a i j s1 s2;
+   s1 = inp1; s2 = inp2;
+   inp1 = i; inp2 = j; InformLibrary.begin_action(a, i, j, 1);
+   inp1 = s1; inp2 = s2;
 ];
 
-[ Process;
-#IFDEF DEBUG;
-   if (debug_flag & 2 ~= 0) TraceAction(0);
-#ENDIF;
-   if (meta==1 || BeforeRoutines()==0)
-       indirect(#actions_table-->action);
-];
-
-#IFDEF DEBUG;
-Array debug_anames table
-[;##Inv "Inv";
-  ##InvTall "InvTall";
-  ##InvWide "InvWide";
-  ##Take "Take";
-  ##Drop "Drop";
-  ##Remove "Remove";
-  ##PutOn "PutOn";
-  ##Insert "Insert";
-  ##Transfer "Transfer";
-  ##Empty "Empty";
-  ##Enter "Enter";
-  ##Exit "Exit";
-  ##GetOff "GetOff";
-  ##Go "Go";
-  ##GoIn "GoIn";
-  ##Look "Look";
-  ##Examine "Examine";
-  ##Search "Search";
-  ##Give "Give";
-  ##Show "Show";
-  ##Unlock "Unlock";
-  ##Lock "Lock";
-  ##SwitchOn "SwitchOn";
-  ##SwitchOff "SwitchOff";
-  ##Open "Open";
-  ##Close "Close";
-  ##Disrobe "Disrobe";
-  ##Wear "Wear";
-  ##Eat "Eat";
-  ##Yes "Yes";
-  ##No "No";
-  ##Burn "Burn";
-  ##Pray "Pray";
-  ##Wake "Wake";
-  ##WakeOther "WakeOther";
-  ##Consult "Consult";
-  ##Kiss "Kiss";
-  ##Think "Think";
-  ##Smell "Smell";
-  ##Listen "Listen";
-  ##Taste "Taste";
-  ##Touch "Touch";
-  ##Dig "Dig";
-  ##Cut "Cut";
-  ##Jump "Jump";
-  ##JumpOver "JumpOver";
-  ##Tie "Tie";
-  ##Drink "Drink";
-  ##Fill "Fill";
-  ##Sorry "Sorry";
-  ##Strong "Strong";
-  ##Mild "Mild";
-  ##Attack "Attack";
-  ##Swim "Swim";
-  ##Swing "Swing";
-  ##Blow "Blow";
-  ##Rub "Rub";
-  ##Set "Set";
-  ##SetTo "SetTo";
-  ##WaveHands "WaveHands";
-  ##Wave "Wave";
-  ##Pull "Pull";
-  ##Push "Push";
-  ##PushDir "PushDir";
-  ##Turn "Turn";
-  ##Squeeze "Squeeze";
-  ##LookUnder "LookUnder";
-  ##ThrowAt "ThrowAt";
-  ##Answer "Answer";
-  ##Buy "Buy";
-  ##Ask "Ask";
-  ##Tell "Tell";
-  ##AskFor "AskFor";
-  ##Sing "Sing";
-  ##Climb "Climb";
-  ##Wait "Wait";
-  ##Sleep "Sleep";
-  ##Order "Order";
-  ##NotUnderstood "NotUnderstood";
-];
-[ DebugParameter w x n l;
-  x=0-->4; x=x+(x->0)+1; l=x->0; n=(x+1)-->0; x=w-(x+3);
-  print w;
-  if (w>=1 && w<=top_object) print " (", (name) w, ")";
-  if (x%l==0 && (x/l)<n) print " ('", (address) w, "')";
-];
-[ DebugAction a i;
-  for (i=1:i<=debug_anames-->0:i=i+2)
-  {   if (debug_anames-->i==a)
-      {   print (string) debug_anames-->(i+1); rfalse; }
-  }
-  print a;
-];
-[ TraceAction source ar;
-  if (source<2) { print "[Action "; DebugAction(action); }
-  else
-  {   if (ar==##Order)
-      {   print "[Order to "; PrintShortName(actor); print ": ";
-          DebugAction(action);
-      }
-      else
-      {   print "[Life rule "; DebugAction(ar); }
-  }
-  if (noun~=0)   { print " with noun "; DebugParameter(noun);  }
-  if (second~=0) { print " and second "; DebugParameter(second); }
-  if (source==0) print " (from parser)";
-  if (source==1) print " (from outside)";
-  print "]^";
-];
-#ENDIF;
+! ----------------------------------------------------------------------------
 
 [ TestScope obj act a al sr x y;
   x=parser_one; y=parser_two;
@@ -3466,21 +3728,6 @@ Array debug_anames table
   return GamePostRoutine();
 ];
 
-[ R_Process acti i j sn ss sa sse;
-   sn=inp1; ss=inp2; sa=action; sse=self;
-   inp1 = i; inp2 = j; noun=i; second=j; action=acti;
-
-#IFDEF DEBUG;
-   if (debug_flag & 2 ~= 0) TraceAction(1);
-#ENDIF;
-
-   if ((meta==1 || BeforeRoutines()==0) && action<256)
-   {   indirect(#actions_table-->action);
-       self=sse; inp1=sn; noun=sn; inp2=ss; second=ss; action=sa; rfalse;
-   }
-   self=sse; inp1=sn; noun=sn; inp2=ss; second=ss; action=sa; rtrue;
-];
-
 [ RunLife a j;
 #IFDEF DEBUG;
    if (debug_flag & 2 ~= 0) TraceAction(2, j);
@@ -3488,145 +3735,53 @@ Array debug_anames table
    reason_code = j; return RunRoutines(a,life);
 ];
 
-[ LowKey_Menu menu_choices EntryR ChoiceR lines main_title i j;
-  menu_nesting++;
- .LKRD;
-  menu_item=0;
-  lines=indirect(EntryR);
-  main_title=item_name;
-
-  print "--- "; print (string) main_title; print " ---^^";
-  if (ZRegion(menu_choices)==3) print (string) menu_choices;
-  else indirect(menu_choices);
-
- .LKML;
-  print "^Type a number from 1 to ", lines,
-        ", 0 to redisplay or press ENTER.^> ";
-
-   #IFV3; read buffer parse; #ENDIF;
-   temp_global=0;
-   #IFV5; read buffer parse DrawStatusLine; #ENDIF;
-   i=parse-->1;
-   if (i=='quit' or #n$q || parse->1==0)
-   {   menu_nesting--; if (menu_nesting>0) rfalse;
-       if (deadflag==0) <<Look>>;
-       rfalse;
-   }
-   i=TryNumber(1);
-   if (i==0) jump LKRD;
-   if (i<1 || i>lines) jump LKML;
-   menu_item=i;
-   j=indirect(ChoiceR);
-   if (j==2) jump LKRD;
-   if (j==3) rfalse;
-   jump LKML;
-];
-
-#IFV3;
-[ DoMenu menu_choices EntryR ChoiceR;
-  LowKey_Menu(menu_choices,EntryR,ChoiceR);
-];
-#ENDIF;
-
-#IFV5;
-[ DoMenu menu_choices EntryR ChoiceR
-         lines main_title main_wid cl i j oldcl pkey;
-  if (pretty_flag==0)
-  {   LowKey_Menu(menu_choices,EntryR,ChoiceR);
-      rfalse;
+[ ZRegion addr;
+  switch(metaclass(addr))       ! Left over from Inform 5
+  {   nothing: return 0;
+      Object, Class: return 1;
+      Routine: return 2;
+      String: return 3;
   }
-  menu_nesting++;
-  menu_item=0;
-  lines=indirect(EntryR);
-  main_title=item_name; main_wid=item_width;
-  cl=7;
-  .ReDisplay;
-      oldcl=0;
-      @erase_window $ffff;
-      i=lines+7;
-      @split_window i;
-      i = 0->33;
-      if (i==0) i=80;
-      @set_window 1;
-      @set_cursor 1 1;
-      style reverse;
-      spaces(i); j=i/2-main_wid;
-      @set_cursor 1 j;
-      print (string) main_title;
-      @set_cursor 2 1; spaces(i);
-      @set_cursor 2 2; print "N = next subject";
-      j=i-12; @set_cursor 2 j; print "P = previous";
-      @set_cursor 3 1; spaces(i);
-      @set_cursor 3 2; print "RETURN = read subject";
-      j=i-17; @set_cursor 3 j;
-      if (menu_nesting==1)
-          print "  Q = resume game";
-      else
-          print "Q = previous menu";
-      style roman;
-      @set_cursor 5 2; font off;
+];
 
-      if (ZRegion(menu_choices)==3) print (string) menu_choices;
-      else indirect(menu_choices);
+[ PrintOrRun obj prop flag;
+  if (obj.#prop > 2) return RunRoutines(obj,prop);
+  if (obj.prop==NULL) rfalse;
+  switch(metaclass(obj.prop))
+  {   Class, Object, nothing: return RunTimeError(2,obj,prop);
+      String: print (string) obj.prop; if (flag==0) new_line; rtrue;
+      Routine: return RunRoutines(obj,prop);
+  }
+];
 
-      .KeyLoop;
-      if (cl~=oldcl)
-      {   if (oldcl>0) { @set_cursor oldcl 4; print " "; }
-          @set_cursor cl 4; print ">";
-      }
-      oldcl=cl;
-      @read_char 1 0 0 pkey;
-      if (pkey=='N' or 'n' or 130)
-          { cl++; if (cl==7+lines) cl=7; jump KeyLoop; }
-      if (pkey=='P' or 'p' or 129)
-          { cl--; if (cl==6)  cl=6+lines; jump KeyLoop; }
-      if ((pkey=='Q' or 'q' or 27)||(pkey==131)) { jump QuitHelp; }
-      if (pkey==10 or 13 or 132)
-      {   @set_window 0; font on;
-          new_line; new_line; new_line;
+[ ValueOrRun obj prop;
+  if (obj.prop < 256) return obj.prop;
+  return RunRoutines(obj, prop);
+];
 
-          menu_item=cl-6;
-          indirect(EntryR);
+[ RunRoutines obj prop;
+   if (obj == thedark
+       && prop ~= initial or short_name or description) obj=real_location;
+   if (obj.&prop == 0) rfalse;
+   return obj.prop();
+];
 
-          @erase_window $ffff;
-          @split_window 1;
-          i = 0->33; if (i==0) { i=80; }
-          @set_window 1; @set_cursor 1 1; style reverse; spaces(i);
-          j=i/2-item_width;
-          @set_cursor 1 j;
-          print (string) item_name;
-          style roman; @set_window 0; new_line;
+[ ChangeDefault prop val;
+   (0-->5)-->(prop-1) = val;
+];
 
-          i = indirect(ChoiceR);
-          if (i==2) jump ReDisplay;
-          if (i==3) jump QuitHelp;
-
-          print "^[Please press SPACE.]^";
-          @read_char 1 0 0 pkey; jump ReDisplay;
-      }
-      jump KeyLoop;
-      .QuitHelp;
-      menu_nesting--; if (menu_nesting>0) rfalse;
-      font on; @set_cursor 1 1;
-      @erase_window $ffff; @set_window 0;
-      new_line; new_line; new_line;
-      if (deadflag==0) <<Look>>;
-];  
-#ENDIF;
+! ----------------------------------------------------------------------------
 
 [ StartTimer obj timer i;
    for (i=0:i<active_timers:i++)
-       if (the_timers-->i==obj)
-       {   if (timer_flags->i==2) RunTimeError(6,obj);
-           rfalse;
-       }
+       if (the_timers-->i==obj) rfalse;
    for (i=0:i<active_timers:i++)
        if (the_timers-->i==0) jump FoundTSlot;
    i=active_timers++;
    if (i*2>=MAX_TIMERS) RunTimeError(4);
    .FoundTSlot;
    if (obj.&time_left==0) RunTimeError(5,obj);
-   the_timers-->i=obj; timer_flags->i=1; obj.time_left=timer;
+   the_timers-->i=obj; obj.time_left=timer;
 ];
 
 [ StopTimer obj i;
@@ -3640,86 +3795,43 @@ Array debug_anames table
 
 [ StartDaemon obj i;
    for (i=0:i<active_timers:i++)
-       if (the_timers-->i==obj)
-       {   if (timer_flags->i==1) RunTimeError(6,obj);
+       if (the_timers-->i == $8000 + obj)
            rfalse;
-       }
    for (i=0:i<active_timers:i++)
        if (the_timers-->i==0) jump FoundTSlot3;
    i=active_timers++;
    if (i*2>=MAX_TIMERS) RunTimeError(4);
    .FoundTSlot3;
-   the_timers-->i=obj; timer_flags->i=2;
+   the_timers-->i = $8000 + obj;
 ];
 
 [ StopDaemon obj i;
    for (i=0:i<active_timers:i++)
-       if (the_timers-->i==obj) jump FoundTSlot4;
+       if (the_timers-->i == $8000 + obj) jump FoundTSlot4;
    rfalse;
    .FoundTSlot4;
    the_timers-->i=0;
 ];
 
-[ EndTurnSequence i j;
+! ----------------------------------------------------------------------------
 
-   turns++;
-   if (the_time~=NULL)
-   {   if (time_rate>=0) the_time=the_time+time_rate;
-       else
-       {   time_step--;
-           if (time_step==0)
-           {   the_time++;
-               time_step = -time_rate;
-           }
-       }
-       the_time=the_time % 1440;
-   }
-#IFDEF DEBUG;
-   if (debug_flag & 4 ~= 0)
-   {   for (i=0: i<active_timers: i++)
-       {   j=the_timers-->i;
-           if (j~=0)
-           {   PrintShortName(j);
-               if (timer_flags->i==2) print ": daemon";
-               else
-               { print ": timer with ", j.time_left, " turns to go"; }
-               new_line;
-           }
-       }
-   }
-#ENDIF;
-   for (i=0: deadflag==0 && i<active_timers: i++)
-   {   j=the_timers-->i;
-       if (j~=0)
-       {   if (timer_flags->i==2) RunRoutines(j,daemon);
-           else
-           {   if (j.time_left==0)
-               {   StopTimer(j);
-                   RunRoutines(j,time_out);
-               }
-               else
-                   j.time_left=j.time_left-1;
-           }
-       }
-   }
-   if (deadflag==0)
-   {   scope_reason=EACH_TURN_REASON; verb_word=0;
-       DoScopeAction(location); SearchScope(location,player,0);
-       scope_reason=PARSING_REASON;
-   }
-   if (deadflag==0) TimePasses();
-   if (deadflag==0)
-   {   AdjustLight();
-       objectloop (i in player)
-           if (i hasnt moved)
-           {   give i moved;
-               if (i has scored)
-               {   score=score+OBJECT_SCORE;
-                   things_score=things_score+OBJECT_SCORE;
-               }
-           }
-   }
+[ DisplayStatus;
+   if (the_time==NULL)
+   {   sline1=score; sline2=turns; }
+   else
+   {   sline1=the_time/60; sline2=the_time%60; }
 ];
+
+[ SetTime t s;
+   the_time=t; time_rate=s; time_step=0;
+   if (s<0) time_step=0-s;
+];
+
+[ NotifyTheScore;
+   print "^[";  L__M(##Miscellany, 50, score-last_score);  print ".]^";
+];
+
+! ----------------------------------------------------------------------------
 
 [ AdjustLight flag i;
    i=lightflag;
@@ -3769,27 +3881,13 @@ Array debug_anames table
    rfalse;
 ];
 
-[ SayProS x;
-  if (x==0) print "is unset";
-  else { print "means "; DefArt(x); }
-];
-
-[ PronounsSub;
-  print "At the moment, ~it~ "; SayProS(itobj);
-  print ", ~him~ "; SayProS(himobj);
-  if (player==selfobj) print " and"; else print ",";
-  print " ~her~ "; SayProS(herobj);
-  if (player==selfobj) ".";
-  print " and ~me~ means "; @print_obj player; ".";
-];
-
 [ ChangePlayer obj flag i;
   if (obj.&number==0) return RunTimeError(7,obj);
   if (actor==player) actor=obj;
   give player ~transparent ~concealed;
   i=obj; while(parent(i)~=0) { if (i has animate) give i transparent;
                                i=parent(i); }
-  if (player==selfobj) player.short_name="your former self";
+  if (player==selfobj) player.short_name=FORMER__TX;
   player.number=real_location; player=obj;
   if (player==selfobj) player.short_name=NULL;
   give player transparent concealed animate proper;
@@ -3801,8 +3899,427 @@ Array debug_anames table
   print_player_flag=flag;
 ];
 
-[ ChangeDefault prop val;
-   (0-->5)-->(prop-1) = val;
+! ----------------------------------------------------------------------------
+
+#IFDEF DEBUG;
+[ DebugParameter w x n l;
+  x=0-->4; x=x+(x->0)+1; l=x->0; n=(x+1)-->0; x=w-(x+3);
+  print w;
+  if (w>=1 && w<=top_object) print " (", (name) w, ")";
+  if (x%l==0 && (x/l)<n) print " ('", (address) w, "')";
+];
+[ DebugAction a anames;
+#iftrue Grammar__Version==1;
+  if (a>=256) { print "<fake action ", a-256, ">"; return; }
+#ifnot;
+  if (a>=4096) { print "<fake action ", a-256, ">"; return; }
+#endif;
+  anames = #identifiers_table;
+  anames = anames + 2*(anames-->0) + 2*48;
+  print (string) anames-->a;
+];
+[ DebugAttribute a anames;
+  if (a<0 || a>=48) print "<invalid attribute ", a, ">";
+  else
+  {   anames = #identifiers_table; anames = anames + 2*(anames-->0);
+      print (string) anames-->a;
+  }
+];
+[ TraceAction source ar;
+  if (source<2) print "[ Action ", (DebugAction) action;
+  else
+  {   if (ar==##Order)
+          print "[ Order to ", (name) actor, ": ", (DebugAction) action;
+      else
+          print "[ Life rule ", (DebugAction) ar;
+  }
+  if (noun~=0)   print " with noun ", (DebugParameter) noun;
+  if (second~=0) print " and second ", (DebugParameter) second;
+  if (source==0) print " ";
+  if (source==1) print " (from < > statement) ";
+  print "]^";
+];
+[ DebugToken token;
+  AnalyseToken(token);
+  switch(found_ttype)
+  {   ILLEGAL_TT: print "<illegal token number ", token, ">";
+      ELEMENTARY_TT:
+      switch(found_tdata)
+      {   NOUN_TOKEN:        print "noun";
+          HELD_TOKEN:        print "held";
+          MULTI_TOKEN:       print "multi";
+          MULTIHELD_TOKEN:   print "multiheld";
+          MULTIEXCEPT_TOKEN: print "multiexcept";
+          MULTIINSIDE_TOKEN: print "multiinside";
+          CREATURE_TOKEN:    print "creature";
+          SPECIAL_TOKEN:     print "special";
+          NUMBER_TOKEN:      print "number";
+          TOPIC_TOKEN:       print "topic";
+          ENDIT_TOKEN:       print "END";
+      }
+      PREPOSITION_TT:
+          print "'", (address) found_tdata, "'";
+      ROUTINE_FILTER_TT:
+          print "noun=Routine(", found_tdata, ")";
+      ATTR_FILTER_TT:
+          print (DebugAttribute) found_tdata;
+      SCOPE_TT:
+          print "scope=Routine(", found_tdata, ")";
+      GPR_TT:
+          print "Routine(", found_tdata, ")";
+  }
+];
+[ DebugGrammarLine pcount;
+  print " * ";
+  for (:line_token-->pcount ~= ENDIT_TOKEN:pcount++)
+  {   if ((line_token-->pcount)->0 & $10) print "/ ";
+      print (DebugToken) line_token-->pcount, " ";
+  }
+  print "-> ", (DebugAction) action_to_be;
+  if (action_reversed) print " reverse";
+];
+[ ShowVerbSub address lines da meta i j;
+    if (((noun->#dict_par1) & 1) == 0)
+      "Try typing ~showverb~ and then the name of a verb.";
+    meta=((noun->#dict_par1) & 2)/2;
+    i = $ff-(noun->#dict_par2);
+    address = (0-->7)-->i;
+    lines = address->0;
+    address++;
+    print "Verb ";
+    if (meta) print "meta ";
+    da = 0-->4;
+    for (j=0:j < (da+5)-->0:j++)
+        if (da->(j*9 + 14) == $ff-i)
+            print "'", (address) (da + 9*j + 7), "' ";
+    new_line;
+    if (lines == 0) "has no grammar lines.";
+    for (:lines > 0:lines--)
+    {   address = UnpackGrammarLine(address);
+        print "    "; DebugGrammarLine(); new_line;
+    }
+];
+[ ShowobjSub c f l a n x;
+   if (noun==0) noun=location;
+   objectloop (c in Class) if (noun ofclass c) { f++; l=c; }
+   new_line;if (f == 1) print (name) l, " ~"; else print "Object ~";
+   print (name) noun, "~ (", noun, ")";
+   if (parent(noun)~=0) print " in ~", (name) parent(noun), "~";
+   new_line;
+   if (f > 1)
+   {   print "  class ";
+       objectloop (c in Class) if (noun ofclass c) print (name) c, " ";
+       new_line;
+   }
+   for (a=0,f=0:a<48:a++) if (noun has a) f=1;
+   if (f)
+   {   print "  has ";
+       for (a=0:a<48:a++) if (noun has a) print (DebugAttribute) a, " ";
+       new_line;
+   }
+   if (noun ofclass Class) return;
+
+   f=0; l = #identifiers_table-->0;
+   for (a=1:a<=l:a++)
+   {   if ((a~=2 or 3) && noun.&a)
+       {   if (f==0) { print "  with "; f=1; }
+           print (property) a;
+           n = noun.#a;
+           for (c=0:2*c<n:c++)
+           {   print " ";
+               x = (noun.&a)-->c;
+               if (a==name) print "'", (address) x, "'";
+               else
+               {   if (a==number or capacity or time_left)
+                       print x;
+                   else
+                   {   switch(x)
+                       {   NULL: print "NULL";
+                           0: print "0";
+                           1: print "1";
+                           default:
+                           switch(metaclass(x))
+                           {   Class, Object: print (name) x;
+                               String: print "~", (string) x, "~";
+                               Routine: print "[...]";
+                           }
+                           print " (", x, ")";
+                       }
+                   }
+               }
+           }
+           print ",^       ";
+       }
+   }
+   if (f==1) new_line;
+];
+#ENDIF;
+
+! ----------------------------------------------------------------------------
+!  Except in Version 3, the DrawStatusLine routine does just that: this is
+!  provided explicitly so that it can be Replace'd to change the style, and
+!  as written it emulates the ordinary Standard game status line, which is
+!  drawn in hardware
+! ----------------------------------------------------------------------------
+
+#IFV5;
+[ DrawStatusLine width posa posb;
+   @split_window 1; @set_window 1; @set_cursor 1 1; style reverse;
+   width = 0->33; posa = width-26; posb = width-13;
+   spaces (width-1);
+   @set_cursor 1 2; print (name) location;
+   if ((0->1)&2 == 0)
+   {   if (width > 76)
+       {   @set_cursor 1 posa; print (string) SCORE__TX, sline1;
+           @set_cursor 1 posb; print (string) MOVES__TX, sline2;
+       }
+       if (width > 63 && width <= 76)
+       {   @set_cursor 1 posb; print sline1, "/", sline2;
+       }
+   }
+   else
+   {   @set_cursor 1 posa;
+       print (string) TIME__TX;
+       LanguageTimeOfDay(sline1, sline2);
+   }
+   @set_cursor 1 1; style roman; @set_window 0;
+];
+#ENDIF;
+
+! ----------------------------------------------------------------------------
+!  Much better menus can be created using the optional library extension
+!  "menus.h".  These are provided for compatibility with previous practice:
+! ----------------------------------------------------------------------------
+
+[ LowKey_Menu menu_choices EntryR ChoiceR lines main_title i j;
+  menu_nesting++;
+ .LKRD;
+  menu_item=0;
+  lines=indirect(EntryR);
+  main_title=item_name;
+
+  print "--- "; print (string) main_title; print " ---^^";
+
+  if (menu_choices ofclass Routine) menu_choices.call();
+  else print (string) menu_choices;
+
+  for (::)
+  {   L__M(##Miscellany, 52, lines);
+      print "> ";
+
+      #IFV3; read buffer parse;
+      #IFNOT; read buffer parse DrawStatusLine;
+      #ENDIF;
+
+      i=parse-->1;
+      if (i==QUIT1__WD or QUIT2__WD || parse->1==0)
+      {   menu_nesting--; if (menu_nesting>0) rfalse;
+          if (deadflag==0) <<Look>>;
+          rfalse;
+      }
+      i=TryNumber(1);
+      if (i==0) jump LKRD;
+      if (i<1 || i>lines) continue;
+      menu_item=i;
+      j=indirect(ChoiceR);
+      if (j==2) jump LKRD;
+      if (j==3) rfalse;
+  }
+];
+
+#IFV3;
+[ DoMenu menu_choices EntryR ChoiceR;
+  LowKey_Menu(menu_choices,EntryR,ChoiceR);
+];
+#ENDIF;
+
+#IFV5;
+[ DoMenu menu_choices EntryR ChoiceR
+         lines main_title main_wid cl i j oldcl pkey;
+
+  if (pretty_flag==0)
+      return LowKey_Menu(menu_choices,EntryR,ChoiceR);
+
+  menu_nesting++;
+  menu_item=0;
+  lines=indirect(EntryR);
+  main_title=item_name; main_wid=item_width;
+  cl=7;
+
+  .ReDisplay;
+      oldcl=0;
+      @erase_window $ffff;
+      i=lines+7;
+      @split_window i;
+      i = 0->33;
+      if (i==0) i=80;
+      @set_window 1;
+      @set_cursor 1 1;
+      style reverse;
+      spaces(i); j=i/2-main_wid;
+      @set_cursor 1 j;
+      print (string) main_title;
+      @set_cursor 2 1; spaces(i);
+      @set_cursor 2 2; print (string) NKEY__TX;
+      j=i-12; @set_cursor 2 j; print (string) PKEY__TX;
+      @set_cursor 3 1; spaces(i);
+      @set_cursor 3 2; print (string) RKEY__TX;
+      j=i-17; @set_cursor 3 j;
+      if (menu_nesting==1) print (string) QKEY1__TX;
+                      else print (string) QKEY2__TX;
+      style roman;
+      @set_cursor 5 2; font off;
+
+      if (menu_choices ofclass String) print (string) menu_choices;
+      else menu_choices.call();
+
+      for (::)
+      {   if (cl ~= oldcl)
+          {   if (oldcl>0) { @set_cursor oldcl 4; print " "; }
+              @set_cursor cl 4; print ">";
+          }
+          oldcl=cl;
+          @read_char 1 -> pkey;
+          if (pkey==NKEY1__KY or NKEY2__KY or 130)
+          {   cl++; if (cl==7+lines) cl=7; continue;
+          }
+          if (pkey==PKEY1__KY or PKEY2__KY or 129)
+          {   cl--; if (cl==6)  cl=6+lines; continue;
+          }
+          if (pkey==QKEY1__KY or QKEY2__KY or 27 or 131) break;
+          if (pkey==10 or 13 or 132)
+          {   @set_window 0; font on;
+              new_line; new_line; new_line;
+    
+              menu_item=cl-6;
+              EntryR.call();
+    
+              @erase_window $ffff;
+              @split_window 1;
+              i = 0->33; if (i==0) { i=80; }
+              @set_window 1; @set_cursor 1 1; style reverse; spaces(i);
+              j=i/2-item_width;
+              @set_cursor 1 j;
+              print (string) item_name;
+              style roman; @set_window 0; new_line;
+    
+              i = ChoiceR.call();
+              if (i==2) jump ReDisplay;
+              if (i==3) break;
+    
+              L__M(##Miscellany, 53);
+              @read_char 1 -> pkey; jump ReDisplay;
+          }
+      }
+
+      menu_nesting--; if (menu_nesting>0) rfalse;
+      font on; @set_cursor 1 1;
+      @erase_window $ffff; @set_window 0;
+      new_line; new_line; new_line;
+      if (deadflag==0) <<Look>>;
+];  
+#ENDIF;
+
+! ----------------------------------------------------------------------------
+
+#ifv5;
+Array StorageForShortName table 160;
+#endif;
+
+[ PrefaceByArticle o acode pluralise  i artform findout;
+
+   if (o provides articles)
+   {   print (string) (o.&articles)-->acode, " ";
+       if (pluralise) return;
+       print (PSN__) o; return;
+   }
+
+   i = LanguageGNAsToArticles-->(GetGNAOfObject(o));
+   if (pluralise)
+   {   if (i<3 || (i>=6 && i<9)) i = i + 3;
+   }
+   artform = LanguageArticles + 6*LanguageContractionForms*i;
+#ifv5;
+
+#iftrue LanguageContractionForms == 2;
+   if (artform-->acode ~= artform-->(acode+3)) findout = true;
+#endif;
+#iftrue LanguageContractionForms == 3;
+   if (artform-->acode ~= artform-->(acode+3)) findout = true;
+   if (artform-->(acode+3) ~= artform-->(acode+6)) findout = true;
+#endif;
+#iftrue LanguageContractionForms == 4;
+   if (artform-->acode ~= artform-->(acode+3)) findout = true;
+   if (artform-->(acode+3) ~= artform-->(acode+6)) findout = true;
+   if (artform-->(acode+6) ~= artform-->(acode+9)) findout = true;
+#endif;
+#iftrue LanguageContractionForms > 4;
+   findout = true;
+#endif;
+
+   if (standard_interpreter ~= 0 && findout)
+   {   StorageForShortName-->0 = 160;
+       @output_stream 3 StorageForShortName;
+       if (pluralise) print (number) pluralise; else print (PSN__) o;
+       @output_stream -3;
+       acode = acode + 3*LanguageContraction(StorageForShortName + 2);
+   }
+
+#ifnot;
+   findout = false;
+#endif;
+
+   print (string) artform-->acode;
+   if (pluralise) return;
+   print (PSN__) o;
+];
+
+[ PSN__ o;
+   if (o==0) { print (string) NOTHING__TX; rtrue; }
+   switch(metaclass(o))
+   {   Routine: print "<routine ", o, ">"; rtrue;
+       String:  print "<string ~", (string) o, "~>"; rtrue;
+       nothing: print "<illegal object number ", o, ">"; rtrue;
+   }
+   if (o==player) { print (string) YOURSELF__TX; rtrue; }
+   if (indef_mode == false && o.&short_name_indef~=0
+       && PrintOrRun(o, short_name_indef, 1)~=0) rtrue;
+   if (o.&short_name~=0 && PrintOrRun(o,short_name,1)~=0) rtrue;
+   @print_obj o;
+];
+
+[ Indefart o i;
+   i = indef_mode; indef_mode = true;
+   if (o has proper) { print (PSN__) o; return; }
+   if (o provides article)
+   {   PrintOrRun(o,article,1); print " ", (PSN__) o; indef_mode = i; return;
+   }
+   PrefaceByArticle(o, 2); indef_mode = i;
+];
+[ Defart o i;
+   i = indef_mode; indef_mode = false;
+   if (o has proper) { print (PSN__) o; indef_mode = i; return; }
+   PrefaceByArticle(o, 1); indef_mode = i;
+];
+[ CDefart o i;
+   i = indef_mode; indef_mode = false;
+   if (o has proper) { print (PSN__) o; indef_mode = i; return; }
+   PrefaceByArticle(o, 0); indef_mode = i;
+];
+
+[ PrintShortName o i;
+   i = indef_mode; indef_mode = false;
+   PSN__(o); indef_mode = i;
+];
+
+[ EnglishNumber n; LanguageNumber(n); ];
+
+[ NumberWord o i n;
+  n = LanguageNumbers-->0;
+  for (i=1:i<=n:i=i+2)
+      if (o == LanguageNumbers-->i)
+          return LanguageNumbers-->(i+1);
+  return 0;
 ];
 
 [ RandomEntry tab;
@@ -3810,52 +4327,21 @@ Array debug_anames table
   return tab-->(random(tab-->0));
 ];
 
-[ Indefart o;
-   if (o hasnt proper) { PrintOrRun(o,article,1); print " "; }
-   PrintShortName(o);
+! ----------------------------------------------------------------------------
+!  Useful routine: unsigned comparison (for addresses in Z-machine)
+!    Returns 1 if x>y, 0 if x=y, -1 if x<y
+! ----------------------------------------------------------------------------
+
+[ UnsignedCompare x y u v;
+  if (x==y) return 0;
+  if (x<0 && y>=0) return 1;
+  if (x>=0 && y<0) return -1;
+  u = x&$7fff; v= y&$7fff;
+  if (u>v) return 1;
+  return -1;
 ];
 
-[ Defart o;
-   if (o hasnt proper) print "the "; PrintShortName(o);
-];
-
-[ CDefart o;
-   if (o hasnt proper) print "The "; PrintShortName(o);
-];
-
-[ PrintShortName o;
-   if (o==0) { print "nothing"; rtrue; }
-   if (o>top_object || o<0)
-   {   switch(ZRegion(o))
-       {   2: print "<routine ", o, ">"; rtrue;
-           3: print "<string ~", (string) o, "~>"; rtrue;
-       }
-       print "<illegal object number ", o, ">"; rtrue;
-   }
-   if (o==player) { print "yourself"; rtrue; }
-   if (o.&short_name~=0 && PrintOrRun(o,short_name,1)~=0) rtrue;
-   @print_obj o;
-];
-
-! Provided for, e.g.,  print (DirectionName) obj.door_dir;
-
-[ DirectionName d;
-   switch(d)
-   {   n_to: print "north";
-       s_to: print "south";
-       e_to: print "east";
-       w_to: print "west";
-       ne_to: print "northeast";
-       nw_to: print "northwest";
-       se_to: print "southeast";
-       sw_to: print "southwest";
-       u_to: print "up";
-       d_to: print "down";
-       in_to: print "in";
-       out_to: print "out";
-       default: return RunTimeError(9,d);
-   }
-];
+! ----------------------------------------------------------------------------
 
 [ Banner i;
    if (Story ~= 0)
@@ -3885,35 +4371,37 @@ Array debug_anames table
   print "Interpreter ", 0->$1e, " Version ", (char) 0->$1f, " / ";
 #ENDIF;
   print "Library serial number ", (string) LibSerial, "^";
+#IFDEF LanguageVersion;
+  print (string) LanguageVersion, "^";
+#ENDIF;
 ];
 
 [ RunTimeError n p1 p2;
 #IFDEF DEBUG;
   print "** Library error ", n, " (", p1, ",", p2, ") **^** ";
   switch(n)
-  {   1: print "Adjective not found (this should not occur)";
+  {   1: print "preposition not found (this should not occur)";
       2: print "Property value not routine or string: ~",
-               (NameTheProperty) p2, "~ of ~", (name) p1, "~ (", p1, ")";
+               (property) p2, "~ of ~", (name) p1, "~ (", p1, ")";
       3: print "Entry in property list not routine or string: ~",
-               (NameTheProperty) p2, "~ list of ~", (name) p1,
-               "~ (", p1, ")";
-      4: print "Too many timers/daemons are active simultaneously.  The \
+               (property) p2, "~ list of ~", (name) p1, "~ (", p1, ")";
+      4: print "Too many timers/daemons are active simultaneously.  The
                 limit is the library constant MAX_TIMERS (currently ",
                 MAX_TIMERS, ") and should be increased";
       5: print "Object ~", (name) p1, "~ has no ~time_left~ property";
-      6: print "The object ~", (name) p1, "~ cannot be active as a \
-                daemon and as a timer at the same time";
-      7: print "The object ~", (name) p1, "~ can only be used as a player \
+      7: print "The object ~", (name) p1, "~ can only be used as a player
                 object if it has the ~number~ property";
       8: print "Attempt to take random entry from an empty table array";
       9: print p1, " is not a valid direction property number";
       10: print "The player-object is outside the object tree";
       11: print "The room ~", (name) p1, "~ has no ~description~ property";
+      12: print "Tried to set a non-existent pronoun using SetPronoun";
+      13: print "A 'topic' token can only be followed by a preposition";
       default: print "(unexplained)";
   }
   " **";
 #IFNOT;
-  print_ret "** Library error ", n, " (", p1, ",", p2, ") **";
+  "** Library error ", n, " (", p1, ",", p2, ") **";
 #ENDIF;
 ];
 

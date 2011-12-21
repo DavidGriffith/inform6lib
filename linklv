@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  LINKLV:  Link declarations of library variables.
 !
-!  Supplied for use with Inform 6                         Serial number 960912
-!                                                                  Release 6/2
+!  Supplied for use with Inform 6                         Serial number 961216
+!                                                                  Release 6/3
 !  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
@@ -10,171 +10,144 @@ Import global location;
 Import global sline1;
 Import global sline2;
 
+Import global top_object;
+Import global standard_interpreter;
+Import global undo_flag;
+Import global transcript_mode;
+IFDEF DEBUG;
+Import global xcommsdir;
+ENDIF;
+
+Import global turns;
 Import global the_time;
 Import global time_rate;
 Import global time_step;
+Import global active_timers;
 
 Import global score;
-Import global turns;
+Import global last_score;
+Import global notify_mode;
+Import global places_score;
+Import global things_score;
+
 Import global player;
+Import global deadflag;
 
 Import global lightflag;
 Import global real_location;
-Import global print_player_flag;
-Import global deadflag;
-
-Import global transcript_mode;
-
-Import global last_score;
-Import global notify_mode;       ! Score notification
-
-Import global places_score;
-Import global things_score;
 Import global lookmode;
+Import global print_player_flag;
 Import global lastdesc;
 
-Import global top_object;
-Import global toomany_flag   ;          ! Flag for "take all made too many"
-Import global actor          ;          ! Person asked to do something
-Import global actors_location;          ! Like location, but for the actor
-Import global action         ;          ! Thing he is asked to do
-Import global inp1           ;          ! First parameter
-Import global inp2           ;          ! Second parameter
-Import global self           ;          ! Object whose routines are being run
-Import global noun           ;          ! First noun
-Import global second         ;          ! Second noun
-Import global special_word   ;          ! Dictionary address of "special"
-Import global special_number ;          ! The number, if a number was typed
-Import global special_number2;          ! Second number, if two numbers typed
-Import global parsed_number  ;          ! For user-supplied parsing routines
-Import global multiflag;                    ! Multiple-object flag
-Import global notheld_mode ;            ! To do with implicit taking
-Import global onotheld_mode;            !
-Import global meta;                         ! Verb is a meta-command (such as "save")
-Import global reason_code;                  ! Reason for calling a life
-Import global sw__var        ;          ! Switch variable (used for embeddeds)
-Import global consult_from;                 ! Word that "consult" topic starts on
-Import global consult_words;                ! ...and number of words in topic
-
-#IFV5;
-Import global undo_flag;                ! Can the interpreter provide "undo"?
-#ENDIF;
-
-Import global parser_trace;             ! Set this to 1 to make the parser trace
-                                     ! tokens and lines
-Import global debug_flag;               ! For debugging information
-Import global lm_n;                         ! Parameters for LibraryMessages
-Import global lm_o;
-
-Import global wn;                      ! Word number (counts from 1)
-Import global num_words;               ! Number of words typed
-Import global verb_word;               ! Verb word (eg, take in "take all" or
-                                ! "dwarf, take all") - address in dictionary
-Import global verb_wordnum;            ! and the number in typing order (eg, 1 or 3)
-
-Import global multi_mode;              ! Multiple mode
-Import global multi_wanted;            ! Number of things needed in multitude
-Import global multi_had;               ! Number of things actually found
-Import global multi_context;           ! What token the multi-object was accepted for
-
-Import global pcount;                  ! and a marker within it
-Import global pcount2;                 ! so far
-
-Import global parameters;              ! Parameters (objects) entered so far
-Import global params_wanted;           ! Number needed (may change in parsing)
-
-Import global nsns;                    ! Number of special_numbers entered so far
-
-Import global inferfrom;               ! The point from which the rest of the
-                                ! command must be inferred
-Import global inferword;               ! And the preposition inferred
-
-Import global oops_from;           ! The "first mistake" point, where oops acts
-Import global saved_oops;          ! Used in working this out
-Import global number_matched;          ! How many items in it?  (0 means none)
-Import global number_of_classes;       ! How many equivalence classes?
-Import global match_length;            ! How many typed words long are these matches?
-Import global match_from;              ! At what word of the input do they begin?
-
-Import global parser_action;           ! For the use of the parser when calling
-Import global parser_one;              ! user-supplied routines
-Import global parser_two;              !
-
-Import global vague_word;              ! Records which vague word ("it", "them", ...)
-                                ! caused an error
-Import global vague_obj;               ! And what it was thought to refer to
-
-Import global itobj;                   ! The object which is currently "it"
-Import global himobj;                  ! The object which is currently "him"
-Import global herobj;                  ! The object which is currently "her"
-
-Import global lookahead;               ! The token after the object now being matched
-Import global indef_mode;              ! "Indefinite" mode - ie, "take a brick" is in
-                                ! this mode
-Import global indef_type;              ! Bit-map holding types of specification
-Import global indef_wanted;            ! Number of items wanted (100 for all)
-Import global indef_guess_p;           ! Plural-guessing flag
-Import global allow_plurals;           ! Whether they are presently allowed or not
-Import global not_holding;             ! Object to be automatically taken as an
-                                ! implicit command
-Import global saved_wn;                ! These are temporary variables for Parser()
-Import global saved_token;             ! (which hasn't enough spare local variables)
-
-Import global held_back_mode;      ! Flag: is there some input from last time
-Import global hb_wn;               ! left over?  (And a save value for wn)
-
-Import global best_etype;              ! Error number used within parser
-Import global etype;                   ! Error number used for individual lines
-
-Import global last_command_from;       ! For sorting out "then again"
-Import global last_command_to;         !
-
-Import global token_was;               ! For noun filtering by user routines
-
-Import global advance_warning;         ! What a later-named thing will be
-
-Import global placed_in_flag;          ! To do with PlaceInScope
-Import global length_of_noun;          ! Set by NounDomain to number of words in noun
-
-Import global action_to_be;            ! So the parser can "cheat" in one case
-Import global dont_infer;              ! Another dull flag
-
-Import global scope_reason;   ! For "each_turn" and reactions
-
-Import global scope_token;             ! For scope:Routine tokens
-Import global scope_error;
-Import global scope_stage;
-
-Import global ats_flag;            ! For AddToScope routines
-Import global ats_hls;                 !
-
-Import global take_all_rule;
-Import global usual_grammar_after;
-
-#IFV5;
-Import global just_undone;         ! Can't have two successive UNDOs
-#ENDIF;
-
-#IFV5;
-Import global pretty_flag;
-Import global menu_nesting;
-#ENDIF;
-Import global item_width;
-Import global item_name;
-Import global menu_item;
-
-Import global active_timers;
-
-Import global inventory_stage;
 Import global c_style;
 Import global lt_value;
 Import global listing_together;
 Import global listing_size;
-Import global inventory_style;
-Import global keep_silent;
-Import global receive_action;
 Import global wlf_indent;
-#ifdef DEBUG;
-Import global xcommsdir;
+Import global inventory_stage;
+Import global inventory_style;
+Import global pretty_flag;
+Import global menu_nesting;
+Import global menu_item;
+Import global item_width;
+Import global item_name;
+Import global lm_n;
+Import global lm_o;
+
+IFDEF DEBUG;
+Import global debug_flag;
 Import global x_scope_count;
-#endif;
+ENDIF;
+Import global action;
+Import global inp1;
+Import global inp2;
+Import global noun;
+Import global second;
+Import global keep_silent;
+Import global reason_code;
+Import global receive_action;
+
+Import global parser_trace;
+Import global parser_action;
+Import global parser_one;
+Import global parser_two;
+Import global parser_inflection;
+Import global actor;
+Import global actors_location;
+Import global meta;
+Import global multiflag;
+Import global toomany_flag;
+
+Import global special_word;
+Import global special_number;
+Import global parsed_number;
+Import global consult_from;
+Import global consult_words;
+Import global notheld_mode;
+Import global onotheld_mode;
+Import global not_holding;
+Import global etype;
+Import global best_etype;
+Import global nextbest_etype;
+Import global pcount;
+Import global pcount2;
+Import global parameters;
+Import global nsns;
+Import global special_number1;
+Import global special_number2;
+Import global params_wanted;
+Import global inferfrom;
+Import global inferword;
+Import global dont_infer;
+Import global action_to_be;
+Import global action_reversed;
+Import global advance_warning;
+Import global found_ttype;
+Import global found_tdata;
+Import global token_filter;
+Import global lookahead;
+Import global multi_mode;
+Import global multi_wanted;
+Import global multi_had;
+Import global multi_context;
+Import global indef_mode;
+Import global indef_type;
+Import global indef_wanted;
+Import global indef_guess_p;
+Import global indef_owner;
+Import global indef_cases;
+Import global indef_possambig;
+Import global allow_plurals;
+Import global take_all_rule;
+Import global gender_and_number;
+Import global pronoun_word;
+Import global pronoun_obj;
+Import global scope_reason;
+Import global scope_token;
+Import global scope_error;
+Import global scope_stage;
+Import global ats_flag;
+Import global ats_hls;
+Import global placed_in_flag;
+Import global number_matched;
+Import global number_of_classes;
+Import global match_length;
+Import global match_from;
+Import global wn;
+Import global num_words;
+Import global verb_word;
+Import global verb_wordnum;
+Import global usual_grammar_after;
+Import global oops_from;
+Import global saved_oops;
+Import global held_back_mode;
+Import global hb_wn;
+
+IFDEF EnglishNaturalLanguage;
+Import global itobj;
+Import global himobj;
+Import global herobj;
+Import global old_itobj;
+Import global old_himobj;
+Import global old_herobj;
+ENDIF;
