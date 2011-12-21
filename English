@@ -1,5 +1,5 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 970818
+!   Inform Language Definition File: English 970918
 !
 !   (c) Graham Nelson 1997
 !
@@ -292,14 +292,17 @@ Constant AND__TX      = " and ";
 Constant WHOM__TX     = "whom ";
 Constant WHICH__TX    = "which ";
 
-[ ThatorThose obj; if (obj has pluralname) { print "those"; return; }
+[ ThatorThose obj;   ! Used in the accusative
+  if (obj == player) { print "you"; return; }
+  if (obj has pluralname) { print "those"; return; }
   if (obj has animate)
-  {   if (obj has female) { print "she"; return; }
-      else if (obj hasnt neuter) { print "he"; return; }
+  {   if (obj has female) { print "her"; return; }
+      else if (obj hasnt neuter) { print "him"; return; }
   }
   print "that";
 ];
 [ ItorThem obj;
+  if (obj == player) { print "yourself"; return; }
   if (obj has pluralname) { print "them"; return; }
   if (obj has animate)
   {   if (obj has female) { print "her"; return; }
@@ -307,16 +310,21 @@ Constant WHICH__TX    = "which ";
   }
   print "it";
 ];
-[ IsorAre obj; if (obj has pluralname) print "are"; else print "is";
+[ IsorAre obj;
+  if (obj has pluralname || obj == player) print "are"; else print "is";
 ];
-[ CThatorThose obj; if (obj has pluralname) print "Those";
+[ CThatorThose obj;   ! Used in the nominative
+  if (obj == player) { print "You"; return; }
+  if (obj has pluralname) { print "Those"; return; }
   if (obj has animate)
   {   if (obj has female) { print "She"; return; }
       else if (obj hasnt neuter) { print "He"; return; }
   }
   print "That";
 ];
-[ CTheyreorThats obj; if (obj has pluralname) print "They're";
+[ CTheyreorThats obj;
+  if (obj == player) { print "You're"; return; }
+  if (obj has pluralname) { print "They're"; return; }
   if (obj has animate)
   {   if (obj has female) { print "She's"; return; }
       else if (obj hasnt neuter) { print "He's"; return; }
@@ -333,6 +341,9 @@ Constant WHICH__TX    = "which ";
                3: print " You have died ";
                4: print " You have won ";
                5: print "^Would you like to RESTART, RESTORE a saved game";
+                  #IFDEF DEATH_MENTION_UNDO;
+                  print ", UNDO your last move";
+                  #ENDIF;
                   if (TASKS_PROVIDED==0)
                       print ", give the FULL score for that game";
                   if (deadflag==2 && AMUSING_PROVIDED==0)
@@ -462,17 +473,18 @@ Constant WHICH__TX    = "which ";
            }
   Verify:  switch(n)
            {   1: "The game file has verified as intact.";
-               2: "The game file did not verify as intact, and may be corrupted
-                   (unless you are playing it with a very primitive interpreter
-                   which is unable properly to perform the test).";
+               2: "The game file did not verify as intact,
+                   and may be corrupt.";
            }
   ScriptOn: switch(n)
            {   1: "Transcripting is already on.";
                2: "Start of a transcript of";
+               3: "Attempt to begin transcript failed.";
            }
   ScriptOff: switch(n)
            {   1: "Transcripting is already off.";
                2: "^End of transcript.";
+               3: "Attempt to end transcript failed.";
            }
   NotifyOn:       "Score notification on.";
   NotifyOff:      "Score notification off.";

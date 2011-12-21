@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIBM:  Core of standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 970818
-!                                                                  Release 6/6
+!  Supplied for use with Inform 6                         Serial number 970918
+!                                                                  Release 6/7
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -476,19 +476,22 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 !   so that the player never catches one not in place
 ! ----------------------------------------------------------------------------
 
-[ MoveFloatingObjects i k l m address;
+[ MoveFloatingObjects i k l m address flag;
   objectloop (i)
   {   address=i.&found_in;
       if (address~=0 && i hasnt absent)
       {   if (ZRegion(address-->0)==2)
-          {   if (i.found_in() ~= 0) move i to location;
+          {   if (i.found_in() ~= 0) move i to location; else remove i;
           }
           else
           {   k=i.#found_in;
               for (l=0: l<k/2: l++)
               {   m=address-->l;
-                  if (m==location || m in location) move i to location;
+                  if (m==location || m in location)
+                  {   move i to location; flag = true;
+                  }
               }
+              if (flag == false) remove i;
           }
       }
   }
@@ -554,17 +557,21 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];
 
 [ ScriptOnSub;
-  if (transcript_mode==1) return L__M(##ScriptOn,1);
-  transcript_mode=1;
-  0-->8 = (0-->8)|1;
+  transcript_mode = ((0-->8) & 1);
+  if (transcript_mode) return L__M(##ScriptOn,1);
+  @output_stream 2;
+  if (((0-->8) & 1) == 0) return L__M(##ScriptOn,3);
   L__M(##ScriptOn,2); VersionSub();
+  transcript_mode = true;
 ];
-
+	
 [ ScriptOffSub;
-  if (transcript_mode==0) return L__M(##ScriptOff,1);
+  transcript_mode = ((0-->8) & 1);
+  if (transcript_mode == false) return L__M(##ScriptOff,1);
   L__M(##ScriptOff,2);
-  transcript_mode=0;
-  0-->8 = (0-->8)&$fffe;
+  @output_stream -2;
+  if ((0-->8) & 1) return L__M(##ScriptOff,3);
+  transcript_mode = false;
 ];
 
 [ NotifyOnSub; notify_mode=1; L__M(##NotifyOn); ];
@@ -672,7 +679,9 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   WriteListFrom(child(player), inventory_style, 1);
   if (inventory_style & ENGLISH_BIT ~= 0) print ".^";
 
+#IFNDEF MANUAL_PRONOUNS;
   objectloop(x in player) PronounNotice(x);
+#ENDIF;
 
   AfterRoutines();
 ];
@@ -1113,8 +1122,9 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   <<Go in_obj>>;
 ];
 
-[ GoSub i j k df movewith thedir;
+[ GoSub i j k df movewith thedir old_loc;
 
+  old_loc = location;
   movewith=0;
   i=parent(player);
   if ((location~=thedark && i~=location)
@@ -1159,7 +1169,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   df=OffersLight(j);
   if (df~=0) { location=j; lightflag=1; }
   else
-  {   if (location==thedark)
+  {   if (old_loc == thedark)
       {   DarkToDark();
           if (deadflag~=0) rtrue;
       }
@@ -1204,7 +1214,9 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   k=0;
   objectloop (o in descin)
       if (o hasnt concealed && NotSupportingThePlayer(o))
-      {  PronounNotice(o);
+      {  #IFNDEF MANUAL_PRONOUNS;
+         PronounNotice(o);
+         #ENDIF;
          if (o hasnt scenery)
          {   give o workflag; k++;
              p=initial; f2=0;
@@ -1275,6 +1287,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   descin=location;
   if (descin~=lastdesc)
   {   if (descin.initial~=0) PrintOrRun(descin, initial);
+      descin=location;
       NewRoom();
       lastdesc=descin;
   }
@@ -1293,6 +1306,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 [ LookSub allow_abbrev  visibility_levels i j k;
   if (parent(player)==0) return RunTimeError(10);
 
+  .MovedByInitial;
   if (location == thedark) visibility_ceiling = thedark;
   else
   {   visibility_levels = 1;
@@ -1304,7 +1318,10 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       {   visibility_ceiling = parent(visibility_ceiling);
           visibility_levels++;
       }
-      if (visibility_ceiling == location) NoteArrival();
+      if (visibility_ceiling == location)
+      {   NoteArrival();
+          if (visibility_ceiling ~= location) jump MovedByInitial;
+      }
   }
 
   !   Printing the top line: e.g.

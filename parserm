@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 970818
-!                                                                  Release 6/6
+!  Supplied for use with Inform 6                         Serial number 970918
+!                                                                  Release 6/7
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -562,6 +562,10 @@ Constant ENDIT_TOKEN       = 15;     ! Value used to mean "end of grammar line"
 ];
 #Endif;
 
+!  To protect against a bug in early versions of the "Zip" interpreter:
+
+[ Tokenise__ b p; b->(2 + b->1) = 0; @tokenise b p; ];
+
 ! ============================================================================
 !  The InformParser object abstracts the front end of the parser.
 !
@@ -685,7 +689,7 @@ Object InformParser "(Inform Parser)"
 !  was typed:
 
     for (i=0:i<64:i++) a_buffer->i = oops_workspace->i;
-    @tokenise a_buffer a_table;
+    Tokenise__(a_buffer,a_table);
 
 !  Work out the position in the buffer of the word to be corrected:
 
@@ -711,7 +715,7 @@ Object InformParser "(Inform Parser)"
 
     for (i=0:i<x2:i++) a_buffer->(i+w) = buffer2->(i+x1);
 
-    @tokenise a_buffer a_table;
+    Tokenise__(a_buffer,a_table);
     nw=a_table->1;
 
     return nw;
@@ -753,7 +757,7 @@ Object InformParser "(Inform Parser)"
 
     if (held_back_mode==1)
     {   held_back_mode=0;
-        @tokenise buffer parse;
+        Tokenise__(buffer,parse);
         jump ReParse;
     }
 
@@ -774,7 +778,7 @@ Object InformParser "(Inform Parser)"
     LanguageToInformese();
 #ifv5;
 !   Re-tokenise:
-    @tokenise buffer parse;
+    Tokenise__(buffer,parse);
 #endif;
 #endif;
 
@@ -1164,9 +1168,9 @@ Object InformParser "(Inform Parser)"
                 #ifdef DEBUG;
                 if (parser_trace >= 3)
                 {   print "  [token resulted in ";
-                    if (l==REPARSE_CODE) print " re-parse request]^";
-                    if (l==0) print " failure with error type ", etype, "]^";
-                    if (l==1) print " success]^";
+                    if (l==REPARSE_CODE) print "re-parse request]^";
+                    if (l==0) print "failure with error type ", etype, "]^";
+                    if (l==1) print "success]^";
                 }
                 #endif;
 
@@ -1397,7 +1401,7 @@ Object InformParser "(Inform Parser)"
            if (wn > num_words) j = 119; else j = WordAddress(wn)-buffer;
            for (:i<j:i++) buffer3->i = ' ';
        }
-       @tokenise buffer parse; held_back_mode = true; return;
+       Tokenise__(buffer,parse); held_back_mode = true; return;
    }
    best_etype=UPTO_PE; jump GiveError;
 ];
@@ -2135,7 +2139,8 @@ Constant UNLIT_BIT  =  32;
   #endif;
   if (first_word ~= 0)
   {   j=first_word->#dict_par1;
-      if (0~=j&1)
+      if ((0~=j&1) && (first_word ~= 'long' or 'short' or 'normal'
+                                     or 'brief' or 'full' or 'verbose'))
       {   CopyBuffer(buffer, buffer2);
           return REPARSE_CODE;
       }
@@ -2246,8 +2251,13 @@ Constant UNLIT_BIT  =  32;
   for (j=0: j<buffer2->1: i++, j++)
   {   buffer->i = buffer2->(j+2);
       (buffer->1)++;
-      if (buffer->1 == buffer->0) break;
+      if (buffer->1 == 120) break;
   }    
+
+!  (3) we fill up the buffer with spaces, which is unnecessary, but may
+!      help incorrectly-written interpreters to cope.
+
+  for (:i<120:i++) buffer->i = ' ';
 
   return REPARSE_CODE;
 ];
@@ -3272,7 +3282,7 @@ Constant UNLIT_BIT  =  32;
 [ DictionaryLookup b l i;
   for (i=0:i<l:i++) buffer2->(2+i) = b->i;
   buffer2->1 = l;
-  @tokenise buffer2 parse2;
+  Tokenise__(buffer2,parse2);
   return parse2-->1;
 ];
 
@@ -3541,7 +3551,7 @@ Object InformLibrary "(Inform Library)"
   with play
        [ i j k l;
        standard_interpreter = $32-->0;
-    
+       transcript_mode = ((0-->8) & 1);
        ChangeDefault(cant_go, CANTGO__TX);
        
        real_location = thedark;
@@ -3572,9 +3582,7 @@ Object InformLibrary "(Inform Library)"
        #endif;
     
        while (~~deadflag)
-       {   if (score ~= last_score)
-           {   if (notify_mode==1) NotifyTheScore(); last_score=score; }
-
+       {   
            #ifdef EnglishNaturalLanguage;
                PronounOldEnglish();
                old_itobj = PronounValue('it');
@@ -3582,7 +3590,12 @@ Object InformLibrary "(Inform Library)"
                old_herobj = PronounValue('her');
            #endif;
 
-          .late__error;
+           .very__late__error;
+
+           if (score ~= last_score)
+           {   if (notify_mode==1) NotifyTheScore(); last_score=score; }
+
+           .late__error;
 
            inputobjs-->0 = 0; inputobjs-->1 = 0;
            inputobjs-->2 = 0; inputobjs-->3 = 0; meta=false;
@@ -3722,7 +3735,7 @@ Object InformLibrary "(Inform Library)"
        }
 
            if (deadflag~=2) AfterLife();
-           if (deadflag==0) jump late__error;
+           if (deadflag==0) jump very__late__error;
     
            print "^^    ";
            #IFV5; style bold; #ENDIF;
@@ -4078,18 +4091,20 @@ Object InformLibrary "(Inform Library)"
 ];
 
 [ ChangePlayer obj flag i;
-  if (obj.&number==0) return RunTimeError(7,obj);
+!  if (obj.&number==0) return RunTimeError(7,obj);
   if (actor==player) actor=obj;
   give player ~transparent ~concealed;
   i=obj; while(parent(i)~=0) { if (i has animate) give i transparent;
                                i=parent(i); }
   if (player==selfobj) player.short_name=FORMER__TX;
-  player.number=real_location; player=obj;
+
+  player=obj;
+
   if (player==selfobj) player.short_name=NULL;
   give player transparent concealed animate proper;
   i=player; while(parent(i)~=0) i=parent(i); location=i;
-  real_location=player.number;
-  if (real_location==0) real_location=location;
+  real_location=location;
+  MoveFloatingObjects();
   lightflag=OffersLight(parent(player));
   if (lightflag==0) location=thedark;
   print_player_flag=flag;
@@ -4560,16 +4575,15 @@ Array StorageForShortName table 160;
    print " D";
 #endif;
    new_line;
-   if (standard_interpreter > 0)
-       print "Standard interpreter ",
-           standard_interpreter/256, ".", standard_interpreter%256, "^";
 ];
 
 [ VersionSub;
   Banner();
-#IFV5;
-  print "Interpreter ", 0->$1e, " Version ", (char) 0->$1f, " / ";
-#ENDIF;
+  if (standard_interpreter > 0)
+      print "Standard interpreter ",
+          standard_interpreter/256, ".", standard_interpreter%256,
+          " (", 0->$1e, (char) 0->$1f, ") / ";
+  else print "Interpreter ", 0->$1e, " Version ", (char) 0->$1f, " / ";
   print "Library serial number ", (string) LibSerial, "^";
 #IFDEF LanguageVersion;
   print (string) LanguageVersion, "^";

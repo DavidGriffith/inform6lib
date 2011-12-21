@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  LINKLV:  Link declarations of library variables.
 !
-!  Supplied for use with Inform 6                         Serial number 970818
-!                                                                  Release 6/6
+!  Supplied for use with Inform 6                         Serial number 970918
+!                                                                  Release 6/7
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -122,7 +122,6 @@ Import global indef_possambig;
 Import global indef_nspec_at;
 Import global allow_plurals;
 Import global take_all_rule;
-Import global gender_and_number;
 Import global pronoun_word;
 Import global pronoun_obj;
 Import global scope_reason;
