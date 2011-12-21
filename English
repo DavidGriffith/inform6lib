@@ -1,7 +1,7 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 970918
+!   Inform Language Definition File: English 981213
 !
-!   (c) Graham Nelson 1997
+!   (c) Graham Nelson 1997, 1998
 !
 !   Define the constant DIALECT_US before including "Parser" to
 !   obtain American English
@@ -505,7 +505,7 @@ Constant WHICH__TX    = "which ";
                   else print "You have so far scored ";
                   print score, " out of a possible ", MAX_SCORE,
                   ", in ", turns, " turn";
-                  if (turns>1) print "s"; return;
+                  if (turns~=1) print "s"; return;
   FullScore: switch(n)
            {   1: if (deadflag) print "The score was ";
                   else          print "The score is ";
@@ -554,7 +554,7 @@ Constant WHICH__TX    = "which ";
                4: "Dropped.";
            }
   Remove:  switch(n)
-           {   1: if (x1 has pluralname) print "They are"; else print "It is ";
+           {   1: if (x1 has pluralname) print "They are"; else print "It is";
                   " unfortunately closed.";
                2: if (x1 has pluralname)
                       print "But they aren't";
@@ -591,6 +591,7 @@ Constant WHICH__TX    = "which ";
            {   1: print_ret (The) x1, " can't contain things.";
                2: print_ret (The) x1, " ", (isorare) x1, " closed.";
                3: print_ret (The) x1, " ", (isorare) x1, " empty already.";
+               4: "That would scarcely empty anything.";
            }
   Give:    switch(n)
            {   1: "You aren't holding ", (the) x1, ".";

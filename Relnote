@@ -1,0 +1,152 @@
+
+Inform Library 6/8 now released
+===============================
+
+It has been a rather long time coming, but library 6/8 is now
+available, at least for testing purposes.  I am fairly confident
+that it is more reliable than 6/7, but until it has been tested
+for a couple of weeks, you may wish to wait before upgrading.
+
+Note that this is not the very hasty library release which I
+made to go with the new beta-release of the compiler, 6.20:
+this one is Library 6/8, serial number 981213.
+
+This was very much a maintenance release.  About 80 bug reports
+have been submitted over the last year, reporting something like
+thirty different bugs, and I've fixed everything I could
+reproduce, which is almost everything.  The changes are cited
+below in the usual way.
+
+At present the files are, not very conveniently, in the Zip
+archive
+
+    Ilib68.zip
+
+in the directory incoming/if-archive at ftp.gmd.de; and the eight
+files included will probably need renaming to have ".h" on the
+end if you use an operating system with file extensions.
+
+It might be useful to clarify the status of Inform 6.20 at this
+point.  Basically... it has a nice new feature, but it's very much
+a beta release at present, undergoing testing.  We're already up
+to patch level "a".  As soon as I think it looks clean enough,
+there'll be a proper release of Inform 6.21: in the mean time, by
+all means play with 6.20, but perhaps you might not want to
+actually publish a story file it produces.
+
+                                                    Graham Nelson
+                                                    13 December 1998
+
+-----------------------------------------------------------------------------
+
+261. The "score" text now describes "0 turns" correctly (for the
+    benefit of games which set the turn counter to 0 because they
+    don't wish to begin on turn 1).
+
+262. The banner now prints "S" if the game is compiled with strict error
+    checking.
+
+263. A new debugging verb, "changes", traces changes in the object
+    state -- moves, removes, attribute and property alterations.  (This
+    only works in games compiled with strict error checking, which
+    in turn only works with Inform 6.20 or later.)
+
+264. Numerous small parser bugs or infelicities, which violated the
+    strict error-checking alluded to above, have been removed.  In
+    particular this caused "vile zero errors from hell" on three
+    occasions: if typing "say to me"; in some circumstances of darkness;
+    and, albeit quite rarely, when listing some plural groups of object
+    names.
+
+265. The scope for debugging verbs like "purloin" now no longer includes
+    classes or uncreated objects.  The "tree" listing similarly omits
+    these.
+
+266. Using "Constant MANUAL_PRONOUNS" no longer results in a compilatiom
+    warning about an unused variable in "InvSub".
+
+267. The command "me, again" no longer sends the parser into an infinite
+    recursion.
+
+268. Light no longer shines out of an object with the following combination
+    of attributes: enterable, container, not open, not transparent.
+    (Thanks to Paul Mikell for fixing this.)
+
+269. The maximum number of words parsed on a line of input is now 15.
+    It was previously in theory 64, but in practice this caused some
+    buffers to be overwritten.
+
+270. The Transfer action no longer tries to Drop items unless the
+    second noun given is "the floor".  Instead, it defaults to Insert
+    unless the second noun is a supporter, in which case to PutOn.
+
+271. The Empty action, for emptying one container into another, takes
+    greater care to check that circumstances don't intervene (if the
+    individual transfers make things happen).  Also, you can now
+    "empty" containers onto supporters (say, onto a table); and a
+    new message, ##EmptyT 4, has been added to take care of the case
+    when a player asks to empty something into itself.
+
+272. You now can't enter a visible but inaccessible enterable object
+    (say, a hole which is visible inside a locked glass cabinet).
+
+273. The rules on edible clothing are now properly toughened up, or
+    I'll eat my hat.  In particular an attempt to Eat a worn item of
+    clothing results in a Disrobe action first.  The same applies to
+    the ThrowAt action.
+
+274. If the player gets into an opaque container and closes the lid
+    so that the world outside is invisible, the status line no longer
+    prints the current location, but instead the outermost visible
+    container.  This matches what "look" would print up.
+
+275. New games now start by printing a new-line, just in case the cursor
+    begins on the top line of the screen (as it sometimes does) and
+    then the game prints text on that line; which subsequently gets
+    hidden beneath the status line.
+
+276. It's now possible to change "MAX_TIMERS", the maximum number of
+    timers or daemons active at any one time, as claimed in chapter 18
+    of the Designer's Manual.
+
+277. When several objects have "each_turn" routines and one of these
+    moves the object elsewhere, the sequence of events is now correct.
+    (Previously it was possible for things from the "elsewhere" room
+    to take place in the original room, thanks to an oversight.)
+
+278. A tiny bug causing an array bound to be overstepped when scanning
+    the table of descriptors for the current language has been removed.
+    (With thanks to Anson Turner for spotting the possibility in the
+    coding; this bug has never manifested itself in play.)
+
+279. The code handling the final "restore, restart, quit" option has
+    been moved to its own routine in the parser, to suit anyone who
+    needs to "Replace" it for some nefarious purpose.
+
+280. Library message ##Remove, 1 has had a double-space removed.
+
+281. The parser error "There are only (however many) available" now
+    gets the right number of however many it is.  (This happens if you
+    try to take seven out of a pile of five apples, for instance.)
+
+282. Several small bugs have been removed from the parser's disambiguation
+    code, and the trace-level-4 output showing the process happening has
+    been made a little more comprehensible.  In particular two different
+    bugs to do with identical objects (spotted by Todd Lair and Brent
+    VanFossen respectively) have been taken out.  Furthermore, problems
+    with "take X and Y" not properly working where X and Y belong to
+    different parents (e.g. one on the floor, one on a table) should now
+    abate, thanks to a suggested improvement by Graham Fyffe.
+
+283. Two bugs have been removed from the library's "note arrival"
+    routines.  Recall that noting arrival means calling the new location's
+    "initial" routine, and calling the entry point routine "NewRoom" if
+    the designer has provided one.  The principle is that this should
+    happen whenever the player enters or is taken to a new and non-dark
+    location, or when light is restored to a previously-dark location.
+
+284. The list-writer was previously unable to cope with recursive listed-
+    together groups of objects: e.g., a listed-together set of Hanoi disks
+    on a listed-together set of Hanoi pegs.  This restriction is lifted.
+
+-----------------------------------------------------------------------------

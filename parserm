@@ -1,9 +1,9 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 970918
-!                                                                  Release 6/7
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
+!  Supplied for use with Inform 6                         Serial number 981213
+!                                                                  Release 6/8
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 !  Inclusion of "linklpa"
@@ -82,8 +82,10 @@ Global the_time = NULL;              ! Current time (in minutes since midnight)
 Global time_rate = 1;                ! How often time is updated
 Global time_step;                    ! By how much
 
-Constant MAX_TIMERS  64;             ! Actually only 32 (it's counting in bytes)
-Array  the_timers  --> 32;
+#ifndef MAX_TIMERS;
+Constant MAX_TIMERS  32;             ! Max number timers/daemons active at once
+#endif;
+Array  the_timers  --> MAX_TIMERS;
 Global active_timers;                ! Number of timers/daemons actives
 
 Global score;                        ! The current score
@@ -339,11 +341,11 @@ Global match_from;                   ! At what word of the input do they begin?
 ! ------------------------------------------------------------------------------
 !   Low level textual manipulation
 ! ------------------------------------------------------------------------------
-Array  buffer    string 120;         ! Buffer for parsing main line of input
-Array  parse     string 64;          ! Parse table mirroring it
-Array  buffer2   string 120;         ! Buffers for supplementary questions
-Array  parse2    string 64;          !
-Array  buffer3   string 120;         ! Buffer retaining input for "again"
+Array  buffer    -> 121;             ! Buffer for parsing main line of input
+Array  parse     -> 65;              ! Parse table mirroring it
+Array  buffer2   -> 121;             ! Buffers for supplementary questions
+Array  parse2    -> 65;              !
+Array  buffer3   -> 121;             ! Buffer retaining input for "again"
 
 Constant comma_word = 'comma,';      ! An "untypeable word" used to substitute
                                      ! for commas in parse buffers
@@ -612,7 +614,7 @@ Object InformParser "(Inform Parser)"
 !  disastrous if it did:
 
    a_buffer->0 = 120;
-   a_table->0 = 64;
+   a_table->0 = 15;  ! Allow to split input into this many words
 
 !  Print the prompt, and read in the words and dictionary addresses
 
@@ -957,7 +959,18 @@ Object InformParser "(Inform Parser)"
 !  Set the global variable "actor", adjust the number of the first word,
 !  and begin parsing again from there.
 
-        verb_wordnum=j+1; actor=l;
+        verb_wordnum=j+1;
+
+!  Stop things like "me, again":
+
+        if (l == player)
+        {   wn = verb_wordnum;
+            if (NextWordStopped() == AGAIN1__WD or AGAIN2__WD or AGAIN3__WD)
+            {   L__M(##Miscellany,20); jump ReType;
+            }
+        }
+
+        actor=l;
         actors_location=ScopeCeiling(l);
         #ifdef DEBUG;
         if (parser_trace>=1)
@@ -1407,12 +1420,12 @@ Object InformParser "(Inform Parser)"
 ];
 
 [ ScopeCeiling person act;
-  act = parent(person);
+  act = parent(person); if (act == 0) return person;
+  if (person == player && location == thedark) return thedark;
   while (parent(act)~=0
          && (act has transparent || act has supporter
              || (act has container && act has open)))
       act = parent(act);
-  if (person == player && location == thedark) return thedark;
   return act;
 ];
 
@@ -1732,7 +1745,7 @@ Constant UNLIT_BIT  =  32;
             !   descriptors have been checked, because it might be an
             !   article (or some such) instead
 
-            for (l=1:l<=LanguageDescriptors:l=l+4)
+            for (l=1:l<=LanguageDescriptors-->0:l=l+4)
                 if (o == LanguageDescriptors-->l) jump AssumeDescriptor;
             pronoun__word=pronoun_word; pronoun__obj=pronoun_obj;
             etype=VAGUE_PE; return 0;
@@ -2321,17 +2334,14 @@ Constant UNLIT_BIT  =  32;
   {   n=match_list-->i;
       match_scores-->i = good_ones;
 
-      ultimate=n;
-      do
-          ultimate=parent(ultimate);
-      until (ultimate==actors_location or actor or 0);
+      ultimate=ScopeCeiling(n);
 
-!      if (context==NOUN_TOKEN && ultimate==actors_location
+!      if (context==NOUN_TOKEN && ultimate==ScopeCeiling(actor)
 !          && n~=actor && n hasnt concealed && n hasnt scenery &&
 !          (token_filter==0 || UserFilter(n)==1)) { good_ones++; last=n; }
       if (context==HELD_TOKEN && parent(n)==actor)
       {   good_ones++; last=n; }
-      if (context==MULTI_TOKEN && ultimate==actors_location
+      if (context==MULTI_TOKEN && ultimate==ScopeCeiling(actor)
           && n~=actor && n hasnt concealed && n hasnt scenery) 
       {   good_ones++; last=n; }
       if (context==MULTIHELD_TOKEN && parent(n)==actor)
@@ -2357,13 +2367,6 @@ Constant UNLIT_BIT  =  32;
       {   good_ones++; last=n; }
 
       match_scores-->i = 1000*(good_ones - match_scores-->i);
-
-      #ifdef DEBUG;
-      if (parser_trace>=4)
-      {   print "   ML: ", (name) n, " ";
-          print " initial score ", match_scores-->i, "^";
-      }
-      #endif;
   }
   if (good_ones==1) return last;
 
@@ -2377,6 +2380,19 @@ Constant UNLIT_BIT  =  32;
 
   ScoreMatchL();
   if (number_matched == 0) return -1;
+
+  if (indef_mode == 0)
+  {   !  Is there now a single highest-scoring object?
+      i = SingleBestGuess();
+      if (i >= 0)
+      {   
+#ifdef DEBUG;
+          if (parser_trace>=4)
+              print "   Single best-scoring object returned.]^";
+#endif;
+          return i;
+      }
+  }
 
   if (indef_mode==1 && indef_type & PLURAL_BIT ~= 0)
   {   if (context ~= MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
@@ -2406,7 +2422,7 @@ Constant UNLIT_BIT  =  32;
       }
       if (i<indef_wanted && indef_wanted<100)
       {   etype=TOOFEW_PE; multi_wanted=indef_wanted;
-          multi_had=multiple_object-->0;
+          multi_had=i;
           return -1;
       }
       multiple_object-->0 = i+offset;
@@ -2436,33 +2452,43 @@ Constant UNLIT_BIT  =  32;
 
 #ifdef DEBUG;
   if (parser_trace>=4)
-  {   print "   Difficult adjudication with ", n, " equivalence classes:^";
+  {   print "   Grouped into ", n, " possibilities by name:^";
       for (i=0:i<number_matched:i++)
-          print "   ", (The) match_list-->i,
-                " (", match_list-->i, ")  ---  ",match_classes-->i, "^";
+          if (match_classes-->i > 0)
+              print "   ", (The) match_list-->i,
+                  " (", match_list-->i, ")  ---  group ",
+                  match_classes-->i, "^";
   }
 #endif;
 
-  if (n>1 && indef_mode==0)
-  {   j=0; good_ones=0;
-      for (i=0:i<number_matched:i++)
-      {   k=ChooseObjects(match_list-->i,2);
-          if (k==j) good_ones++;
-          if (k>j) { j=k; good_ones=1; last=match_list-->i; }
-      }
-      if (good_ones==1)
-      {
+  if (indef_mode == 0)
+  {   if (n > 1)
+      {   k = -1;
+          for (i=0:i<number_matched:i++)
+          {   if (match_scores-->i > k)
+              {   k = match_scores-->i;
+                  j = match_classes-->i; j=j*j;
+                  flag = 0;
+              }
+              else
+              if (match_scores-->i == k)
+              {   if ((match_classes-->i) * (match_classes-->i) ~= j)
+                      flag = 1;
+              }
+          }
+          if (flag)
+          {
+#ifdef DEBUG;
+              if (parser_trace>=4)
+                  print "   Unable to choose best group, so ask player.]^";
+#endif;
+              return 0;
+          }
 #ifdef DEBUG;
           if (parser_trace>=4)
-              print "   ChooseObjects picked a best.]^";
-#endif;
-          return last;
+              print "   Best choices are all from the same group.^";
+#endif;          
       }
-#ifdef DEBUG;
-      if (parser_trace>=4)
-          print "   Unable to decide: it's a draw.]^";
-#endif;
-      return 0;
   }
 
 !  When the player is really vague, or there's a single collection of
@@ -2503,14 +2529,15 @@ Constant UNLIT_BIT  =  32;
 
   if (multi_context==MULTI_TOKEN && action_to_be == ##Take)
   {   for (i=1, low=0:i<=multiple_object-->0:i++)
-          if (parent(multiple_object-->i)==parent(actor)) low++;
+          if (ScopeCeiling(multiple_object-->i)==ScopeCeiling(actor))
+              low++;
 #ifdef DEBUG;
       if (parser_trace>=4)
           print "   Token 2 plural case: number with actor ", low, "^";
 #endif;
       if (take_all_rule==2 || low>0)
       {   for (i=1, low=0:i<=multiple_object-->0:i++)
-          {   if (parent(multiple_object-->i)==parent(actor))
+          {   if (ScopeCeiling(multiple_object-->i)==ScopeCeiling(actor))
               {   low++; multiple_object-->low = multiple_object-->i;
               }
           }
@@ -2606,9 +2633,9 @@ Constant UNLIT_BIT  =  32;
           match_scores-->i = match_scores-->i + its_score;
 #ifdef DEBUG;
           if (parser_trace >= 4)
-              print "   ", (The) match_list-->i,
+              print "     ", (The) match_list-->i,
                     " (", match_list-->i, ") in ", (the) its_owner,
-                    " scores ", match_scores-->i, "^";
+                    " : ", match_scores-->i, " points^";
 #endif;
       }
   }
@@ -2617,7 +2644,9 @@ Constant UNLIT_BIT  =  32;
   {   while (match_list-->i == -1)
       {   if (i == number_matched-1) { number_matched--; break; }
           for (j=i:j<number_matched:j++)
-              match_list-->j = match_list-->(j+1);
+          {   match_list-->j = match_list-->(j+1);
+              match_scores-->j = match_scores-->(j+1);              
+          }
           number_matched--;
       }
   }
@@ -2652,6 +2681,22 @@ Constant UNLIT_BIT  =  32;
   i=match_list-->earliest;
   match_list-->earliest=-1;
   return i;
+];
+
+! ----------------------------------------------------------------------------
+!  SingleBestGuess returns the highest-scoring object in the match list
+!  if it is the clear winner, or returns -1 if there is no clear winner
+! ----------------------------------------------------------------------------
+
+[ SingleBestGuess  earliest its_score best i;
+
+  earliest=-1; best=-1000;
+  for (i=0:i<number_matched:i++)
+  {   its_score=match_scores-->i;
+      if (its_score==best) { earliest = -1; }
+      if (its_score>best) { best=its_score; earliest=match_list-->i; }
+  }
+  return earliest;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -2877,7 +2922,9 @@ Constant UNLIT_BIT  =  32;
   if (scope_reason==PARSING_REASON
       && verb_word == 'purloin' or 'tree' or 'abstract'
                        or 'gonear' or 'scope' or 'showobj')
-  {   for (i=selfobj:i<=top_object:i++) PlaceInScope(i);
+  {   for (i=selfobj:i<=top_object:i++)
+          if (i ofclass Object && (parent(i)==0 || parent(i) ofclass Object))
+              PlaceInScope(i);
       rtrue;
   }
 #endif;
@@ -2993,7 +3040,7 @@ Constant UNLIT_BIT  =  32;
 !  the second argument.)
 ! ----------------------------------------------------------------------------
 
-[ ScopeWithin domain nosearch context;
+[ ScopeWithin domain nosearch context x y;
 
    if (domain==0) rtrue;
 
@@ -3006,8 +3053,15 @@ Constant UNLIT_BIT  =  32;
        && scope_reason==PARSING_REASON && context~=CREATURE_TOKEN)
            ScopeWithin(compass);
 
-!  Look through the objects in the domain
-   objectloop (domain in domain) ScopeWithin_O(domain, nosearch, context);
+!  Look through the objects in the domain, avoiding "objectloop" in case
+!  movements occur, e.g. when trying each_turn.
+
+   x = child(domain);
+   while (x ~= 0)
+   {   y = sibling(x);
+       ScopeWithin_O(x, nosearch, context);
+       x = y;
+   }
 ];
 
 [ ScopeWithin_O domain nosearch context i ad n;
@@ -3553,17 +3607,25 @@ Object InformLibrary "(Inform Library)"
        standard_interpreter = $32-->0;
        transcript_mode = ((0-->8) & 1);
        ChangeDefault(cant_go, CANTGO__TX);
+
+       buffer->0 = 120;
+       buffer2->0 = 120;
+       buffer3->0 = 120;
+       parse->0 = 64;
+       parse2->0 = 64;
        
        real_location = thedark;
-       player = selfobj;
+       player = selfobj; actor = player;
     
        top_object = #largest_object-255;
        selfobj.capacity = MAX_CARRIED;
        #ifdef LanguageInitialise;
        LanguageInitialise();
        #endif;
+       new_line;
        j=Initialise();
        last_score = score;
+
        move player to location;
        while (parent(location)~=0) location=parent(location);
        objectloop (i in player) give i moved ~concealed;
@@ -3748,38 +3810,7 @@ Object InformLibrary "(Inform Library)"
            print "^^^";
            ScoreSub();
            DisplayStatus();
-    
-           .RRQPL;
-           L__M(##Miscellany,5);
-           .RRQL;
-           print "> ";
-           #IFV3; read buffer parse; #ENDIF;
-           temp_global=0;
-           #IFV5; read buffer parse DrawStatusLine; #ENDIF;
-           i=parse-->1;
-           if (i==QUIT1__WD or QUIT2__WD) quit;
-           if (i==RESTART__WD)      @restart;
-           if (i==RESTORE__WD)      { RestoreSub(); jump RRQPL; }
-           if (i==FULLSCORE1__WD or FULLSCORE2__WD && TASKS_PROVIDED==0)
-           {   new_line; FullScoreSub(); jump RRQPL; }
-           if (deadflag==2 && i==AMUSING__WD && AMUSING_PROVIDED==0)
-           {   new_line; Amusing(); jump RRQPL; }
-           #IFV5;
-           if (i==UNDO1__WD or UNDO2__WD or UNDO3__WD)
-           {   if (undo_flag==0)
-               {   L__M(##Miscellany,6);
-                   jump RRQPL;
-               }
-               if (undo_flag==1) jump UndoFailed2;
-               @restore_undo i;
-               if (i==0)
-               {   .UndoFailed2; L__M(##Miscellany,7);
-               }
-               jump RRQPL;
-           }
-           #ENDIF;
-           L__M(##Miscellany,8);
-           jump RRQL;
+           AfterGameOver();
        ],
 
        end_turn_sequence
@@ -3873,6 +3904,40 @@ Object InformLibrary "(Inform Library)"
        ],
   has  proper;
        
+[ AfterGameOver i;
+   .RRQPL;
+   L__M(##Miscellany,5);
+   .RRQL;
+   print "> ";
+   #IFV3; read buffer parse; #ENDIF;
+   temp_global=0;
+   #IFV5; read buffer parse DrawStatusLine; #ENDIF;
+   i=parse-->1;
+   if (i==QUIT1__WD or QUIT2__WD) quit;
+   if (i==RESTART__WD)      @restart;
+   if (i==RESTORE__WD)      { RestoreSub(); jump RRQPL; }
+   if (i==FULLSCORE1__WD or FULLSCORE2__WD && TASKS_PROVIDED==0)
+   {   new_line; FullScoreSub(); jump RRQPL; }
+   if (deadflag==2 && i==AMUSING__WD && AMUSING_PROVIDED==0)
+   {   new_line; Amusing(); jump RRQPL; }
+   #IFV5;
+   if (i==UNDO1__WD or UNDO2__WD or UNDO3__WD)
+   {   if (undo_flag==0)
+       {   L__M(##Miscellany,6);
+           jump RRQPL;
+       }
+       if (undo_flag==1) jump UndoFailed2;
+       @restore_undo i;
+       if (i==0)
+       {   .UndoFailed2; L__M(##Miscellany,7);
+       }
+       jump RRQPL;
+   }
+   #ENDIF;
+   L__M(##Miscellany,8);
+   jump RRQL;
+];
+
 [ R_Process a i j s1 s2;
    s1 = inp1; s2 = inp2;
    inp1 = i; inp2 = j; InformLibrary.begin_action(a, i, j, 1);
@@ -3969,8 +4034,11 @@ Object InformLibrary "(Inform Library)"
    return obj.prop();
 ];
 
-[ ChangeDefault prop val;
-   (0-->5)-->(prop-1) = val;
+[ ChangeDefault prop val a b;
+   ! Use assembly-language here because -S compilation won't allow this:
+   @loadw 0 5 -> a;
+   b = prop-1;
+   @storew a b val;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -3981,7 +4049,7 @@ Object InformLibrary "(Inform Library)"
    for (i=0:i<active_timers:i++)
        if (the_timers-->i==0) jump FoundTSlot;
    i=active_timers++;
-   if (i*2>=MAX_TIMERS) RunTimeError(4);
+   if (i >= MAX_TIMERS) RunTimeError(4);
    .FoundTSlot;
    if (obj.&time_left==0) RunTimeError(5,obj);
    the_timers-->i=obj; obj.time_left=timer;
@@ -4003,7 +4071,7 @@ Object InformLibrary "(Inform Library)"
    for (i=0:i<active_timers:i++)
        if (the_timers-->i==0) jump FoundTSlot3;
    i=active_timers++;
-   if (i*2>=MAX_TIMERS) RunTimeError(4);
+   if (i >= MAX_TIMERS) RunTimeError(4);
    .FoundTSlot3;
    the_timers-->i = $8000 + obj;
 ];
@@ -4068,13 +4136,20 @@ Object InformLibrary "(Inform Library)"
    rfalse;
 ];
 
+[ HidesLightSource obj;
+    if (obj == player) rfalse;
+    if (obj has transparent or supporter) rfalse;
+    if (obj has container) return obj hasnt open;
+    return obj hasnt enterable;
+];
+
 [ HasLightSource i j ad;
    if (i==0) rfalse;
    if (i has light) rtrue;
    if (i has enterable || IsSeeThrough(i)==1)
-   {   objectloop (i in i)
-           if (HasLightSource(i)==1) rtrue;
-   }
+       if (~~(HidesLightSource(i)))
+           objectloop (j in i)
+               if (HasLightSource(j)==1) rtrue;
    ad = i.&add_to_scope;
    if (parent(i)~=0 && ad ~= 0)
    {   if (ad-->0 > top_object)
@@ -4212,14 +4287,14 @@ Object InformLibrary "(Inform Library)"
 ];
 [ ShowobjSub c f l a n x;
    if (noun==0) noun=location;
-   objectloop (c in Class) if (noun ofclass c) { f++; l=c; }
+   objectloop (c ofclass Class) if (noun ofclass c) { f++; l=c; }
    new_line;if (f == 1) print (name) l, " ~"; else print "Object ~";
    print (name) noun, "~ (", noun, ")";
    if (parent(noun)~=0) print " in ~", (name) parent(noun), "~";
    new_line;
    if (f > 1)
    {   print "  class ";
-       objectloop (c in Class) if (noun ofclass c) print (name) c, " ";
+       objectloop (c ofclass Class) if (noun ofclass c) print (name) c, " ";
        new_line;
    }
    for (a=0,f=0:a<48:a++) if (noun has a) f=1;
@@ -4278,7 +4353,14 @@ Object InformLibrary "(Inform Library)"
    @split_window 1; @set_window 1; @set_cursor 1 1; style reverse;
    width = 0->33; posa = width-26; posb = width-13;
    spaces width;
-   @set_cursor 1 2; print (name) location;
+   @set_cursor 1 2;
+   if (location == thedark) print (name) location;
+   else
+   {   FindVisibilityLevels();
+       if (visibility_ceiling == location)
+           print (name) location;
+       else print (The) visibility_ceiling;
+   }
    if ((0->1)&2 == 0)
    {   if (width > 76)
        {   @set_cursor 1 posa; print (string) SCORE__TX, sline1;
@@ -4297,144 +4379,8 @@ Object InformLibrary "(Inform Library)"
 ];
 #ENDIF;
 
-! ----------------------------------------------------------------------------
-!  Much better menus can be created using the optional library extension
-!  "menus.h".  These are provided for compatibility with previous practice:
-! ----------------------------------------------------------------------------
-
-[ LowKey_Menu menu_choices EntryR ChoiceR lines main_title i j;
-  menu_nesting++;
- .LKRD;
-  menu_item=0;
-  lines=indirect(EntryR);
-  main_title=item_name;
-
-  print "--- "; print (string) main_title; print " ---^^";
-
-  if (menu_choices ofclass Routine) menu_choices.call();
-  else print (string) menu_choices;
-
-  for (::)
-  {   L__M(##Miscellany, 52, lines);
-      print "> ";
-
-      #IFV3; read buffer parse;
-      #IFNOT; read buffer parse DrawStatusLine;
-      #ENDIF;
-
-      i=parse-->1;
-      if (i==QUIT1__WD or QUIT2__WD || parse->1==0)
-      {   menu_nesting--; if (menu_nesting>0) rfalse;
-          if (deadflag==0) <<Look>>;
-          rfalse;
-      }
-      i=TryNumber(1);
-      if (i==0) jump LKRD;
-      if (i<1 || i>lines) continue;
-      menu_item=i;
-      j=indirect(ChoiceR);
-      if (j==2) jump LKRD;
-      if (j==3) rfalse;
-  }
-];
-
-#IFV3;
-[ DoMenu menu_choices EntryR ChoiceR;
-  LowKey_Menu(menu_choices,EntryR,ChoiceR);
-];
-#ENDIF;
-
-#IFV5;
-[ DoMenu menu_choices EntryR ChoiceR
-         lines main_title main_wid cl i j oldcl pkey;
-
-  if (pretty_flag==0)
-      return LowKey_Menu(menu_choices,EntryR,ChoiceR);
-
-  menu_nesting++;
-  menu_item=0;
-  lines=indirect(EntryR);
-  main_title=item_name; main_wid=item_width;
-  cl=7;
-
-  .ReDisplay;
-      oldcl=0;
-      @erase_window $ffff;
-      i=lines+7;
-      @split_window i;
-      i = 0->33;
-      if (i==0) i=80;
-      @set_window 1;
-      @set_cursor 1 1;
-      style reverse;
-      spaces(i); j=i/2-main_wid;
-      @set_cursor 1 j;
-      print (string) main_title;
-      @set_cursor 2 1; spaces(i);
-      @set_cursor 2 2; print (string) NKEY__TX;
-      j=i-12; @set_cursor 2 j; print (string) PKEY__TX;
-      @set_cursor 3 1; spaces(i);
-      @set_cursor 3 2; print (string) RKEY__TX;
-      j=i-17; @set_cursor 3 j;
-      if (menu_nesting==1) print (string) QKEY1__TX;
-                      else print (string) QKEY2__TX;
-      style roman;
-      @set_cursor 5 2; font off;
-
-      if (menu_choices ofclass String) print (string) menu_choices;
-      else menu_choices.call();
-
-      for (::)
-      {   if (cl ~= oldcl)
-          {   if (oldcl>0) { @set_cursor oldcl 4; print " "; }
-              @set_cursor cl 4; print ">";
-          }
-          oldcl=cl;
-          @read_char 1 -> pkey;
-          if (pkey==NKEY1__KY or NKEY2__KY or 130)
-          {   cl++; if (cl==7+lines) cl=7; continue;
-          }
-          if (pkey==PKEY1__KY or PKEY2__KY or 129)
-          {   cl--; if (cl==6)  cl=6+lines; continue;
-          }
-          if (pkey==QKEY1__KY or QKEY2__KY or 27 or 131) break;
-          if (pkey==10 or 13 or 132)
-          {   @set_window 0; font on;
-              new_line; new_line; new_line;
-    
-              menu_item=cl-6;
-              EntryR.call();
-    
-              @erase_window $ffff;
-              @split_window 1;
-              i = 0->33; if (i==0) { i=80; }
-              @set_window 1; @set_cursor 1 1; style reverse; spaces(i);
-              j=i/2-item_width;
-              @set_cursor 1 j;
-              print (string) item_name;
-              style roman; @set_window 0; new_line;
-    
-              i = ChoiceR.call();
-              if (i==2) jump ReDisplay;
-              if (i==3) break;
-    
-              L__M(##Miscellany, 53);
-              @read_char 1 -> pkey; jump ReDisplay;
-          }
-      }
-
-      menu_nesting--; if (menu_nesting>0) rfalse;
-      font on; @set_cursor 1 1;
-      @erase_window $ffff; @set_window 0;
-      new_line; new_line; new_line;
-      if (deadflag==0) <<Look>>;
-];  
-#ENDIF;
-
-! ----------------------------------------------------------------------------
-
 #ifv5;
-Array StorageForShortName table 160;
+Array StorageForShortName --> 161;
 #endif;
 
 [ PrefaceByArticle o acode pluralise  i artform findout;
@@ -4470,7 +4416,6 @@ Array StorageForShortName table 160;
 #iftrue LanguageContractionForms > 4;
    findout = true;
 #endif;
-
    if (standard_interpreter ~= 0 && findout)
    {   StorageForShortName-->0 = 160;
        @output_stream 3 StorageForShortName;
@@ -4554,69 +4499,6 @@ Array StorageForShortName table 160;
   u = x&$7fff; v= y&$7fff;
   if (u>v) return 1;
   return -1;
-];
-
-! ----------------------------------------------------------------------------
-
-[ Banner i;
-   if (Story ~= 0)
-   {
-#IFV5; style bold; #ENDIF;
-   print (string) Story;
-#IFV5; style roman; #ENDIF;
-   }
-   if (Headline ~= 0)
-       print (string) Headline;
-   print "Release ", (0-->1) & $03ff, " / Serial number ";
-   for (i=18:i<24:i++) print (char) 0->i;
-   print " / Inform v"; inversion;
-   print " Library ", (string) LibRelease;
-#ifdef DEBUG;
-   print " D";
-#endif;
-   new_line;
-];
-
-[ VersionSub;
-  Banner();
-  if (standard_interpreter > 0)
-      print "Standard interpreter ",
-          standard_interpreter/256, ".", standard_interpreter%256,
-          " (", 0->$1e, (char) 0->$1f, ") / ";
-  else print "Interpreter ", 0->$1e, " Version ", (char) 0->$1f, " / ";
-  print "Library serial number ", (string) LibSerial, "^";
-#IFDEF LanguageVersion;
-  print (string) LanguageVersion, "^";
-#ENDIF;
-];
-
-[ RunTimeError n p1 p2;
-#IFDEF DEBUG;
-  print "** Library error ", n, " (", p1, ",", p2, ") **^** ";
-  switch(n)
-  {   1: print "preposition not found (this should not occur)";
-      2: print "Property value not routine or string: ~",
-               (property) p2, "~ of ~", (name) p1, "~ (", p1, ")";
-      3: print "Entry in property list not routine or string: ~",
-               (property) p2, "~ list of ~", (name) p1, "~ (", p1, ")";
-      4: print "Too many timers/daemons are active simultaneously.  The
-                limit is the library constant MAX_TIMERS (currently ",
-                MAX_TIMERS, ") and should be increased";
-      5: print "Object ~", (name) p1, "~ has no ~time_left~ property";
-      7: print "The object ~", (name) p1, "~ can only be used as a player
-                object if it has the ~number~ property";
-      8: print "Attempt to take random entry from an empty table array";
-      9: print p1, " is not a valid direction property number";
-      10: print "The player-object is outside the object tree";
-      11: print "The room ~", (name) p1, "~ has no ~description~ property";
-      12: print "Tried to set a non-existent pronoun using SetPronoun";
-      13: print "A 'topic' token can only be followed by a preposition";
-      default: print "(unexplained)";
-  }
-  " **";
-#IFNOT;
-  "** Library error ", n, " (", p1, ",", p2, ") **";
-#ENDIF;
 ];
 
 ! ----------------------------------------------------------------------------
