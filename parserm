@@ -1,9 +1,10 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 961216
-!                                                                  Release 6/3
-!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
+!  Supplied for use with Inform 6                         Serial number 970127
+!                                                                  Release 6/4
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
+!      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 !  Inclusion of "linklpa"
 !                   (which defines properties and attributes)
@@ -104,7 +105,7 @@ Global lightflag = true;             ! Is there currently light to see by?
 Global real_location;                ! When in darkness, location = thedark
                                      ! and this holds the real location
 
-Global lookmode = 1;                 ! 1=brief, 2=standard, 3=verbose room descs
+Global lookmode = 1;                 ! 1=standard, 2=verbose, 3=brief room descs
 Global print_player_flag;            ! If set, print something like "(as Fred)"
                                      ! in room descriptions, to reveal whom
                                      ! the human is playing through
@@ -294,6 +295,8 @@ Global dict_flags_of_noun;           ! Of the noun currently being parsed
 Global pronoun_word;                 ! Records which pronoun ("it", "them", ...)
                                      ! caused an error
 Global pronoun_obj;                  ! And what obj it was thought to refer to
+Global pronoun__word;                ! Saved value
+Global pronoun__obj;                 ! Saved value
 ! ------------------------------------------------------------------------------
 !   Searching through scope and parsing "scope=Routine" grammar tokens
 ! ------------------------------------------------------------------------------
@@ -839,7 +842,7 @@ Object InformParser "(Inform Parser)"
 !  or REPARSE_CODE if it has restructured the parse table so the whole parse
 !  must be begun again...
 
-        wn=verb_wordnum;
+        wn=verb_wordnum; indef_mode = false; token_filter = 0;
         l=NounDomain(compass,0,0); if (l==REPARSE_CODE) jump ReParse;
 
 !  If it is a direction, send back the results:
@@ -1196,8 +1199,10 @@ Object InformParser "(Inform Parser)"
                 if (action_reversed && parameters==2)
                 {   i = results-->2; results-->2 = results-->3;
                     results-->3 = i;
-                    i = special_number1; special_number1=special_number2;
-                    special_number2=i;
+                    if (nsns == 2)
+                    {   i = special_number1; special_number1=special_number2;
+                        special_number2=i;
+                    }
                 }
 
 !  ...and to reset "it"-style objects to the first of these parameters, if
@@ -1283,6 +1288,7 @@ Object InformParser "(Inform Parser)"
 !  and fresh input called for.  In three cases the oops word must be jiggled.
 
     if (ParserError(etype)~=0) jump ReType;
+    pronoun_word = pronoun__word; pronoun_obj = pronoun__obj;
 
     if (etype==STUCK_PE)   { L__M(##Miscellany, 27); oops_from=1; }
     if (etype==UPTO_PE)    { L__M(##Miscellany, 28);
@@ -1371,7 +1377,7 @@ Constant UNLIT_BIT  =  32;
 [ Descriptors allow_multiple  o x flag cto type n;
 
    ResetDescriptors();
-   if (wn > num_words) { indef_mode = true; return 0; }
+   if (wn > num_words) return 0;
 
    for (flag=true:flag:)
    {   o=NextWordStopped(); flag=false;
@@ -1548,9 +1554,13 @@ Constant UNLIT_BIT  =  32;
                    pattern-->pcount = REPARSE_CODE + Dword__No(found_tdata);
                }
 
-!  Otherwise, this line must be wrong.
+!  If we are not inferring, then the line is wrong...
 
                if (inferfrom==0) return 0;
+
+!  If not, then the line is right but we mark in the preposition...
+
+               pattern-->pcount = REPARSE_CODE + Dword__No(found_tdata);
                return 1;
            }
 
@@ -1655,6 +1665,7 @@ Constant UNLIT_BIT  =  32;
 
             for (l=1:l<=LanguageDescriptors:l=l+4)
                 if (o == LanguageDescriptors-->l) jump AssumeDescriptor;
+            pronoun__word=pronoun_word; pronoun__obj=pronoun_obj;
             etype=VAGUE_PE; return 0;
         }
     }
@@ -1695,7 +1706,9 @@ Constant UNLIT_BIT  =  32;
         #endif;
         l=NounDomain(actors_location, actor, token);
         if (l==REPARSE_CODE) return l;                  ! Reparse after Q&A
-        if (l==0) { etype=CantSee(); jump FailToken; }  ! Choose best error
+        if (l==0) {   if (indef_possambig)
+                      {   ResetDescriptors(); wn = desc_wn; jump TryAgain2; }
+                      etype=CantSee(); jump FailToken; } ! Choose best error
 
         #ifdef DEBUG;
         if (parser_trace>=3)
@@ -1765,7 +1778,11 @@ Constant UNLIT_BIT  =  32;
 
     {   l=NounDomain(actor,actors_location,token);       ! Same as above...
         if (l==REPARSE_CODE) return l;
-        if (l==0) { etype=CantSee(); return l; }
+        if (l==0)
+        {   if (indef_possambig)
+            {   ResetDescriptors(); wn = desc_wn; jump TryAgain2; }
+            etype=CantSee(); return l;                   ! Choose best error
+        }
 
 !  ...until it produces something not held by the actor.  Then an implicit
 !  take must be tried.  If this is already happening anyway, things are too
@@ -2249,6 +2266,7 @@ Constant UNLIT_BIT  =  32;
   if (indef_mode==0) indef_type=0;
 
   ScoreMatchL();
+  if (number_matched == 0) return -1;
 
   if (indef_mode==1 && indef_type & PLURAL_BIT ~= 0)
   {   if (context ~= MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
@@ -2402,11 +2420,11 @@ Constant UNLIT_BIT  =  32;
 ! ----------------------------------------------------------------------------
 !  ScoreMatchL  scores the match list for quality in terms of what the
 !  player has vaguely asked for.  Points are awarded for conforming with
-!  requirements like "my", and so on.  If the score is less than the
-!  threshold, block out the entry to -1.
+!  requirements like "my", and so on.  Remove from the match list any
+!  entries which fail the basic requirements of the descriptors.
 ! ----------------------------------------------------------------------------
 
-[ ScoreMatchL  its_owner its_score obj i threshold a_s l_s;
+[ ScoreMatchL  its_owner its_score obj i j threshold a_s l_s;
 
 !  if (indef_type & OTHER_BIT ~= 0) threshold=45;
   if (indef_type & MY_BIT ~= 0)    threshold=threshold+45;
@@ -2482,6 +2500,15 @@ Constant UNLIT_BIT  =  32;
                     " (", match_list-->i, ") in ", (the) its_owner,
                     " scores ", match_scores-->i, "^";
 #endif;
+      }
+  }
+
+  for (i=0:i<number_matched:i++)
+  {   while (match_list-->i == -1)
+      {   if (i == number_matched-1) { number_matched--; break; }
+          for (j=i:j<number_matched:j++)
+              match_list-->j = match_list-->(j+1);
+          number_matched--;
       }
   }
 ];
@@ -2634,7 +2661,10 @@ Constant UNLIT_BIT  =  32;
 
     wn--; w=NextWord();
     e=CANTSEE_PE;
-    if (w==pronoun_word) e=ITGONE_PE;
+    if (w==pronoun_word)
+    {   pronoun__word=pronoun_word; pronoun__obj=pronoun_obj;
+        e=ITGONE_PE;
+    }
     i=parent(actor);
     if (i has visited && Refers(i,w)==1) e=SCENERY_PE;
     if (etype>e) return etype;
@@ -2952,7 +2982,9 @@ Constant UNLIT_BIT  =  32;
 #endif;
    if (token_filter~=0 && UserFilter(obj)==0)
    {   #ifdef DEBUG;
-       if (parser_trace>=6) print "    Match filtered out^";
+       if (parser_trace>=6)
+       {   print "    Match filtered out: token filter ", token_filter, "^";
+       }
        #endif;
        rtrue;
    }
@@ -4066,7 +4098,7 @@ Object InformLibrary "(Inform Library 6/3)"
 [ DrawStatusLine width posa posb;
    @split_window 1; @set_window 1; @set_cursor 1 1; style reverse;
    width = 0->33; posa = width-26; posb = width-13;
-   spaces (width-1);
+   spaces width;
    @set_cursor 1 2; print (name) location;
    if ((0->1)&2 == 0)
    {   if (width > 76)

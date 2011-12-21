@@ -3,14 +3,15 @@
 !
 !  Supplied for use with Inform 6
 !
-!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
+!      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
-Constant LibSerial  = "961216";
-Constant LibRelease = "6/3";
+Constant LibSerial  = "970127";
+Constant LibRelease = "6/4";
 Constant Grammar__Version = 2;
 IFNDEF VN_1610;
-Message fatalerror "*** Library 6/3 needs Inform v6.10 or later to work ***";
+Message fatalerror "*** Library 6/4 needs Inform v6.10 or later to work ***";
 ENDIF;
 System_file;
 Include "linklpa";
@@ -24,6 +25,10 @@ Fake_Action ListMiscellany;
 Fake_Action Miscellany;
 Fake_Action Prompt;
 Fake_Action NotUnderstood;
+IFDEF NO_PLACES;
+Fake_Action Places;
+Fake_Action Objects;
+ENDIF;
 [ Main; InformLibrary.play(); ];
 
 IFDEF USE_MODULES;

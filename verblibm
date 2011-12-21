@@ -1,9 +1,10 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIBM:  Core of standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 961216
-!                                                                  Release 6/3
-!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
+!  Supplied for use with Inform 6                         Serial number 970127
+!                                                                  Release 6/4
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
+!      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
 #IFDEF MODULE_MODE;
@@ -44,29 +45,16 @@ Constant CONCEAL_BIT 2048;    !  Omit objects with "concealed" or "scenery":
 Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
 [ NextEntry o odepth;
-  o=sibling(o);
-  if (lt_value~=0)
-  {   if (c_style & WORKFLAG_BIT ~= 0 && odepth==0)
-      {   while (o~=0 && (o.list_together~=lt_value
-                          || o hasnt workflag)) o=sibling(o);
-          return o;
-      }
-      if (c_style & CONCEAL_BIT ~= 0)
-      {   while (o~=0 &&
-                 (o has concealed || o has scenery
-                  || o.list_together~=lt_value)) o=sibling(o);
-          return o;
-      }
-      while (o~=0 && o.list_together~=lt_value) o=sibling(o);
+  for(::)
+  {   o=sibling(o);
+      if (o==0) return 0;
+      if (lt_value ~=0 && o.list_together~=lt_value) continue;
+      if (c_style & WORKFLAG_BIT ~= 0 && odepth==0 && o hasnt workflag)
+          continue;
+      if (c_style & CONCEAL_BIT ~= 0 && (o has concealed || o has scenery))
+          continue;
       return o;
   }
-  if (c_style & WORKFLAG_BIT ~= 0 && odepth==0)
-  {   while (o~=0 && o hasnt workflag) o=sibling(o);
-      return o;
-  }
-  if (c_style & CONCEAL_BIT ~= 0)
-      while (o~=0 && (o has concealed || o has scenery)) o=sibling(o);
-  return o;
 ];
 
 [ WillRecurs o;
@@ -135,18 +123,13 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   }
 ];
 
+[ Print__Spaces n;         ! To avoid a bug occurring in Inform 6.01 to 6.10
+  if (n==0) return; spaces n; ];
+
 [ WriteListFrom o style depth;
   if (o==child(parent(o)))
   {   SortOutList(o); o=child(parent(o)); }
   c_style=style;
-  if (style & WORKFLAG_BIT ~= 0)
-  {   while (o~=0 && o hasnt workflag) o=sibling(o);
-  }
-  else
-  {   if (c_style & CONCEAL_BIT ~= 0)
-          while (o~=0 && (o has concealed || o has scenery)) o=sibling(o);
-  }
-  if (o==0) rfalse;
   wlf_indent=0; WriteListR(o,depth);
   rtrue;
 ];
@@ -155,6 +138,15 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   if (depth>0 && o==child(parent(o)))
   {   SortOutList(o); o=child(parent(o)); }
+  for (::)
+  {   if (o==0) rfalse;
+      if (c_style & WORKFLAG_BIT ~= 0 && depth==0 && o hasnt workflag)
+      {   o = sibling(o); continue; }
+      if (c_style & CONCEAL_BIT ~= 0
+          && (o has concealed || o has scenery))
+      {   o=sibling(o); continue; }
+      break;
+  }
 
   classes_p = match_classes + stack_pointer;
   sizes_p   = match_list + stack_pointer;
@@ -220,7 +212,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
               }
 !              print " [", listing_size, "] ";
               if (listing_size==1) jump Omit_WL2;
-              if (c_style & INDENT_BIT ~= 0) spaces 2*(depth+wlf_indent);
+              if (c_style & INDENT_BIT ~= 0)
+                  Print__Spaces(2*(depth+wlf_indent));
               if (k2==3)
               {   q=0; for (l=0:l<listing_size:l++) q=q+sizes_p->(l+i);
                   EnglishNumber(q); print " ";
@@ -246,7 +239,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
                   RunRoutines(j,list_together);
               }
              .Omit__Sublist2;
-              if (q & NEWLINE_BIT ~= 0 && c_style & NEWLINE_BIT == 0) new_line;
+              if (q & NEWLINE_BIT ~= 0 && c_style & NEWLINE_BIT == 0)
+                  new_line;
               c_style=q;
               mr=j.list_together;
               jump Omit_EL2;
@@ -296,7 +290,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
           if (k==0 || k.list_together~=j.list_together) jump Omit_WL;
           k=ZRegion(j.list_together);
           if (k==2 or 3)
-          {   if (c_style & INDENT_BIT ~= 0) spaces 2*(depth+wlf_indent);
+          {   if (c_style & INDENT_BIT ~= 0)
+                  Print__Spaces(2*(depth+wlf_indent));
               if (k==3)
               {   q=j; l=0;
                   do
@@ -349,7 +344,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];
 
 [ WriteBeforeEntry o depth  flag;
-  if (c_style & INDENT_BIT ~= 0) spaces 2*(depth+wlf_indent);
+  if (c_style & INDENT_BIT ~= 0) Print__Spaces(2*(depth+wlf_indent));
 
   if (c_style & FULLINV_BIT ~= 0)
   {   if (o.invent~=0)
@@ -423,7 +418,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   else
   {   flag3 = 0;
       objectloop (p in o)
-          if (p hasnt concealed) { flag3++; flag2 = p; }
+          if (p hasnt concealed && p hasnt scenery) { flag3++; flag2 = p; }
   }
 
   if (c_style & ALWAYS_BIT ~= 0 && flag3>0)
@@ -435,7 +430,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   {   if (o has supporter)
       {   if (c_style & ENGLISH_BIT ~= 0)
           {   if (c_style & TERSE_BIT ~= 0)
-              L__M(##ListMiscellany, 19, o); else L__M(##ListMiscellany, 20, o);
+                   L__M(##ListMiscellany, 19, o);
+              else L__M(##ListMiscellany, 20, o);
               if (o has animate) print (string) WHOM__TX;
               else print (string) WHICH__TX;
           }
@@ -444,7 +440,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       if (o has container && (o has open || o has transparent))
       {   if (c_style & ENGLISH_BIT ~= 0)
           {   if (c_style & TERSE_BIT ~= 0)
-              L__M(##ListMiscellany, 21, o); else L__M(##ListMiscellany, 22, o);
+                   L__M(##ListMiscellany, 21, o);
+              else L__M(##ListMiscellany, 22, o);
               if (o has animate) print (string) WHOM__TX;
               else print (string) WHICH__TX;
           }
@@ -460,9 +457,11 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   if (c_style & NEWLINE_BIT ~= 0) new_line;
 
-  if (flag==1) WriteListR(child(o),depth+1,stack_p);
-
-  if (flag==1 && c_style & TERSE_BIT ~= 0) print ")";
+  if (flag==1)
+  {   o = child(o);
+      WriteListR(o, depth+1, stack_p);
+      if (c_style & TERSE_BIT ~= 0) print ")";
+  }
 ];
 
 ! ----------------------------------------------------------------------------
@@ -836,8 +835,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       if (RunRoutines(second,before)~=0) { action=##Insert; rtrue; }
       action=##Insert;
   }
-  if (second hasnt container) return L__M(##Insert,2,noun);
-  if (second hasnt open)      return L__M(##Insert,3,noun);
+  if (second hasnt container) return L__M(##Insert,2,second);
+  if (second hasnt open)      return L__M(##Insert,3,second);
   if (IndirectlyContains(noun,second)==1) return L__M(##Insert,5,noun);
   if (noun has worn)
   {   L__M(##Insert,6,noun);
@@ -1019,9 +1018,11 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
           return L__M(##Go,5,j);
       }
       if (ZRegion(j.door_to)==2) j=RunRoutines(j,door_to);
-      else j=j.door_to;
-      if (j==0) return L__M(##Go,6,j);
-      if (j==1) rtrue;
+      else
+      {   if (j.door_to == 0) return L__M(##Go,6,j);
+          j=j.door_to;
+          if (j==1) rtrue;
+      }
   }
   if (movewith==0) move player to j; else move movewith to j;
 
@@ -1030,7 +1031,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   else
   {   if (location==thedark)
       {   DarkToDark();
-          if (deadflag) rtrue;
+          if (deadflag~=0) rtrue;
       }
       real_location=j;
       location=thedark; lightflag=0;
@@ -1058,15 +1059,13 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
 [ Locale descin text1 text2  o p k j flag f2;
 
-  objectloop (o in descin)
-  {   give o ~workflag;
-      PronounNotice(o);
-  }
+  objectloop (o in descin) give o ~workflag;
 
   k=0;
   objectloop (o in descin)
       if (o hasnt concealed && o~=parent(player))
-      {  if (o hasnt scenery)
+      {  PronounNotice(o);
+         if (o hasnt scenery)
          {   give o workflag; k++;
              p=initial; f2=0;
              if ((o has door || o has container)
@@ -1209,7 +1208,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
 [ SearchSub i f;
   if (location==thedark) return L__M(##Search,1,noun);
-  objectloop (i in noun) if (i hasnt concealed) f=1;
+  objectloop (i in noun) if (i hasnt concealed && i hasnt scenery) f=1;
   if (noun has supporter)
   {   if (f==0) return L__M(##Search,2,noun);
       return L__M(##Search,3,noun);
@@ -1467,7 +1466,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   @input_stream 1; xcommsdir=2; "[Replaying commands.]"; ];
 [ PredictableSub i; i=random(-100);
   "[Random number generator now predictable.]"; ];
-[ XPurloinSub; move noun to player; give noun moved ~concealed; "[Purloined.]"; ];
+[ XPurloinSub; move noun to player; give noun moved ~concealed;
+  "[Purloined.]"; ];
 [ XAbstractSub; move noun to second; "[Abstracted.]"; ];
 [ XObj obj f;
   if (parent(obj) == 0) print (name) obj; else print (a) obj;

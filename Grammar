@@ -1,9 +1,10 @@
 ! ----------------------------------------------------------------------------
 !  GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 961216
-!                                                                  Release 6/3
-!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
+!  Supplied for use with Inform 6                         Serial number 970127
+!                                                                  Release 6/4
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
+!      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 !  The "meta-verbs", commands to the game rather than in the game, come first:
 ! ----------------------------------------------------------------------------
@@ -106,14 +107,16 @@ Verb meta 'showobj'
 !  And now the game verbs.
 ! ----------------------------------------------------------------------------
 
-Verb 'take' 'get' 'carry' 'hold'
-                * 'out'/'off'/'up'               -> Exit
-                * 'in'/'into'/'on'/'onto' noun   -> Enter
-                * 'off' worn                     -> Disrobe
-                * 'off' noun                     -> GetOff
+Verb 'take' 'carry' 'hold'
                 * multi                          -> Take
+                * 'off' worn                     -> Disrobe
                 * multiinside 'from'/'off' noun  -> Remove
                 * 'inventory'                    -> Inv;
+Verb 'get'      * multi                          -> Take
+                * 'out'/'off'/'up'               -> Exit
+                * 'in'/'into'/'on'/'onto' noun   -> Enter
+                * 'off' noun                     -> GetOff
+                * multiinside 'from'/'off' noun  -> Remove;
 Verb 'pick'
                 * 'up' multi                     -> Take
                 * multi 'up'                     -> Take;

@@ -1,7 +1,7 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 961209
+!   Inform Language Definition File: English 970127
 !
-!   (c) Graham Nelson 1996
+!   (c) Graham Nelson 1997
 !
 !   Define the constant DIALECT_US before including "Parser" to
 !   obtain American English
@@ -241,7 +241,6 @@ Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
 ];
 
 [ LanguageTimeOfDay hours mins i;
-   print (string) TIME__TX;
    i=hours%12; if (i<10) print " ";
    if (i==0) i=12;
    print i, ":", mins/10, mins%10;
@@ -286,7 +285,6 @@ Constant IS__TX       = " is";
 Constant ARE__TX      = " are";
 Constant IS2__TX      = "is ";
 Constant ARE2__TX     = "are ";
-Constant THE__TX      = "the ";
 Constant AND__TX      = " and ";
 Constant WHOM__TX     = "whom ";
 Constant WHICH__TX    = "which ";
@@ -492,11 +490,11 @@ Constant WHICH__TX    = "which ";
                   if (x1 has supporter) print "off "; else print "out of ";
                   print_ret (the) x1, " first.";
                5: "You already have ", (thatorthose) x1, ".";
-               6: if (noun has pluralname) print "That seems ";
-                  else print "Those seem ";
+               6: if (noun has pluralname) print "Those seem ";
+                  else print "That seems ";
                   "to belong to ", (the) x1, ".";
-               7: if (noun has pluralname) print "That seems ";
-                  else print "Those seem ";
+               7: if (noun has pluralname) print "Those seem ";
+                  else print "That seems ";
                   "to be a part of ", (the) x1, ".";
                8: print_ret (Cthatorthose) x1, " ", (isorare) x1,
                   "n't available.";
@@ -567,7 +565,7 @@ Constant WHICH__TX    = "which ";
            {   1: "You aren't holding ", (the) x1, ".";
                2: "You juggle ", (the) x1,
                   " for a while, but don't achieve much.";
-               3: print (The) x1, " ";
+               3: print (The) x1;
                   if (x1 has pluralname) print " don't";
                   else print " doesn't";
                   " seem interested.";
@@ -714,8 +712,8 @@ Constant WHICH__TX    = "which ";
   Open:    switch(n)
            {   1: print_ret (ctheyreorthats) x1,
                   " not something you can open.";
-               2: if (x1 has pluralname) print "It seems ";
-                  else print "They seem ";
+               2: if (x1 has pluralname) print "They seem ";
+                  else print "It seems ";
                   "to be locked.";
                3: print_ret (ctheyreorthats) x1,
                   " already open.";
@@ -790,8 +788,8 @@ Constant WHICH__TX    = "which ";
            }
   Pull, Push, Turn:
            switch(n)
-           {   1: if (x1 has pluralname) print "It is ";
-                  else print "Those are ";
+           {   1: if (x1 has pluralname) print "Those are ";
+                  else print "It is ";
                   "fixed in place.";
                2: "You are unable to.";
                3: "Nothing obvious happens.";
