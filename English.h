@@ -1,5 +1,5 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 970127
+!   Inform Language Definition File: English 970405
 !
 !   (c) Graham Nelson 1997
 !
@@ -363,17 +363,18 @@ Constant WHICH__TX    = "which ";
                   else print "Only ", (number) x1;
                   print " of those ";
                   if (x1==1) print "is"; else print "are";
-                  print " available.";
+                  " available.";
               43: "Nothing to do!";
               44: "There are none at all available!";
               45: print "Who do you mean, ";
               46: print "Which do you mean, ";
-              47: print "Sorry, you can only have one item here.
-                         Which exactly?";
+              47: "Sorry, you can only have one item here. Which exactly?";
               48: print "Whom do you want";
                   if (actor~=player) print " ", (the) actor; print " to ";
+                  PrintCommand(); print "?^";
               49: print "What do you want";
                   if (actor~=player) print " ", (the) actor; print " to ";
+                  PrintCommand(); print "?^";
               50: print "Your score has just gone ";
                   if (x1 > 0) print "up"; else { x1 = -x1; print "down"; }
                   print " by ", (number) x1, " point";
@@ -498,7 +499,7 @@ Constant WHICH__TX    = "which ";
                   "to be a part of ", (the) x1, ".";
                8: print_ret (Cthatorthose) x1, " ", (isorare) x1,
                   "n't available.";
-               9: print (The) x1, " ", (isorare) x1, "n't open.";
+               9: print_ret (The) x1, " ", (isorare) x1, "n't open.";
               10: if (x1 has pluralname) print "They're ";
                   else print "That's ";
                   "hardly portable.";
@@ -512,7 +513,7 @@ Constant WHICH__TX    = "which ";
   Drop:    switch(n)
            {   1: if (x1 has pluralname) print (The) x1, " are ";
                   else print (The) x1, " is ";
-                  "already on the floor.";
+                  "already here.";
                2: "You haven't got ", (thatorthose) x1, ".";
                3: "(first taking ", (the) x1, " off)";
                4: "Dropped.";
@@ -551,11 +552,6 @@ Constant WHICH__TX    = "which ";
                8: "Done.";
                9: "You put ", (the) x1, " into ", (the) second, ".";
            }
-  Transfer: switch(n)
-           {   1: "You do not have ", (the) x1, " to hand.";
-               2: "First pick up ", (the) x1, ".";
-           }
-
   EmptyT:  switch(n)
            {   1: print_ret (The) x1, " can't contain things.";
                2: print_ret (The) x1, " ", (isorare) x1, " closed.";
@@ -572,7 +568,7 @@ Constant WHICH__TX    = "which ";
            }
   Show:    switch(n)
            {   1: "You aren't holding ", (the) x1, ".";
-               2: print (The) x1, " ", (isorare) x1, " unimpressed.";
+               2: print_ret (The) x1, " ", (isorare) x1, " unimpressed.";
            }
   Enter:   switch(n)
            {   1: print "But you're already ";
@@ -585,6 +581,12 @@ Constant WHICH__TX    = "which ";
                5: print "You get ";
                   if (x1 has supporter) print "onto "; else print "into ";
                   print_ret (the) x1, ".";
+               6: print "(getting ";
+                  if (x1 has supporter) print "off "; else print "out of ";
+                  print (the) x1; ")";
+               7: if (x1 has supporter) "(getting onto ", (the) x1, ")^";
+                  if (x1 has container) "(getting into ", (the) x1, ")^";
+                  "(entering ", (the) x1, ")^";
            }
   GetOff:         "But you aren't on ", (the) x1, " at the moment.";
   Exit:    switch(n)
@@ -594,7 +596,7 @@ Constant WHICH__TX    = "which ";
                   if (x1 has supporter) print "off "; else print "out of ";
                   print_ret (the) x1, ".";
            }
-  VagueGo: "You'll have to say which compass direction to go in.";
+  VagueGo:       "You'll have to say which compass direction to go in.";
 
   Go:      switch(n)
            {   1: print "You'll have to get ";
@@ -621,9 +623,9 @@ Constant WHICH__TX    = "which ";
                    (even if you haven't been there before).";
 
   Look:    switch(n)
-           {   1: print "on";
-               2: print "in";
-               3: print "as";
+           {   1: print " (on ", (the) x1, ")";
+               2: print " (in ", (the) x1, ")";
+               3: print " (as "; @print_obj x1; print ")";
                4: print "^On ", (the) x1;
                   WriteListFrom(child(x1),
                       ENGLISH_BIT + RECURSE_BIT + PARTINV_BIT

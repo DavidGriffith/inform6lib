@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 970127
-!                                                                  Release 6/4
+!  Supplied for use with Inform 6                         Serial number 970405
+!                                                                  Release 6/5
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -337,7 +337,7 @@ Array  buffer    string 120;         ! Buffer for parsing main line of input
 Array  parse     string 64;          ! Parse table mirroring it
 Array  buffer2   string 120;         ! Buffers for supplementary questions
 Array  parse2    string 64;          !
-Array  parse3    string 64;          !
+Array  buffer3   string 120;         ! Buffer retaining input for "again"
 
 Constant comma_word = 'comma,';      ! An "untypeable word" used to substitute
                                      ! for commas in parse buffers
@@ -376,15 +376,20 @@ Array PowersOfTwo_TB                 ! Used in converting case numbers to
 
 
 ! ============================================================================
-!  Constants needed by the language definition file
+!  Constants, and one variable, needed for the language definition file
 ! ----------------------------------------------------------------------------
 Constant POSSESS_PK  = $100;
 Constant DEFART_PK   = $101;
 Constant INDEFART_PK = $102;
+Global short_name_case;
 ! ----------------------------------------------------------------------------
 Include "language__";                !  The natural language definition,
                                      !  whose filename is taken from the ICL
                                      !  language_name variable
+! ----------------------------------------------------------------------------
+#ifndef LanguageCases;
+Constant LanguageCases = 1;
+#endif;
 ! ------------------------------------------------------------------------------
 !   Pronouns support for the cruder (library 6/2 and earlier) version:
 !   only needed in English
@@ -735,8 +740,8 @@ Object InformParser "(Inform Parser)"
 
     num_words=parse->1;
     wn=1;
-#ifdef LanguageReword;
-    LanguageReword();
+#ifdef LanguageToInformese;
+    LanguageToInformese();
 #ifv5;
 !   Re-tokenise:
     @tokenise buffer parse;
@@ -768,7 +773,8 @@ Object InformParser "(Inform Parser)"
     }
 #endif;
     verb_wordnum=1;
-    actor=player; actors_location=location;
+    actor=player;
+    actors_location = ScopeCeiling(player);
     usual_grammar_after = 0;
 
   .AlmostReParse;
@@ -790,23 +796,22 @@ Object InformParser "(Inform Parser)"
 
 !  Now try for "again" or "g", which are special cases:
 !  don't allow "again" if nothing has previously been typed;
-!  simply copy the previous parse table and ReParse with that
+!  simply copy the previous text across
 
     if (verb_word==AGAIN2__WD or AGAIN3__WD) verb_word=AGAIN1__WD;
     if (verb_word==AGAIN1__WD)
     {   if (actor~=player)
         {   L__M(##Miscellany,20); jump ReType; }
-        if (parse3->1==0)
+        if (buffer3->1==0)
         {   L__M(##Miscellany,21); jump ReType; }
-        for (i=0:i<64:i++) parse->i=parse3->i;
+        for (i=0:i<120:i++) buffer->i=buffer3->i;
         jump ReParse;
     }
 
-!  Save the present parse table in case of an "again" next time
+!  Save the present input in case of an "again" next time
 
     if (verb_word~=AGAIN1__WD)
-        for (i=0:i<64:i++)
-            parse3->i=parse->i;
+        for (i=0:i<120:i++) buffer3->i=buffer->i;
 
     if (usual_grammar_after==0)
     {   i = RunRoutines(actor, grammar);
@@ -829,6 +834,13 @@ Object InformParser "(Inform Parser)"
     else usual_grammar_after=0;
 
 !  **** (B) ****
+
+    #ifdef LanguageIsVerb;
+    if (verb_word==0)
+    {   i = wn; verb_word=LanguageIsVerb(buffer, parse, verb_wordnum);
+        wn = i;
+    }
+    #endif;
 
 !  If the first word is not listed as a verb, it must be a direction
 !  or the name of someone to talk to
@@ -912,9 +924,7 @@ Object InformParser "(Inform Parser)"
 !  and begin parsing again from there.
 
         verb_wordnum=j+1; actor=l;
-        actors_location=l;
-        while (parent(actors_location)~=0)
-            actors_location=parent(actors_location);
+        actors_location=ScopeCeiling(l);
         #ifdef DEBUG;
         if (parser_trace>=1)
             print "[Actor is ", (the) actor, " in ",
@@ -1186,7 +1196,7 @@ Object InformParser "(Inform Parser)"
 !  ...explain any inferences made (using the pattern)...
 
                 if (inferfrom~=0)
-                {   print "("; PrintCommand(inferfrom,1); print ")^";
+                {   print "("; PrintCommand(inferfrom); print ")^";
                 }
 
 !  ...copy the action number, and the number of parameters...
@@ -1293,7 +1303,7 @@ Object InformParser "(Inform Parser)"
     if (etype==STUCK_PE)   { L__M(##Miscellany, 27); oops_from=1; }
     if (etype==UPTO_PE)    { L__M(##Miscellany, 28);
                              for (m=0:m<32:m++) pattern-->m = pattern2-->m;
-                             pcount=pcount2; PrintCommand(0,1); print ".^";
+                             pcount=pcount2; PrintCommand(0); print ".^";
                            }
     if (etype==NUMBER_PE)  L__M(##Miscellany, 29);
     if (etype==CANTSEE_PE) { L__M(##Miscellany, 30); oops_from=saved_oops; }
@@ -1306,7 +1316,10 @@ Object InformParser "(Inform Parser)"
     if (etype==ANIMA_PE)   L__M(##Miscellany, 37);
     if (etype==VERB_PE)    L__M(##Miscellany, 38);
     if (etype==SCENERY_PE) L__M(##Miscellany, 39);
-    if (etype==ITGONE_PE)  L__M(##Miscellany, 40);
+    if (etype==ITGONE_PE)
+    {   if (pronoun_obj == NULL) L__M(##Miscellany, 35);
+                            else L__M(##Miscellany, 40);
+    }
     if (etype==JUNKAFTER_PE) L__M(##Miscellany, 41);
     if (etype==TOOFEW_PE)  L__M(##Miscellany, 42, multi_had);
     if (etype==NOTHING_PE) { if (multi_wanted==100) L__M(##Miscellany, 43);
@@ -1347,6 +1360,16 @@ Object InformParser "(Inform Parser)"
        @tokenise buffer parse; held_back_mode = true; return;
    }
    best_etype=UPTO_PE; jump GiveError;
+];
+
+[ ScopeCeiling person act;
+  act = parent(person);
+  while (parent(act)~=0
+         && (act has transparent || act has supporter
+             || (act has container && act has open)))
+      act = parent(act);
+  if (person == player && location == thedark) return thedark;
+  return act;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -1396,6 +1419,7 @@ Constant UNLIT_BIT  =  32;
                    {  0: indef_type = indef_type | MY_BIT;
                       1: indef_type = indef_type | THAT_BIT;
                       default: indef_owner = PronounValue(cto);
+                        if (indef_owner == NULL) indef_owner = InformParser;
                    }
                }
 
@@ -1521,7 +1545,7 @@ Constant UNLIT_BIT  =  32;
                        && (line_token-->(token_n+1) ~= ENDIT_TOKEN))
                        RunTimeError(13);
                    do o=NextWordStopped();
-                   until (o==-1 || PrepositionChain(o, token_n+1) >= 0);
+                   until (o==-1 || PrepositionChain(o, token_n+1) ~= -1);
                    wn--;
                    consult_words = wn-consult_from;
                    if (consult_words==0) return 1;
@@ -1574,10 +1598,7 @@ Constant UNLIT_BIT  =  32;
 
            if (o == found_tdata) return 1;
            #Iffalse Grammar__Version==1;
-           l = PrepositionChain(o, token_n);
-           if (l >= 0)
-           {   return 1;
-           }
+           if (PrepositionChain(o, token_n) ~= -1) return 1;
            #Endif;
            return 0;
 
@@ -1910,7 +1931,7 @@ Constant UNLIT_BIT  =  32;
 !   hand (not by MultiAdd, because we want to allow duplicates).
 ! ----------------------------------------------------------------------------
 
-[ NounDomain domain1 domain2 context    first_word i j k l oldw
+[ NounDomain domain1 domain2 context    first_word i j k l
                                         answer_words marker;
 
 #ifdef DEBUG;
@@ -2062,11 +2083,15 @@ Constant UNLIT_BIT  =  32;
 !  not themselves verbs - thus, "north" as a reply to "Which, the north
 !  or south door" is not treated as a fresh command but as an answer.)
 
+  #ifdef LanguageIsVerb;
+  if (first_word==0)
+  {   j = wn; first_word=LanguageIsVerb(buffer2, parse2, 1); wn = j;
+  }
+  #endif;
   if (first_word ~= 0)
   {   j=first_word->#dict_par1;
       if (0~=j&1)
       {   CopyBuffer(buffer, buffer2);
-          CopyBuffer(parse, parse2);
           return REPARSE_CODE;
       }
   }
@@ -2086,7 +2111,6 @@ Constant UNLIT_BIT  =  32;
   buffer->(k+l-1) = ' ';
   buffer->1 = buffer->1 + l;
   if (buffer->1 >= (buffer->0 - 1)) buffer->1 = buffer->0;
-  @tokenise buffer parse;
 
 !  Having reconstructed the input, we warn the parser accordingly
 !  and get out.
@@ -2101,11 +2125,15 @@ Constant UNLIT_BIT  =  32;
 
   if (context==CREATURE_TOKEN)
       L__M(##Miscellany, 48); else L__M(##Miscellany, 49);
-  PrintCommand(0,1); print "?^";
 
   answer_words=Keyboard(buffer2, parse2);
 
   first_word=(parse2-->1);
+  #ifdef LanguageIsVerb;
+  if (first_word==0)
+  {   j = wn; first_word=LanguageIsVerb(buffer2, parse2, 1); wn = j;
+  }
+  #endif;
 
 !  Once again, if the reply looks like a command, give it to the
 !  parser to get on with and forget about the question...
@@ -2114,43 +2142,59 @@ Constant UNLIT_BIT  =  32;
   {   j=first_word->#dict_par1;
       if (0~=j&1)
       {   CopyBuffer(buffer, buffer2);
-          CopyBuffer(parse, parse2);
           return REPARSE_CODE;
       }
   }
 
-!  ...but if we have a genuine answer, then we adjoin the words
-!  typed onto the expression.  But if we've just inferred something
-!  which wasn't actually there, we must adjoin that as well.  (Note
-!  the sneaky use of pronouns to create text which matches an object
-!  we only inferred this time round, and thus have no textual representation
-!  of.)
+!  ...but if we have a genuine answer, then:
+!
+!  (1) we must glue in text suitable for anything that's been inferred.
 
-  oldw=parse->1;
-  if (inferfrom==0)
-      for (k=1:k<=answer_words:k++)
-          MoveWord(oldw+k, parse2, k);
-  else
-  {   j=pcount-inferfrom;
-      for (k=1:k<=answer_words:k++)
-          MoveWord(oldw+k+j, parse2, k);
-      for (j=inferfrom:j<pcount:j++)
-      {   if (pattern-->j >= 2 && pattern-->j < REPARSE_CODE)
+  if (inferfrom ~= 0)
+  {   for (j = inferfrom: j<pcount: j++)
+      {   i=2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
+    
+          parse2-->1 = 0;
+
+          ! An inferred object.  Best we can do is glue in a pronoun.
+          ! (This is imperfect, but it's very seldom needed anyway.)
+    
+          if (pattern-->j >= 2 && pattern-->j < REPARSE_CODE)
           {   PronounNotice(pattern-->j);
-              for (i=0: i<=LanguagePronouns: i=i+3)
-                  if (pattern-->j == LanguagePronouns-->(i+2))
-                  {   parse2-->1 = LanguagePronouns-->i;
+              for (k=1: k<=LanguagePronouns-->0: k=k+3)
+                  if (pattern-->j == LanguagePronouns-->(k+2))
+                  {   parse2-->1 = LanguagePronouns-->k;
                       break;
                   }
           }
-          else parse2-->1 = No__Dword(pattern-->j - REPARSE_CODE);
-          MoveWord(oldw+1+j-inferfrom, parse2, 1);
-          answer_words++;
+          else
+          {   ! An inferred preposition.
+              parse2-->1 = No__Dword(pattern-->j - REPARSE_CODE);
+          }
+    
+          ! parse2-->1 now holds the dictionary address of the word to glue in.
+    
+          if (parse2-->1 ~= 0)
+          {   k = buffer + i;
+              @output_stream 3 k;
+              print (address) parse2-->1;
+              @output_stream -3;
+              k = k-->0;
+              for (l=i:l<i+k:l++) buffer->l = buffer->(l+2);
+              i = i + k; buffer->1 = i-2;
+          }
       }
   }
-  parse->1 = answer_words+oldw;
 
-!  And go back to the parser.
+!  (2) we must glue the newly-typed text onto the end.
+
+  i=2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
+  for (j=0: j<buffer2->1: i++, j++)
+  {   buffer->i = buffer2->(j+2);
+      (buffer->1)++;
+      if (buffer->1 == buffer->0) break;
+  }    
+
   return REPARSE_CODE;
 ];
 
@@ -2619,24 +2663,26 @@ Constant UNLIT_BIT  =  32;
 !  preposition n)
 ! ----------------------------------------------------------------------------
 
-[ PrintCommand from emptyf i j k f;
+[ PrintCommand from i k spacing_flag;
+
   if (from==0)
-  {   i=verb_word; from=1; f=1;
+  {   i=verb_word;
       if (LanguageVerb(i) == 0)
-          if (PrintVerb(i)==0)
+          if (PrintVerb(i) == 0)
               print (address) i;
+      from++; spacing_flag = true;
   }
-  j=pcount-emptyf;
-  for (k=from:k<=j:k++)
-  {   if (pattern-->k == PATTERN_NULL) continue;
-      if (f==1) print (char) ' ';
-      i=pattern-->k;
+
+  for (k=from:k<pcount:k++)
+  {   i=pattern-->k;
+      if (i == PATTERN_NULL) continue;
+      if (spacing_flag) print (char) ' ';
       if (i==0) { print (string) THOSET__TX; jump TokenPrinted; }
       if (i==1) { print (string) THAT__TX; jump TokenPrinted; }
       if (i>=REPARSE_CODE) print (address) No__Dword(i-REPARSE_CODE);
       else print (the) i;
       .TokenPrinted;
-      f=1;
+      spacing_flag = true;
   }
 ];
 
@@ -2665,8 +2711,8 @@ Constant UNLIT_BIT  =  32;
     {   pronoun__word=pronoun_word; pronoun__obj=pronoun_obj;
         e=ITGONE_PE;
     }
-    i=parent(actor);
-    if (i has visited && Refers(i,w)==1) e=SCENERY_PE;
+    i=actor; while (parent(i) ~= 0) i = parent(i);
+    if (i has visited && Refers(i,wn-1)==1) e=SCENERY_PE;
     if (etype>e) return etype;
     return e;
 ];
@@ -2791,8 +2837,21 @@ Constant UNLIT_BIT  =  32;
           ScopeWithin(advance_warning, 0, context);
   }
   else
-  {   ScopeWithin(domain1, domain2, context);
-      ScopeWithin(domain2,0,context);
+  {   if (domain1 has supporter or container)
+          ScopeWithin_O(domain1, domain1, context);
+      ScopeWithin(domain1, domain2, context);
+      if (domain2 has supporter or container)
+          ScopeWithin_O(domain2, domain2, context);
+      ScopeWithin(domain2, 0, context);
+  }
+
+!  A special rule applies:
+!  in Darkness as in light, the actor is always in scope to himself.
+
+  if (thedark == domain1 or domain2)
+  {   ScopeWithin_O(actor, actor, context);
+      if (parent(actor) has supporter or container)
+          ScopeWithin_O(parent(actor), parent(actor), context);
   }
 ];
 
@@ -2935,7 +2994,7 @@ Constant UNLIT_BIT  =  32;
 !  transparent - such as a dwarf whose sword you can get at.
 
       if (child(domain)~=0 && domain ~= nosearch && IsSeeThrough(domain)==1)
-          ScopeWithin(domain,0,context);
+          ScopeWithin(domain,nosearch,context);
 
 !  Drag any extras into context
 
@@ -3084,7 +3143,7 @@ Constant UNLIT_BIT  =  32;
    if (threshold<0) wn++;
    if (threshold>0) { k=threshold; jump MMbyPN; }
 
-   if (threshold==0 || Refers(obj,w)==0)
+   if (threshold==0 || Refers(obj,wn-1)==0)
    {   .NoWordsMatch;
        if (indef_mode~=0)
        {   k=0; parser_action=NULL; jump MMbyPN;
@@ -3095,10 +3154,13 @@ Constant UNLIT_BIT  =  32;
    if (threshold<0)
    {   threshold=1;
        dict_flags_of_noun = (w->#dict_par1) & $$01110100;
-       while (0~=Refers(obj, (w = NextWord())))
+       w = NextWord();
+       while (Refers(obj, wn-1))
        {   threshold++;
-           dict_flags_of_noun = dict_flags_of_noun
-                               | ((w->#dict_par1) & $$01110100);
+           if (w)
+               dict_flags_of_noun = dict_flags_of_noun
+                                    | ((w->#dict_par1) & $$01110100);
+           w = NextWord();
        }
    }
 
@@ -3106,14 +3168,21 @@ Constant UNLIT_BIT  =  32;
 ];
 
 ! ----------------------------------------------------------------------------
-!  Refers works out whether the word with dictionary address wd can refer to
-!  the object obj, by seeing if wd is listed in the "names" property of obj
-!  (or possibly another property, according to the current inflection, used
-!  to handle cases such as the dative in non-English languages).
+!  Refers works out whether the word at number wnum can refer to the object
+!  obj, returning true or false.  The standard method is to see if the
+!  word is listed under "name" for the object, but this is more complex
+!  in languages other than English.
 ! ----------------------------------------------------------------------------
 
-[ Refers obj wd   k l m;
+[ Refers obj wnum   wd k l m;
     if (obj==0) rfalse;
+
+    #ifdef LanguageRefers;
+    k = LanguageRefers(obj,wnum); if (k>=0) return k;
+    #endif;
+
+    k = wn; wn = wnum; wd = NextWordStopped(); wn = k;
+
     if (parser_inflection >= 256)
     {   k = indirect(parser_inflection, obj, wd);
         if (k>=0) return k;
@@ -3352,7 +3421,7 @@ Constant UNLIT_BIT  =  32;
 [ SetPronoun dword value x;
   for (x = 1 : x <= LanguagePronouns-->0: x = x+3)
       if (LanguagePronouns-->x == dword)
-      {   LanguagePronouns-->(x+2) == value; return;
+      {   LanguagePronouns-->(x+2) = value; return;
       }
   RunTimeError(14);
 ];
@@ -3365,9 +3434,23 @@ Constant UNLIT_BIT  =  32;
 ];
 
 [ ResetVagueWords obj; PronounNotice(obj); ];
+
+#ifdef EnglishNaturalLanguage;
+[ PronounOldEnglish;
+   if (itobj ~= old_itobj)   SetPronoun('it', itobj);
+   if (himobj ~= old_himobj) SetPronoun('him', himobj);
+   if (herobj ~= old_herobj) SetPronoun('her', herobj);
+   old_itobj = itobj; old_himobj = himobj; old_herobj = herobj;
+];
+#endif;
+
 [ PronounNotice obj x bm;
 
    if (obj == player) return;
+
+   #ifdef EnglishNaturalLanguage;
+   PronounOldEnglish();
+   #endif;
 
    bm = PowersOfTwo_TB-->(GetGNAOfObject(obj));
 
@@ -3375,20 +3458,18 @@ Constant UNLIT_BIT  =  32;
        if (bm & (LanguagePronouns-->(x+1)) ~= 0)
            LanguagePronouns-->(x+2) = obj;
 
-#ifdef EnglishNaturalLanguage;
-   if (itobj ~= old_itobj)   SetPronoun('it', itobj);
-   if (himobj ~= old_himobj) SetPronoun('him', himobj);
-   if (herobj ~= old_herobj) SetPronoun('her', herobj);
-
-   old_itobj = itobj; old_himobj = himobj; old_herobj = herobj;
-#endif;
+   #ifdef EnglishNaturalLanguage;
+   itobj  = PronounValue('it');  old_itobj  = itobj;
+   himobj = PronounValue('him'); old_himobj = himobj;
+   herobj = PronounValue('her'); old_herobj = herobj;
+   #endif;
 ];
 
 ! ============================================================================
 !  End of the parser proper: the remaining routines are its front end.
 ! ----------------------------------------------------------------------------
 
-Object InformLibrary "(Inform Library 6/3)"
+Object InformLibrary "(Inform Library)"
   with play
        [ i j k l;
        standard_interpreter = $32-->0;
@@ -3400,7 +3481,9 @@ Object InformLibrary "(Inform Library 6/3)"
     
        top_object = #largest_object-255;
        selfobj.capacity = MAX_CARRIED;
-    
+       #ifdef LanguageInitialise;
+       LanguageInitialise();
+       #endif;
        j=Initialise();
        last_score = score;
        move player to location;
@@ -3414,12 +3497,17 @@ Object InformLibrary "(Inform Library 6/3)"
        <Look>;
     
        for (i=1:i<=100:i++) j=random(i);
+
+       #ifdef EnglishNaturalLanguage;
+       old_itobj = itobj; old_himobj = himobj; old_herobj = herobj;
+       #endif;
     
        while (~~deadflag)
        {   if (score ~= last_score)
            {   if (notify_mode==1) NotifyTheScore(); last_score=score; }
 
            #ifdef EnglishNaturalLanguage;
+               PronounOldEnglish();
                old_itobj = PronounValue('it');
                old_himobj = PronounValue('him');
                old_herobj = PronounValue('her');
@@ -3662,7 +3750,8 @@ Object InformLibrary "(Inform Library 6/3)"
            if (deadflag) return;
 
            scope_reason=EACH_TURN_REASON; verb_word=0;
-           DoScopeAction(location); SearchScope(location,player,0);
+           DoScopeAction(location);
+           SearchScope(ScopeCeiling(player), player, 0);
            scope_reason=PARSING_REASON;
 
            if (deadflag) return;
@@ -3721,10 +3810,8 @@ Object InformLibrary "(Inform Library 6/3)"
   parser_one=obj; parser_two=0; a=actor; al=actors_location;
   sr=scope_reason; scope_reason=TESTSCOPE_REASON;
   if (act==0) actor=player; else actor=act;
-  actors_location=actor;
-  while (parent(actors_location)~=0)
-      actors_location=parent(actors_location);
-  SearchScope(location,player,0); scope_reason=sr; actor=a;
+  actors_location=ScopeCeiling(actor);
+  SearchScope(actors_location,actor,0); scope_reason=sr; actor=a;
   actors_location=al; parser_one=x; x=parser_two; parser_two=y;
   return x;
 ];
@@ -3732,9 +3819,7 @@ Object InformLibrary "(Inform Library 6/3)"
 [ LoopOverScope routine act x y a al;
   x = parser_one; y=scope_reason; a=actor; al=actors_location;
   parser_one=routine; if (act==0) actor=player; else actor=act;
-  actors_location=actor;
-  while (parent(actors_location)~=0)
-      actors_location=parent(actors_location);
+  actors_location=ScopeCeiling(actor);
   scope_reason=LOOPOVERSCOPE_REASON;
   SearchScope(actors_location,actor,0);
   parser_one=x; scope_reason=y; actor=a; actors_location=al;
@@ -3745,7 +3830,7 @@ Object InformLibrary "(Inform Library 6/3)"
   if (RunRoutines(player,orders)~=0) rtrue;
   if (location~=0 && RunRoutines(location,before)~=0) rtrue;
   scope_reason=REACT_BEFORE_REASON; parser_one=0;
-  SearchScope(location,player,0); scope_reason=PARSING_REASON;
+  SearchScope(ScopeCeiling(player),player,0); scope_reason=PARSING_REASON;
   if (parser_one~=0) rtrue;
   if (inp1>1 && RunRoutines(inp1,before)~=0) rtrue;
   rfalse;
@@ -3753,7 +3838,7 @@ Object InformLibrary "(Inform Library 6/3)"
 
 [ AfterRoutines;
   scope_reason=REACT_AFTER_REASON; parser_one=0;
-  SearchScope(location,player,0); scope_reason=PARSING_REASON;
+  SearchScope(ScopeCeiling(player),player,0); scope_reason=PARSING_REASON;
   if (parser_one~=0) rtrue;
   if (location~=0 && RunRoutines(location,after)~=0) rtrue;
   if (inp1>1 && RunRoutines(inp1,after)~=0) rtrue;
@@ -3886,8 +3971,14 @@ Object InformLibrary "(Inform Library 6/3)"
    if (i has light) rtrue;
    objectloop (j in i)
        if (HasLightSource(j)==1) rtrue;
-   if (i has enterable || IsSeeThrough(i)==1)
-       return OffersLight(parent(i));
+   if (i has container)
+   {   if (i has open || i has transparent)
+           return OffersLight(parent(i));
+   }
+   else
+   {   if (i has enterable || i has transparent || i has supporter)
+           return OffersLight(parent(i));
+   }
    rfalse;
 ];
 
@@ -3944,7 +4035,7 @@ Object InformLibrary "(Inform Library 6/3)"
 #iftrue Grammar__Version==1;
   if (a>=256) { print "<fake action ", a-256, ">"; return; }
 #ifnot;
-  if (a>=4096) { print "<fake action ", a-256, ">"; return; }
+  if (a>=4096) { print "<fake action ", a-4096, ">"; return; }
 #endif;
   anames = #identifiers_table;
   anames = anames + 2*(anames-->0) + 2*48;
@@ -4261,17 +4352,20 @@ Array StorageForShortName table 160;
 [ PrefaceByArticle o acode pluralise  i artform findout;
 
    if (o provides articles)
-   {   print (string) (o.&articles)-->acode, " ";
+   {   print (string) (o.&articles)-->(acode+short_name_case*LanguageCases),
+           " ";
        if (pluralise) return;
        print (PSN__) o; return;
    }
 
-   i = LanguageGNAsToArticles-->(GetGNAOfObject(o));
+   i = GetGNAOfObject(o);
    if (pluralise)
    {   if (i<3 || (i>=6 && i<9)) i = i + 3;
    }
-   artform = LanguageArticles + 6*LanguageContractionForms*i;
-#ifv5;
+   i = LanguageGNAsToArticles-->i;
+
+   artform = LanguageArticles
+             + 6*LanguageContractionForms*(short_name_case + i*LanguageCases);
 
 #iftrue LanguageContractionForms == 2;
    if (artform-->acode ~= artform-->(acode+3)) findout = true;
@@ -4297,10 +4391,6 @@ Array StorageForShortName table 160;
        acode = acode + 3*LanguageContraction(StorageForShortName + 2);
    }
 
-#ifnot;
-   findout = false;
-#endif;
-
    print (string) artform-->acode;
    if (pluralise) return;
    print (PSN__) o;
@@ -4314,7 +4404,10 @@ Array StorageForShortName table 160;
        nothing: print "<illegal object number ", o, ">"; rtrue;
    }
    if (o==player) { print (string) YOURSELF__TX; rtrue; }
-   if (indef_mode == false && o.&short_name_indef~=0
+   #ifdef LanguagePrintShortName;
+   if (LanguagePrintShortName(o)) rtrue;
+   #endif;
+   if (indef_mode && o.&short_name_indef~=0
        && PrintOrRun(o, short_name_indef, 1)~=0) rtrue;
    if (o.&short_name~=0 && PrintOrRun(o,short_name,1)~=0) rtrue;
    @print_obj o;
@@ -4322,7 +4415,7 @@ Array StorageForShortName table 160;
 
 [ Indefart o i;
    i = indef_mode; indef_mode = true;
-   if (o has proper) { print (PSN__) o; return; }
+   if (o has proper) { indef_mode = NULL; print (PSN__) o; return; }
    if (o provides article)
    {   PrintOrRun(o,article,1); print " ", (PSN__) o; indef_mode = i; return;
    }
@@ -4330,17 +4423,19 @@ Array StorageForShortName table 160;
 ];
 [ Defart o i;
    i = indef_mode; indef_mode = false;
-   if (o has proper) { print (PSN__) o; indef_mode = i; return; }
+   if (o has proper)
+   { indef_mode = NULL; print (PSN__) o; indef_mode = i; return; }
    PrefaceByArticle(o, 1); indef_mode = i;
 ];
 [ CDefart o i;
    i = indef_mode; indef_mode = false;
-   if (o has proper) { print (PSN__) o; indef_mode = i; return; }
+   if (o has proper)
+   { indef_mode = NULL; print (PSN__) o; indef_mode = i; return; }
    PrefaceByArticle(o, 0); indef_mode = i;
 ];
 
 [ PrintShortName o i;
-   i = indef_mode; indef_mode = false;
+   i = indef_mode; indef_mode = NULL;
    PSN__(o); indef_mode = i;
 ];
 

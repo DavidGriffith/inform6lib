@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  LINKLPA:  Link declarations of common properties and attributes.
 !
-!  Supplied for use with Inform 6                         Serial number 970127
-!                                                                  Release 6/4
+!  Supplied for use with Inform 6                         Serial number 970405
+!                                                                  Release 6/5
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -105,3 +105,4 @@ Property short_name_indef 0;
 Property parse_name 0;
 
 Property articles;
+Property inside_description;

@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  LINKLV:  Link declarations of library variables.
 !
-!  Supplied for use with Inform 6                         Serial number 970127
-!                                                                  Release 6/4
+!  Supplied for use with Inform 6                         Serial number 970405
+!                                                                  Release 6/5
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -143,6 +143,7 @@ Import global oops_from;
 Import global saved_oops;
 Import global held_back_mode;
 Import global hb_wn;
+Import global short_name_case;
 
 IFDEF EnglishNaturalLanguage;
 Import global itobj;

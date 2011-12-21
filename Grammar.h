@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 970127
-!                                                                  Release 6/4
+!  Supplied for use with Inform 6                         Serial number 970405
+!                                                                  Release 6/5
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -110,13 +110,14 @@ Verb meta 'showobj'
 Verb 'take' 'carry' 'hold'
                 * multi                          -> Take
                 * 'off' worn                     -> Disrobe
-                * multiinside 'from'/'off' noun  -> Remove
+                * multiinside 'from' noun        -> Remove
+                * multiinside 'off' noun         -> Remove
                 * 'inventory'                    -> Inv;
-Verb 'get'      * multi                          -> Take
-                * 'out'/'off'/'up'               -> Exit
+Verb 'get'      * 'out'/'off'/'up'               -> Exit
                 * 'in'/'into'/'on'/'onto' noun   -> Enter
                 * 'off' noun                     -> GetOff
-                * multiinside 'from'/'off' noun  -> Remove;
+                * multi                          -> Take
+                * multiinside 'from' noun        -> Remove;
 Verb 'pick'
                 * 'up' multi                     -> Take
                 * multi 'up'                     -> Take;
@@ -194,7 +195,7 @@ Verb 'open' 'unwrap' 'uncover' 'undo'
                 * noun 'with' held               -> Unlock;
 Verb 'close' 'shut' 'cover'
                 * noun                           -> Close
-                * 'up'                           -> Close
+                * 'up' noun                      -> Close
                 * 'off' noun                     -> SwitchOff;
 Verb 'enter' 'cross'
                 *                                -> GoIn
@@ -351,7 +352,6 @@ Verb 'dig'      * noun                           -> Dig
 ! ----------------------------------------------------------------------------
 !  Final task: provide trivial routines if the user hasn't already:
 ! ----------------------------------------------------------------------------
-
 #Stub TimePasses      0;
 #Stub Amusing         0;
 #Stub DeathMessage    0;
@@ -384,5 +384,4 @@ Constant Make__PN;
 #ENDIF;
 #Default Story 0;
 #Default Headline 0;
-
 ! ----------------------------------------------------------------------------

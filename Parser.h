@@ -7,11 +7,11 @@
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
-Constant LibSerial  = "970127";
-Constant LibRelease = "6/4";
+Constant LibSerial  = "970405";
+Constant LibRelease = "6/5";
 Constant Grammar__Version = 2;
 IFNDEF VN_1610;
-Message fatalerror "*** Library 6/4 needs Inform v6.10 or later to work ***";
+Message fatalerror "*** Library 6/5 needs Inform v6.10 or later to work ***";
 ENDIF;
 System_file;
 Include "linklpa";
