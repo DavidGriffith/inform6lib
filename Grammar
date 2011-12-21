@@ -1,9 +1,9 @@
 ! ----------------------------------------------------------------------------
 !  GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!  Supplied for use with Inform 5                         Serial number 951024
-!                                                                 Release 5/12
-!  (c) Graham Nelson 1993, 1994, 1995, but freely usable (see documentation)
+!  Supplied for use with Inform 6                         Serial number 960912
+!                                                                  Release 6/2
+!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 !  The "meta-verbs", commands to the game rather than in the game, come first:
 ! ----------------------------------------------------------------------------

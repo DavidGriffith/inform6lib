@@ -1,7 +1,9 @@
 ! ----------------------------------------------------------------------------
-!  "VERBLIB" header for Inform 6
+!  VERBLIB:  Front end to standard verbs library.
 !
-!  (c) Graham Nelson 1993, 1994, 1995, but freely usable (see documentation)
+!  Supplied for use with Inform 6                         Serial number 960912
+!                                                                  Release 6/2
+!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 System_file;
 Default MAX_CARRIED  100;
@@ -18,7 +20,7 @@ Array  task_scores --> 0 0;
 #ENDIF;
 Array  task_done --> NUMBER_TASKS;
 #IFDEF USE_MODULES;
-Link "VerblibM";
+Link "verblibm";
 #IFNOT;
-Include "VerblibM";
+Include "verblibm";
 #ENDIF;

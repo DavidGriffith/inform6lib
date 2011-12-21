@@ -1,13 +1,13 @@
 ! ----------------------------------------------------------------------------
-!  "PARSER": The core of the Inform library
+!  PARSER:  Front end to parser.
 !
-!  Supplied for use with Inform 5.5
+!  Supplied for use with Inform 6
 !
-!  (c) Graham Nelson 1993, 1994, 1995, but freely usable (see documentation)
+!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
-Constant LibSerial "960429";
-Constant LibRelease "6/1";
+Constant LibSerial "960912";
+Constant LibRelease "6/2";
 System_file;
 Constant MAX_TIMERS  64;
 Array  the_timers  -> MAX_TIMERS;
@@ -26,14 +26,8 @@ Fake_Action Prompt;
 Fake_Action NotUnderstood;
 [ Main; PlayTheGame(); ];
 
-!trace symbols;
-!message "Hello!";
-
 IFDEF USE_MODULES;
-Link "ParserM";
+Link "parserm";
 IFNOT;
-!message "And here!";
-Include "ParserM";
+Include "parserm";
 ENDIF;
-
-!message "Goodbye!";

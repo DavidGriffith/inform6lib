@@ -1,7 +1,21 @@
+! ----------------------------------------------------------------------------
+!  LINKLPA:  Link declarations of common properties and attributes.
+!
+!  Supplied for use with Inform 6                         Serial number 960912
+!                                                                  Release 6/2
+!  (c) Graham Nelson 1993, 1994, 1995, 1996 but freely usable (see manuals)
+! ----------------------------------------------------------------------------
 
 System_file;
 
 Attribute animate;
+Ifdef USE_MODULES;
+   Iffalse (animate==0);
+   Message error "Please move your Attribute declarations after the
+                  Include ~Parser~ line: otherwise it will be impossible
+                  to USE_MODULES";
+   Endif;
+Endif;
 Attribute clothing;
 Attribute concealed;
 Attribute container;
@@ -32,6 +46,13 @@ Attribute worn;
 Attribute absent alias female;      !  Please, no psychoanalysis
 
 Property additive before $ffff;
+Ifdef USE_MODULES;
+   Iffalse before==4;
+   Message error "Please move your Property declarations after the
+                  Include ~Parser~ line: otherwise it will be impossible
+                  to USE_MODULES";
+   Endif;
+Endif;
 Property additive after  $ffff;
 Property additive life   $ffff;
 
@@ -77,17 +98,4 @@ Property capacity 100;
 
 Property long short_name 0;
 Property long parse_name 0;
-
-! The following definitions, commented out, define pre-Inform 5.2 and now
-! obselete names as aliases for the standard names:
-
-! Property preroutine alias before; Property desc        alias description;
-! Property postroutine alias after; Property longdesc    alias description;
-! Property liferoutine alias life;  Property timeleft    alias time_left;
-! Property initpos     alias initial;
-! Property portalto    alias door_to;
-! Property closedpos   alias when_closed;
-! Property dirprop     alias door_dir;
-! Property cantgo      alias cant_go;
-! Attribute portal alias door;
 
