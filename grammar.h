@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 970405
-!                                                                  Release 6/5
+!  Supplied for use with Inform 6                         Serial number 970818
+!                                                                  Release 6/6
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -114,9 +114,9 @@ Verb 'take' 'carry' 'hold'
                 * multiinside 'off' noun         -> Remove
                 * 'inventory'                    -> Inv;
 Verb 'get'      * 'out'/'off'/'up'               -> Exit
+                * multi                          -> Take
                 * 'in'/'into'/'on'/'onto' noun   -> Enter
                 * 'off' noun                     -> GetOff
-                * multi                          -> Take
                 * multiinside 'from' noun        -> Remove;
 Verb 'pick'
                 * 'up' multi                     -> Take

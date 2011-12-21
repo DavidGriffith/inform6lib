@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIBM:  Core of standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 970405
-!                                                                  Release 6/5
+!  Supplied for use with Inform 6                         Serial number 970818
+!                                                                  Release 6/6
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -248,7 +248,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       }
 
      .Omit_WL2;
-      if (WriteBeforeEntry(j,depth)==1) jump Omit_FL2;
+      if (WriteBeforeEntry(j,depth,-senc)==1) jump Omit_FL2;
       if (sizes_p->i == 1)
       {   if (c_style & NOARTICLE_BIT ~= 0) print (name) j;
           else
@@ -327,7 +327,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
           }
       }
      .Omit_WL;
-      if (WriteBeforeEntry(j,depth)==1) jump Omit_FL;
+      if (WriteBeforeEntry(j,depth,i-senc)==1) jump Omit_FL;
       if (c_style & NOARTICLE_BIT ~= 0) print (name) j;
       else
       {   if (c_style & DEFART_BIT ~= 0) print (the) j; else print (a) j;
@@ -343,14 +343,20 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   }
 ];
 
-[ WriteBeforeEntry o depth  flag;
+[ WriteBeforeEntry o depth sentencepos  flag;
   if (c_style & INDENT_BIT ~= 0) Print__Spaces(2*(depth+wlf_indent));
 
   if (c_style & FULLINV_BIT ~= 0)
   {   if (o.invent~=0)
       {   inventory_stage=1;
           flag=PrintOrRun(o,invent,1);
-          if (flag==1 && c_style & NEWLINE_BIT ~= 0) new_line;
+          if (flag==1)
+          {   if (c_style & ENGLISH_BIT ~= 0)
+              {   if (sentencepos == -1) print (string) AND__TX;
+                  if (sentencepos < -1) print ", ";
+              }
+              if (c_style & NEWLINE_BIT ~= 0) new_line;
+          }
       }
   }
   return flag;
@@ -475,7 +481,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   {   address=i.&found_in;
       if (address~=0 && i hasnt absent)
       {   if (ZRegion(address-->0)==2)
-          {   if (indirect(address-->0) ~= 0) move i to location;
+          {   if (i.found_in() ~= 0) move i to location;
           }
           else
           {   k=i.#found_in;
@@ -496,7 +502,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   move player to newplace;
   while (parent(newplace)~=0) newplace=parent(newplace);
   location=newplace;
-  real_location=location;
+  real_location=location; MoveFloatingObjects();
   AdjustLight(1);
   if (flag==0) <Look>;
   if (flag==1) { NoteArrival(); ScoreArrival(); }
@@ -703,6 +709,20 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   rfalse;
 ];
 
+[ ObjectScopedBySomething item i j k l m;
+  i = item;
+  while (parent(i) ~= 0) i=parent(i);
+  objectloop (j .& add_to_scope)
+  {   l = j.&add_to_scope;
+      k = (j.#add_to_scope)/2;
+      if (l-->0 ofclass Routine) continue;
+      for (m=0:m<k:m++)
+          if (l-->m == i)
+              return j;
+  }
+  rfalse;
+];
+
 [ ObjectIsUntouchable item flag1 flag2 ancestor i;
 
   ! Determine if there's any barrier preventing the player from moving
@@ -710,6 +730,15 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   ! suitable message and return true.
   ! If flag1 is set, do not print any message.
   ! If flag2 is set, also apply Take/Remove restrictions.
+
+  ! If the item has been added to scope by something, it's first necessary
+  ! for that something to be touchable.
+
+  i = ObjectScopedBySomething(item);
+  if (i ~= 0)
+  {   if (ObjectIsUntouchable(i)) return;
+      ! An item immediately added to scope
+  }
 
   ancestor = CommonAncestor(player, item);
 
@@ -768,7 +797,13 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   ancestor = CommonAncestor(player, item);
 
+  if (ancestor == 0)
+  {   i = ObjectScopedBySomething(item);
+      if (i ~= 0) ancestor = CommonAncestor(player, i);
+  }
+
   ! Are player and item in totally different places?
+
   if (ancestor == 0) return L__M(##Take,8,item);
 
   ! Is the player indirectly inside the item?
@@ -862,6 +897,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];
 
 [ DropSub;
+  if (noun == player) return L__M(##PutOn, 4);
   if (noun in parent(player)) return L__M(##Drop,1,noun);
   if (noun notin player) return L__M(##Drop,2,noun);
   if (noun has worn)
@@ -1112,15 +1148,14 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
           if (noun==d_obj) return L__M(##Go,4,j);
           return L__M(##Go,5,j);
       }
-      if (ZRegion(j.door_to)==2) j=RunRoutines(j,door_to);
-      else
-      {   if (j.door_to == 0) return L__M(##Go,6,j);
-          j=j.door_to;
-      }
-      if (j==1) rtrue;
+      k=RunRoutines(j,door_to);
+      if (k==0) return L__M(##Go,6,j);
+      if (k==1) rtrue;
+      j = k;
   }
   if (movewith==0) move player to j; else move movewith to j;
 
+  location=j; MoveFloatingObjects();
   df=OffersLight(j);
   if (df~=0) { location=j; lightflag=1; }
   else
@@ -1152,13 +1187,23 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   L__M(##Look, 4, descon); rtrue;
 ];
 
-[ Locale descin text1 text2  o p k j flag f2;
+[ NotSupportingThePlayer o i;
+  i=parent(player);
+  while (i~=0 && i~=visibility_ceiling)
+  {   if (i==o) rfalse;
+      i = parent(i);
+      if (i~=0 && i hasnt supporter) rtrue;
+  }
+  rtrue;
+];
+
+[ Locale descin text1 text2 o k p j f2 flag;
 
   objectloop (o in descin) give o ~workflag;
 
   k=0;
   objectloop (o in descin)
-      if (o hasnt concealed && o~=parent(player))
+      if (o hasnt concealed && NotSupportingThePlayer(o))
       {  PronounNotice(o);
          if (o hasnt scenery)
          {   give o workflag; k++;
@@ -1231,7 +1276,6 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   if (descin~=lastdesc)
   {   if (descin.initial~=0) PrintOrRun(descin, initial);
       NewRoom();
-      MoveFloatingObjects();
       lastdesc=descin;
   }
 ];
@@ -1246,28 +1290,32 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   }
 ];
 
-[ LookSub allow_abbrev  visible visibility_levels i j k;
+[ LookSub allow_abbrev  visibility_levels i j k;
   if (parent(player)==0) return RunTimeError(10);
 
-  if (location == thedark) visible = thedark;
+  if (location == thedark) visibility_ceiling = thedark;
   else
   {   visibility_levels = 1;
-      visible = parent(player);
-      while ((parent(visible) ~= 0)
-             && (visible hasnt container
-                 || visible has open || visible has transparent))
-      {   visible = parent(visible);
+      visibility_ceiling = parent(player);
+      while ((parent(visibility_ceiling) ~= 0)
+             && (visibility_ceiling hasnt container
+                 || visibility_ceiling has open
+                 || visibility_ceiling has transparent))
+      {   visibility_ceiling = parent(visibility_ceiling);
           visibility_levels++;
       }
-      if (visible == location) NoteArrival();
+      if (visibility_ceiling == location) NoteArrival();
   }
+
+  !   Printing the top line: e.g.
+  !   Octagonal Room (on the table) (as Frodo)
 
   new_line;
   style bold;
   if (visibility_levels == 0) print (name) thedark;
   else
-  {   if (visible ~= location) print (The) visible;
-      else print (name) visible;
+  {   if (visibility_ceiling ~= location) print (The) visibility_ceiling;
+      else print (name) visibility_ceiling;
   }
   style roman;
 
@@ -1278,7 +1326,9 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   if (print_player_flag==1) L__M(##Look,3,player);
   new_line;
 
-  if (lookmode<3 && visible==location)
+  !   The room description (if visible)
+
+  if (lookmode<3 && visibility_ceiling==location)
   {   if ((allow_abbrev~=1) || (lookmode==2) || (location hasnt visited))
       {   if (location.describe~=NULL) RunRoutines(location,describe);
           else
@@ -1290,11 +1340,15 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   if (visibility_levels == 0) Locale(thedark);
   else
-  for (j=visibility_levels: j>0: j--)
-  {   for (i=player, k=0: k<j: k++) i=parent(i);
-      if (i.inside_description~=0)
-      {   new_line; PrintOrRun(i,inside_description); }
-      Locale(i);
+  {   for (i=player, j=visibility_levels: j>0: j--, i=parent(i))
+          give i workflag;
+      
+      for (j=visibility_levels: j>0: j--)
+      {   for (i=player, k=0: k<j: k++) i=parent(i);
+          if (i.inside_description~=0)
+          {   new_line; PrintOrRun(i,inside_description); }
+          Locale(i);
+      }
   }
 
   LookRoutine();

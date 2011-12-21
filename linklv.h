@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  LINKLV:  Link declarations of library variables.
 !
-!  Supplied for use with Inform 6                         Serial number 970405
-!                                                                  Release 6/5
+!  Supplied for use with Inform 6                         Serial number 970818
+!                                                                  Release 6/6
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -36,6 +36,7 @@ Import global deadflag;
 
 Import global lightflag;
 Import global real_location;
+Import global visibility_ceiling;
 Import global lookmode;
 Import global print_player_flag;
 Import global lastdesc;
@@ -118,6 +119,7 @@ Import global indef_guess_p;
 Import global indef_owner;
 Import global indef_cases;
 Import global indef_possambig;
+Import global indef_nspec_at;
 Import global allow_plurals;
 Import global take_all_rule;
 Import global gender_and_number;

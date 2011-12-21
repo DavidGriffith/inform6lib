@@ -1,5 +1,5 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 970405
+!   Inform Language Definition File: English 970818
 !
 !   (c) Graham Nelson 1997
 !
@@ -204,6 +204,8 @@ Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
   if (n==0) rfalse;
   #ifndef DIALECT_US;
   if (f==1) print " and ";
+  #ifnot;
+  if (f==1) print " ";
   #endif;
   switch(n)
   {   1:  print "one";
@@ -241,8 +243,9 @@ Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
 ];
 
 [ LanguageTimeOfDay hours mins i;
-   i=hours%12; if (i<10) print " ";
+   i=hours%12;
    if (i==0) i=12;
+   if (i<10) print " ";
    print i, ":", mins/10, mins%10;
    if ((hours/12) > 0) print " pm"; else print " am";
 ];
@@ -289,16 +292,36 @@ Constant AND__TX      = " and ";
 Constant WHOM__TX     = "whom ";
 Constant WHICH__TX    = "which ";
 
-[ ThatorThose obj; if (obj has pluralname) print "those"; else print "that";
+[ ThatorThose obj; if (obj has pluralname) { print "those"; return; }
+  if (obj has animate)
+  {   if (obj has female) { print "she"; return; }
+      else if (obj hasnt neuter) { print "he"; return; }
+  }
+  print "that";
 ];
-[ ItorThem obj; if (obj has pluralname) print "them"; else print "it";
+[ ItorThem obj;
+  if (obj has pluralname) { print "them"; return; }
+  if (obj has animate)
+  {   if (obj has female) { print "her"; return; }
+      else if (obj hasnt neuter) { print "him"; return; }
+  }
+  print "it";
 ];
 [ IsorAre obj; if (obj has pluralname) print "are"; else print "is";
 ];
-[ CThatorThose obj; if (obj has pluralname) print "Those"; else print "That";
+[ CThatorThose obj; if (obj has pluralname) print "Those";
+  if (obj has animate)
+  {   if (obj has female) { print "She"; return; }
+      else if (obj hasnt neuter) { print "He"; return; }
+  }
+  print "That";
 ];
 [ CTheyreorThats obj; if (obj has pluralname) print "They're";
-  else print "That's";
+  if (obj has animate)
+  {   if (obj has female) { print "She's"; return; }
+      else if (obj hasnt neuter) { print "He's"; return; }
+  }
+  print "That's";
 ];
 
 [ LanguageLM n x1;

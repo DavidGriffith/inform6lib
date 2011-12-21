@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 970405
-!                                                                  Release 6/5
+!  Supplied for use with Inform 6                         Serial number 970818
+!                                                                  Release 6/6
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -104,6 +104,10 @@ Global deadflag;                     ! Normally 0, or false; 1 for dead;
 Global lightflag = true;             ! Is there currently light to see by?
 Global real_location;                ! When in darkness, location = thedark
                                      ! and this holds the real location
+Global visibility_ceiling;           ! Highest object in tree visible from
+                                     ! the player's point of view (usually
+                                     ! the room, sometimes darkness, sometimes
+                                     ! a closed non-transparent container).
 
 Global lookmode = 1;                 ! 1=standard, 2=verbose, 3=brief room descs
 Global print_player_flag;            ! If set, print something like "(as Fred)"
@@ -282,6 +286,8 @@ Global indef_owner;                  ! Object which must hold these items
 Global indef_cases;                  ! Possible gender and numbers of them
 Global indef_possambig;              ! Has a possibly dangerous assumption
                                      ! been made about meaning of a descriptor?
+Global indef_nspec_at;               ! Word at which a number like "two" was
+                                     ! parsed (for backtracking)
 Global allow_plurals;                ! Whether plurals presently allowed or not
 
 Global take_all_rule;                ! Slightly different rules apply to
@@ -353,7 +359,7 @@ Global usual_grammar_after;          ! Point from which usual grammar is parsed
 
 Global oops_from;                    ! The "first mistake" word number
 Global saved_oops;                   ! Used in working this out
-Array  oops_workspace --> 5;         ! Used temporarily by "oops" routine
+Array  oops_workspace -> 64;         ! Used temporarily by "oops" routine
 
 Global held_back_mode;               ! Flag: is there some input from last time
 Global hb_wn;                        ! left over?  (And a save value for wn.)
@@ -547,7 +553,7 @@ Constant ENDIT_TOKEN       = 15;     ! Value used to mean "end of grammar line"
   {   line_address = line_address + 3;
       if (line_address->0 == ENDIT_TOKEN) break;
       line_token-->i = line_address;
-      AnalyseToken(line_token-->i);
+      AnalyseToken(line_address);
       if (found_ttype ~= PREPOSITION_TT) params_wanted++;
       line_ttype-->i = found_ttype;
       line_tdata-->i = found_tdata;
@@ -588,15 +594,15 @@ Object InformParser "(Inform Parser)"
 !  Return the number of words typed
 ! ----------------------------------------------------------------------------
 
-[ Keyboard  a_buffer a_table  nw i w x1 x2;
+[ Keyboard  a_buffer a_table  nw i w w2 x1 x2;
 
     DisplayStatus();
     .FreshInput;
 
-!  Save the start of the table, in case "oops" needs to restore it
-!  to the previous time's table
+!  Save the start of the buffer, in case "oops" needs to restore it
+!  to the previous time's buffer
 
-    for (i=0:i<10:i++) oops_workspace->i = a_table->i;
+    for (i=0:i<64:i++) oops_workspace->i = a_buffer->i;
 
 !  In case of an array entry corruption that shouldn't happen, but would be
 !  disastrous if it did:
@@ -670,19 +676,43 @@ Object InformParser "(Inform Parser)"
 
 !  So now we know: there was a previous mistake, and the player has
 !  attempted to correct a single word of it.
-!
-!  Oops is very primitive: it gets the text buffer wrong, for instance.
-!
-!  Take out the 4-byte table entry for the supplied correction:
-!  restore the 10 bytes at the front of the table, which were over-written
-!  by what the user just typed: and then replace the oops_from word entry
-!  with the correction one.
-!
-    x1=a_table-->3; x2=a_table-->4;
-    for (i=0:i<10:i++) a_table->i = oops_workspace->i;
-    w=2*oops_from - 1;
-    a_table-->w = x1;
-    a_table-->(w+1) = x2;
+
+    for (i=0:i<=120:i++) buffer2->i = a_buffer->i;
+    x1 = a_table->9; ! Start of word following "oops"
+    x2 = a_table->8; ! Length of word following "oops"
+
+!  Repair the buffer to the text that was in it before the "oops"
+!  was typed:
+
+    for (i=0:i<64:i++) a_buffer->i = oops_workspace->i;
+    @tokenise a_buffer a_table;
+
+!  Work out the position in the buffer of the word to be corrected:
+
+    w = a_table->(4*oops_from + 1); ! Start of word to go
+    w2 = a_table->(4*oops_from);    ! Length of word to go
+
+!  Write spaces over the word to be corrected:
+
+    for (i=0:i<w2:i++) a_buffer->(i+w) = ' ';
+
+    if (w2 < x2)
+    {   ! If the replacement is longer than the original, move up...
+
+        for (i=120:i>=w+x2:i--)
+            a_buffer->i = a_buffer->(i-x2+w2);
+
+        ! ...increasing buffer size accordingly.
+
+        a_buffer->1 = (a_buffer->1) + (x2-w2);
+    }
+
+!  Write the correction in:
+
+    for (i=0:i<x2:i++) a_buffer->(i+w) = buffer2->(i+x1);
+
+    @tokenise a_buffer a_table;
+    nw=a_table->1;
 
     return nw;
 ];
@@ -1357,6 +1387,16 @@ Object InformParser "(Inform Parser)"
        i = WordAddress(verb_wordnum);
        j = WordAddress(wn);
        for (:i<j:i++) i->0 = ' ';
+       i = NextWord();
+       if (i==AGAIN1__WD or AGAIN2__WD or AGAIN3__WD)
+       {   !   Delete the words "then again" from the again buffer,
+           !   in which we have just realised that it must occur:
+           !   prevents an infinite loop on "i. again"
+
+           i = WordAddress(wn-2)-buffer;
+           if (wn > num_words) j = 119; else j = WordAddress(wn)-buffer;
+           for (:i<j:i++) buffer3->i = ' ';
+       }
        @tokenise buffer parse; held_back_mode = true; return;
    }
    best_etype=UPTO_PE; jump GiveError;
@@ -1395,6 +1435,7 @@ Constant UNLIT_BIT  =  32;
    indef_possambig = false;
    indef_owner = nothing;
    indef_cases = $$111111111111;
+   indef_nspec_at = 0;
 ];
 
 [ Descriptors allow_multiple  o x flag cto type n;
@@ -1437,10 +1478,12 @@ Constant UNLIT_BIT  =  32;
                               if (take_all_rule == 1)
                                   take_all_rule = 2;
                               indef_type = indef_type | PLURAL_BIT; }
-       if (allow_plurals)
+       if (allow_plurals && allow_multiple)
        {   n=NumberWord(o);
+           if (n==1)        { indef_mode=1; flag=1; }
            if (n>1)         { indef_guess_p=1;
                               indef_mode=1; flag=1; indef_wanted=n;
+                              indef_nspec_at=wn-1;
                               indef_type = indef_type | PLURAL_BIT; }
        }
        if (flag==1
@@ -1470,7 +1513,8 @@ Constant UNLIT_BIT  =  32;
   {   if (line_tdata-->index == wd) return wd;
       index++;
   }
-  until (((line_token-->index)->0 & $10) == 0);
+  until ((line_token-->index == ENDIT_TOKEN)
+         || (((line_token-->index)->0 & $10) == 0));
   return -1;
 ];
 
@@ -2053,6 +2097,7 @@ Constant UNLIT_BIT  =  32;
 !  ...and get an answer:
 
   .WhichOne;
+  for (i=2:i<120:i++) buffer2->i=' ';
   answer_words=Keyboard(buffer2, parse2);
 
   first_word=(parse2-->1);
@@ -2126,6 +2171,7 @@ Constant UNLIT_BIT  =  32;
   if (context==CREATURE_TOKEN)
       L__M(##Miscellany, 48); else L__M(##Miscellany, 49);
 
+  for (i=2:i<120:i++) buffer2->i=' ';
   answer_words=Keyboard(buffer2, parse2);
 
   first_word=(parse2-->1);
@@ -2152,8 +2198,12 @@ Constant UNLIT_BIT  =  32;
 
   if (inferfrom ~= 0)
   {   for (j = inferfrom: j<pcount: j++)
-      {   i=2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
+      {   if (pattern-->j == PATTERN_NULL) continue;
+          i=2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
     
+          if (parser_trace >= 5)
+          print "[Gluing in inference with pattern code ", pattern-->j, "]^";
+
           parse2-->1 = 0;
 
           ! An inferred object.  Best we can do is glue in a pronoun.
@@ -2164,12 +2214,16 @@ Constant UNLIT_BIT  =  32;
               for (k=1: k<=LanguagePronouns-->0: k=k+3)
                   if (pattern-->j == LanguagePronouns-->(k+2))
                   {   parse2-->1 = LanguagePronouns-->k;
+                      if (parser_trace >= 5)
+                      print "[Using pronoun '", (address) parse2-->1, "']^";
                       break;
                   }
           }
           else
           {   ! An inferred preposition.
               parse2-->1 = No__Dword(pattern-->j - REPARSE_CODE);
+              if (parser_trace >= 5)
+                  print "[Using preposition '", (address) parse2-->1, "']^";
           }
     
           ! parse2-->1 now holds the dictionary address of the word to glue in.
@@ -2262,11 +2316,13 @@ Constant UNLIT_BIT  =  32;
           ultimate=parent(ultimate);
       until (ultimate==actors_location or actor or 0);
 
-      if (context==NOUN_TOKEN && ultimate==actors_location &&
-          (token_filter==0 || UserFilter(n)==1)) { good_ones++; last=n; }
+!      if (context==NOUN_TOKEN && ultimate==actors_location
+!          && n~=actor && n hasnt concealed && n hasnt scenery &&
+!          (token_filter==0 || UserFilter(n)==1)) { good_ones++; last=n; }
       if (context==HELD_TOKEN && parent(n)==actor)
       {   good_ones++; last=n; }
-      if (context==MULTI_TOKEN && ultimate==actors_location) 
+      if (context==MULTI_TOKEN && ultimate==actors_location
+          && n~=actor && n hasnt concealed && n hasnt scenery) 
       {   good_ones++; last=n; }
       if (context==MULTIHELD_TOKEN && parent(n)==actor)
       {   good_ones++; last=n; }
@@ -2776,7 +2832,7 @@ Constant UNLIT_BIT  =  32;
 
 [ UserFilter obj;
 
-  if (token_filter < 49)
+  if (token_filter > 0 && token_filter < 49)
   {   if (obj has (token_filter-1)) rtrue;
       rfalse;
   }
@@ -2837,10 +2893,10 @@ Constant UNLIT_BIT  =  32;
           ScopeWithin(advance_warning, 0, context);
   }
   else
-  {   if (domain1 has supporter or container)
+  {   if (domain1~=0 && domain1 has supporter or container)
           ScopeWithin_O(domain1, domain1, context);
       ScopeWithin(domain1, domain2, context);
-      if (domain2 has supporter or container)
+      if (domain2~=0 && domain2 has supporter or container)
           ScopeWithin_O(domain2, domain2, context);
       ScopeWithin(domain2, 0, context);
   }
@@ -2886,7 +2942,7 @@ Constant UNLIT_BIT  =  32;
 [ DoScopeAction thing s p1;
   s = scope_reason; p1=parser_one;
 #ifdef DEBUG;
-  if (parser_trace>=5)
+  if (parser_trace>=6)
   {   print "[DSA on ", (the) thing, " with reason = ", scope_reason,
       " p1 = ", parser_one, " p2 = ", parser_two, "]^";
   }
@@ -2954,33 +3010,43 @@ Constant UNLIT_BIT  =  32;
       if (scope_reason~=PARSING_REASON or TALKING_REASON)
       {   DoScopeAction(domain); jump DontAccept; }
 
-!  If we're beyond the end of the user's typing, accept everything
-!  (NounDomain will sort things out)
-
-      if (match_from > num_words)
-      {   i=parser_trace; parser_trace=0;
-#ifdef DEBUG;
-          if (i>=5) print "     Out of text: matching ", (the) domain, "^";
-#endif;
-          MakeMatch(domain,0);  ! Used to be quality 1 -- GN
-          parser_trace=i; jump DontAccept;
-      }
-
 !  "it" or "them" matches to the it-object only.  (Note that (1) this means
 !  that "it" will only be understood if the object in question is still
 !  in context, and (2) only one match can ever be made in this case.)
 
-      wn=match_from;
-      i=NounWord();
-      if (i==1 && player==domain)  MakeMatch(domain, 1);
+      if (match_from <= num_words)  ! If there's any text to match, that is
+      {   wn=match_from;
+          i=NounWord();
+          if (i==1 && player==domain)  MakeMatch(domain, 1);
 
-      if (i>=2 && i<128 && (LanguagePronouns-->i == domain))
-          MakeMatch(domain, 1);
+          if (i>=2 && i<128 && (LanguagePronouns-->i == domain))
+              MakeMatch(domain, 1);
+      }
 
 !  Construing the current word as the start of a noun, can it refer to the
 !  object?
 
-      wn--; TryGivenObject(domain);
+      wn = match_from;
+      if (TryGivenObject(domain) > 0)
+          if (indef_nspec_at>0 && match_from~=indef_nspec_at)
+          {   !  This case arises if the player has typed a number in
+              !  which is hypothetically an indefinite descriptor:
+              !  e.g. "take two clubs".  We have just checked the object
+              !  against the word "clubs", in the hope of eventually finding
+              !  two such objects.  But we also backtrack and check it
+              !  against the words "two clubs", in case it turns out to
+              !  be the 2 of Clubs from a pack of cards, say.  If it does
+              !  match against "two clubs", we tear up our original
+              !  assumption about the meaning of "two" and lapse back into
+              !  definite mode.
+          
+              wn = indef_nspec_at;
+              if (TryGivenObject(domain) > 0)
+              {   match_from = indef_nspec_at;
+                  ResetDescriptors();                  
+              }
+              wn = match_from;
+          }
 
       .DontAccept;
 
@@ -3063,7 +3129,8 @@ Constant UNLIT_BIT  =  32;
 ! ----------------------------------------------------------------------------
 !  TryGivenObject tries to match as many words as possible in what has been
 !  typed to the given object, obj.  If it manages any words matched at all,
-!  it calls MakeMatch to say so.  There is no return value.
+!  it calls MakeMatch to say so, then returns the number of words (or 1
+!  if it was a match because of inadequate input).
 ! ----------------------------------------------------------------------------
 
 [ TryGivenObject obj threshold k w j;
@@ -3075,17 +3142,18 @@ Constant UNLIT_BIT  =  32;
 
    dict_flags_of_noun = 0;
 
-!  If input has run out and we're in indefinite mode, then always match,
-!  with only quality 0 (this saves time).
+!  If input has run out then always match, with only quality 0 (this saves
+!  time).
 
-   if (indef_mode ~=0 && wn > num_words)
-   {   dict_flags_of_noun = $$01110000;  ! Reject "plural" bit
+   if (wn > num_words)
+   {   if (indef_mode ~= 0)
+           dict_flags_of_noun = $$01110000;  ! Reject "plural" bit
        MakeMatch(obj,0);
        #ifdef DEBUG;
        if (parser_trace>=5)
        print "    Matched (0)^";
        #endif;
-       rfalse;
+       return 1;
    }
 
 !  Ask the object to parse itself if necessary, sitting up and taking notice
@@ -3117,7 +3185,7 @@ Constant UNLIT_BIT  =  32;
                }
            #endif;
            MakeMatch(obj,k);
-           rfalse;
+           return k;
        }
        if (k==0) jump NoWordsMatch;
    }
@@ -3491,7 +3559,8 @@ Object InformLibrary "(Inform Library)"
        objectloop (i in player) give i moved ~concealed;
     
        if (j~=2) Banner();
-    
+
+       MoveFloatingObjects();
        lightflag=OffersLight(parent(player));
        if (lightflag==0) { real_location=location; location=thedark; }
        <Look>;
@@ -3647,7 +3716,7 @@ Object InformLibrary "(Inform Library)"
            !  (ii) we've only had the implicit take before the "real"
            !  action to follow.
     
-           if (notheld_mode==1) continue;
+           if (notheld_mode==1) { NoteObjectAcquisitions(); continue; }
            if (meta) continue;
            if (~~deadflag) self.end_turn_sequence();
        }
@@ -3764,13 +3833,7 @@ Object InformLibrary "(Inform Library)"
 
            if (deadflag) return;
 
-           objectloop (i in player && i hasnt moved)
-           {   give i moved;
-               if (i has scored)
-               {   score = score + OBJECT_SCORE;
-                   things_score = things_score + OBJECT_SCORE;
-               }
-           }
+           NoteObjectAcquisitions();
        ],
 
        begin_action
@@ -3801,6 +3864,16 @@ Object InformLibrary "(Inform Library)"
    s1 = inp1; s2 = inp2;
    inp1 = i; inp2 = j; InformLibrary.begin_action(a, i, j, 1);
    inp1 = s1; inp2 = s2;
+];
+
+[ NoteObjectAcquisitions i;
+  objectloop (i in player && i hasnt moved)
+  {   give i moved;
+      if (i has scored)
+      {   score = score + OBJECT_SCORE;
+          things_score = things_score + OBJECT_SCORE;
+      }
+  }
 ];
 
 ! ----------------------------------------------------------------------------
