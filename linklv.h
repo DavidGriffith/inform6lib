@@ -1,11 +1,17 @@
-! ----------------------------------------------------------------------------
-!  LINKLV:  Link declarations of library variables.
+! ==============================================================================
+!   LINKLV:  Link declarations of library variables.
 !
-!  Supplied for use with Inform 6                         Serial number 000629
-!                                                                 Release 6/10
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
-!      but freely usable (see manuals)
-! ----------------------------------------------------------------------------
+!   Supplied for use with Inform 6 -- Release 6/11 -- Serial number 040227
+!
+!   Copyright Graham Nelson 1993-2004 but freely usable (see manuals)
+!
+!   This file is automatically Included in your game file by "verblibm" only if
+!   you supply the -U compiler switch to use pre-compiled Modules.
+! ==============================================================================
+
+System_file;
+
+! ------------------------------------------------------------------------------
 
 Import global location;
 Import global sline1;
@@ -15,9 +21,8 @@ Import global top_object;
 Import global standard_interpreter;
 Import global undo_flag;
 Import global transcript_mode;
-IFDEF DEBUG;
+
 Import global xcommsdir;
-ENDIF;
 
 Import global turns;
 Import global the_time;
@@ -56,10 +61,11 @@ Import global item_name;
 Import global lm_n;
 Import global lm_o;
 
-IFDEF DEBUG;
+#Ifdef DEBUG;
 Import global debug_flag;
 Import global x_scope_count;
-ENDIF;
+#Endif; ! DEBUG
+
 Import global action;
 Import global inp1;
 Import global inp2;
@@ -147,11 +153,13 @@ Import global held_back_mode;
 Import global hb_wn;
 Import global short_name_case;
 
-IFDEF EnglishNaturalLanguage;
+#Ifdef EnglishNaturalLanguage;
 Import global itobj;
 Import global himobj;
 Import global herobj;
 Import global old_itobj;
 Import global old_himobj;
 Import global old_herobj;
-ENDIF;
+#Endif; ! EnglishNaturalLanguage
+
+! ==============================================================================

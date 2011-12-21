@@ -1,22 +1,40 @@
-! ----------------------------------------------------------------------------
-!  LINKLPA:  Link declarations of common properties and attributes.
+! ==============================================================================
+!   LINKLPA:  Link declarations of common properties and attributes.
 !
-!  Supplied for use with Inform 6                         Serial number 000629
-!                                                                 Release 6/10
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
-!      but freely usable (see manuals)
-! ----------------------------------------------------------------------------
+!   Supplied for use with Inform 6 -- Release 6/11 -- Serial number 040227
+!
+!   Copyright Graham Nelson 1993-2004 but freely usable (see manuals)
+!
+!   This file is automatically Included in your game file by "Parser".
+! ==============================================================================
 
 System_file;
 
+! ------------------------------------------------------------------------------
+!   Some VM-specific constants.
+!   (WORDSIZE and TARGET_XXX are defined by the compiler.)
+! ------------------------------------------------------------------------------
+
+#Ifdef TARGET_ZCODE;
+Constant NULL         = $ffff;
+Constant WORD_HIGHBIT = $8000;
+#Ifnot; ! TARGET_GLULX
+Constant NULL         = $ffffffff;
+Constant WORD_HIGHBIT = $80000000;
+#Endif; ! TARGET_
+
+! ------------------------------------------------------------------------------
+!   The common attributes and properties.
+! ------------------------------------------------------------------------------
+
 Attribute animate;
-Ifdef USE_MODULES;
-   Iffalse (animate==0);
-   Message error "Please move your Attribute declarations after the
-                  Include ~Parser~ line: otherwise it will be impossible
-                  to USE_MODULES";
-   Endif;
-Endif;
+#Ifdef USE_MODULES;
+    #Iffalse (animate == 0);
+    Message error "Please move your Attribute declarations after the Include ~Parser~ line:
+                   otherwise it will be impossible to USE_MODULES";
+    #Endif;
+#Endif;
+
 Attribute absent;
 Attribute clothing;
 Attribute concealed;
@@ -49,31 +67,31 @@ Attribute female;
 Attribute neuter;
 Attribute pluralname;
 
-#ifdef TARGET_ZCODE;
-Constant NULL = $ffff;
-Constant WORD_HIGHBIT = $8000;
-#ifnot; ! TARGET_GLULX
-Constant NULL = $ffffffff;
-Constant WORD_HIGHBIT = $80000000;
-#endif; ! TARGET_
+! ------------------------------------------------------------------------------
 
 Property additive before NULL;
-Ifdef USE_MODULES;
-   Iffalse before==4;
-   Message error "Please move your Property declarations after the
-                  Include ~Parser~ line: otherwise it will be impossible
-                  to USE_MODULES";
-   Endif;
-Endif;
 Property additive after  NULL;
 Property additive life   NULL;
 
-Property n_to;  Property s_to;
-Property e_to;  Property w_to;
-Property ne_to; Property se_to;
-Property nw_to; Property sw_to;
-Property u_to;  Property d_to;
-Property in_to; Property out_to;
+Property n_to;
+Property s_to;
+Property e_to;
+Property w_to;
+Property ne_to;
+Property nw_to;
+Property se_to;
+Property sw_to;
+Property u_to;
+Property d_to;
+Property in_to;
+Property out_to;
+
+#Ifdef USE_MODULES;
+    #Iffalse (7 >= n_to);
+    Message error "Please move your Property declarations after the Include ~Parser~ line:
+                   otherwise it will be impossible to USE_MODULES";
+    #Endif;
+#Endif;
 
 Property door_to;
 Property with_key;
@@ -98,7 +116,7 @@ Property article "a";
 
 Property cant_go;
 
-Property found_in;         !  For fiddly reasons this can't alias
+Property found_in;          ! For fiddly reasons this can't alias
 
 Property time_left;
 Property number;
@@ -114,3 +132,5 @@ Property parse_name 0;
 
 Property articles;
 Property inside_description;
+
+! ==============================================================================
