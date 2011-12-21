@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIBM:  Core of standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 991113
+!  Supplied for use with Inform 6                         Serial number 000629
 !                                                                 Release 6/10
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
@@ -21,14 +21,28 @@ System_file;
 [ Banner i;
    if (Story ~= 0)
    {
+#ifdef TARGET_ZCODE;
 #IFV5; style bold; #ENDIF;
    print (string) Story;
 #IFV5; style roman; #ENDIF;
+#ifnot; ! TARGET_GLULX;
+   glk($0086, 3); ! set header style
+   print (string) Story;
+   glk($0086, 0); ! set normal style
+#endif; ! TARGET_
    }
    if (Headline ~= 0)
        print (string) Headline;
+#ifdef TARGET_ZCODE;
    print "Release ", (0-->1) & $03ff, " / Serial number ";
    for (i=18:i<24:i++) print (char) 0->i;
+#ifnot; ! TARGET_GLULX;
+   print "Release ";
+   @aloads 52 0 i;
+   print i;
+   print " / Serial number ";
+   for (i=0:i<6:i++) print (char) 54->i;
+#endif; ! TARGET_
    print " / Inform v"; inversion;
    print " Library ", (string) LibRelease, " ";
 #ifdef STRICT_MODE;
@@ -44,13 +58,23 @@ System_file;
    new_line;
 ];
 
-[ VersionSub;
+[ VersionSub ix;
   Banner();
+#ifdef TARGET_ZCODE;
+  ix = 0; ! shut up compiler warning
   if (standard_interpreter > 0)
       print "Standard interpreter ",
           standard_interpreter/256, ".", standard_interpreter%256,
           " (", 0->$1e, (char) 0->$1f, ") / ";
   else print "Interpreter ", 0->$1e, " Version ", (char) 0->$1f, " / ";
+#ifnot; ! TARGET_GLULX;
+  @gestalt 1 0 ix;
+  print "Interpreter version ", ix / $10000, ".", (ix & $FF00) / $100,
+    ".", ix & $FF, " / ";
+  @gestalt 0 0 ix;
+  print "VM ", ix / $10000, ".", (ix & $FF00) / $100,
+    ".", ix & $FF, " / ";
+#endif; ! TARGET_;
   print "Library serial number ", (string) LibSerial, "^";
 #IFDEF LanguageVersion;
   print (string) LanguageVersion, "^";
@@ -193,8 +217,21 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   }
 ];
 
+#ifdef TARGET_ZCODE;
+
 [ Print__Spaces n;         ! To avoid a bug occurring in Inform 6.01 to 6.10
   if (n==0) return; spaces n; ];
+
+#ifnot; ! TARGET_GLULX;
+
+[ Print__Spaces n;
+  while (n > 0) {
+    @streamchar ' ';
+    n = n-1;
+  }
+];
+
+#endif; ! TARGET_
 
 [ WriteListFrom o style depth;
   if (o==child(parent(o)))
@@ -301,10 +338,22 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
                   if (RunRoutines(j,list_together)==1) jump Omit__Sublist2;
               }
 
+#ifdef TARGET_ZCODE;
               @push lt_value; @push listing_together; @push listing_size;
+#ifnot; ! TARGET_GLULX;
+              @copy lt_value sp; 
+              @copy listing_together sp; 
+              @copy listing_size sp;
+#endif; ! TARGET_;
               lt_value=j.list_together; listing_together=j; wlf_indent++;
               WriteListR(j,depth,stack_pointer); wlf_indent--;
+#ifdef TARGET_ZCODE;
               @pull listing_size; @pull listing_together; @pull lt_value;
+#ifnot; ! TARGET_GLULX;
+              @copy sp listing_size; 
+              @copy sp listing_together; 
+              @copy sp lt_value;
+#endif; ! TARGET_;
 
               if (k2==3)
               {   if (q & ENGLISH_BIT ~= 0) print ")";
@@ -385,10 +434,22 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
                   if (RunRoutines(j,list_together)==1) jump Omit__Sublist;
               }
 
+#ifdef TARGET_ZCODE;
               @push lt_value; @push listing_together; @push listing_size;
+#ifnot; ! TARGET_GLULX;
+              @copy lt_value sp; 
+              @copy listing_together sp; 
+              @copy listing_size sp;
+#endif; ! TARGET_;
               lt_value=j.list_together; listing_together=j; wlf_indent++;
               WriteListR(j,depth,stack_pointer); wlf_indent--;
+#ifdef TARGET_ZCODE;
               @pull listing_size; @pull listing_together; @pull lt_value;
+#ifnot; ! TARGET_GLULX;
+              @copy sp listing_size; 
+              @copy sp listing_together; 
+              @copy sp lt_value;
+#endif; ! TARGET_;
 
               if (k==3)
               {   if (q & ENGLISH_BIT ~= 0) print ")";
@@ -544,10 +605,22 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   if (flag==1)
   {   o = child(o);
+#ifdef TARGET_ZCODE;
       @push lt_value; @push listing_together; @push listing_size;
+#ifnot; ! TARGET_GLULX;
+      @copy lt_value sp; 
+      @copy listing_together sp; 
+      @copy listing_size sp;
+#endif; ! TARGET_;
       lt_value = 0; listing_together = 0; listing_size = 0;
       WriteListR(o, depth+1, stack_p);
+#ifdef TARGET_ZCODE;
       @pull listing_size; @pull listing_together; @pull lt_value;
+#ifnot; ! TARGET_GLULX;
+      @copy sp listing_size; 
+      @copy sp listing_together; 
+      @copy sp lt_value;
+#endif; ! TARGET_;
       if (c_style & TERSE_BIT ~= 0) print ")";
   }
 ];
@@ -573,12 +646,18 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   {   L__M(##Miscellany, 52, lines);
       print "> ";
 
+#ifdef TARGET_ZCODE;
       #IFV3; read buffer parse;
       #IFNOT; read buffer parse DrawStatusLine;
       #ENDIF;
+      j = parse->1; ! number of words
+#ifnot; ! TARGET_GLULX;
+      KeyboardPrimitive(buffer, parse);
+      j = parse-->0; ! number of words
+#endif; ! TARGET_
 
       i=parse-->1;
-      if (i==QUIT1__WD or QUIT2__WD || parse->1==0)
+      if (j==0 || (i==QUIT1__WD or QUIT2__WD))
       {   menu_nesting--; if (menu_nesting>0) rfalse;
           if (deadflag==0) <<Look>>;
           rfalse;
@@ -592,6 +671,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       if (j==3) rfalse;
   }
 ];
+
+#ifdef TARGET_ZCODE;
 
 #IFV3;
 [ DoMenu menu_choices EntryR ChoiceR;
@@ -686,6 +767,129 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];  
 #ENDIF;
 
+#ifnot; ! TARGET_GLULX
+
+[ DoMenu menu_choices EntryR ChoiceR
+    winwid winhgt lines main_title main_wid cl i oldcl pkey;
+
+  if (pretty_flag==0 || gg_statuswin==0)
+    return LowKey_Menu(menu_choices, EntryR, ChoiceR);
+  
+  menu_nesting++;
+  menu_item=0;
+  lines=indirect(EntryR);
+  main_title=item_name;
+  main_wid=item_width;
+
+  cl = 0;
+  
+  ! If we printed "hit arrow keys" here, it would be appropriate to
+  ! check for the availability of Glk input keys. But we actually
+  ! print "hit N/P/Q". So it's reasonable to silently accept Glk
+  ! arrow key codes as secondary options.
+
+  .ReDisplay;
+    glk($002A, gg_statuswin); ! window_clear
+    glk($002A, gg_mainwin); ! window_clear
+    glk($002F, gg_statuswin); ! set_window
+    StatusLineHeight(lines+7);
+    glk($0025, gg_statuswin, gg_arguments, gg_arguments+4); ! window_get_size
+    winwid = gg_arguments-->0;
+    winhgt = gg_arguments-->1;
+    glk($0086, 4); ! set subheader style
+    glk($002B, gg_statuswin, winwid/2-main_wid, 0); ! window_move_cursor
+    print (string) main_title;
+    glk($002B, gg_statuswin, 1, 1); ! window_move_cursor
+    print (string) NKEY__TX;
+    glk($002B, gg_statuswin, winwid-13, 1); ! window_move_cursor
+    print (string) PKEY__TX;
+    glk($002B, gg_statuswin, 1, 2); ! window_move_cursor
+    print (string) RKEY__TX;
+    glk($002B, gg_statuswin, winwid-18, 2); ! window_move_cursor
+    if (menu_nesting==1)
+      print (string) QKEY1__TX;
+    else
+      print (string) QKEY2__TX;
+    glk($0086, 0); ! set normal style
+
+    glk($002B, gg_statuswin, 1, 4); ! window_move_cursor
+    if (menu_choices ofclass String) 
+      print (string) menu_choices;
+    else 
+      menu_choices.call();
+
+    oldcl = -1;
+
+    for (::) {
+      if (cl ~= oldcl) {
+        if (cl < 0 || cl >= lines)
+          cl = 0;
+        if (oldcl >= 0) {
+          glk($002B, gg_statuswin, 3, oldcl+6);
+          print (char) ' ';
+        }
+        oldcl = cl;
+        glk($002B, gg_statuswin, 3, oldcl+6);
+        print (char) '>';
+      }
+      pkey = KeyCharPrimitive(gg_statuswin, true);
+      if (pkey==$80000000) {
+        jump ReDisplay;
+      }
+      if (pkey==NKEY1__KY or NKEY2__KY or $fffffffb) {
+        cl++;
+        if (cl >= lines)
+          cl = 0;
+        continue;
+      }
+      if (pkey==PKEY1__KY or PKEY2__KY or $fffffffc) {
+        cl--;
+        if (cl < 0)
+          cl = lines-1;
+        continue;
+      }
+      if (pkey==QKEY1__KY or QKEY2__KY or $fffffff8 or $fffffffe) 
+        break; 
+      if (pkey==$fffffffa or $fffffffd) {
+        glk($002F, gg_mainwin); ! set_window
+        new_line; new_line; new_line;
+        menu_item = cl+1;
+        EntryR.call();
+
+        glk($002A, gg_statuswin); ! window_clear
+        glk($002A, gg_mainwin); ! window_clear
+        glk($002F, gg_statuswin); ! set_window
+        StatusLineHeight(1);
+        glk($0025, gg_statuswin, gg_arguments, gg_arguments+4); ! window_get_size
+        winwid = gg_arguments-->0;
+        winhgt = gg_arguments-->1;
+        glk($0086, 4); ! set subheader style
+        glk($002B, gg_statuswin, winwid/2-item_width, 0); ! window_move_cursor
+        print (string) item_name;
+        glk($0086, 0); ! set normal style
+
+        glk($002F, gg_mainwin); ! set_window
+        new_line;
+        i = ChoiceR.call();
+        if (i==2) jump ReDisplay;
+        if (i==3) break;
+        L__M(##Miscellany, 53);
+        pkey = KeyCharPrimitive(gg_mainwin, 1);
+        jump ReDisplay;
+      }
+    }
+
+  ! done with this menu...  
+  menu_nesting--; 
+  if (menu_nesting>0) rfalse;
+  glk($002F, gg_mainwin); ! set_window
+  glk($002A, gg_mainwin); ! window_clear
+  new_line; new_line; new_line;
+  if (deadflag==0) <<Look>>;
+];
+
+#endif; ! TARGET_
+
 ! ----------------------------------------------------------------------------
 !   A cunning routine (which could have been a daemon, but isn't, for the
 !   sake of efficiency) to move objects which could be in many rooms about
@@ -701,7 +905,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
           }
           else
           {   k=i.#found_in;
-              for (l=0: l<k/2: l++)
+              for (l=0: l<k/WORDSIZE: l++)
               {   m=address-->l;
                   if (m==location || m in location)
                   {   if (i notin location) move i to location;
@@ -737,14 +941,21 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
 [ YesOrNo i;
   for (::)
-  {   if (location == nothing || parent(player) == nothing) read buffer parse;
+  {
+#ifdef TARGET_ZCODE;
+      if (location == nothing || parent(player) == nothing) read buffer parse;
       else read buffer parse DrawStatusLine;
+#ifnot; ! TARGET_GLULX;
+      KeyboardPrimitive(buffer, parse);
+#endif; ! TARGET_
       i=parse-->1;
       if (i==YES1__WD or YES2__WD or YES3__WD) rtrue;
       if (i==NO1__WD or NO2__WD or NO3__WD) rfalse;
       L__M(##Quit,1); print "> ";
   }
 ];
+
+#ifdef TARGET_ZCODE;
 
 [ QuitSub; L__M(##Quit,2); if (YesOrNo()~=0) quit; ];
 
@@ -789,7 +1000,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   L__M(##ScriptOn,2); VersionSub();
   transcript_mode = true;
 ];
-	
+
 [ ScriptOffSub;
   transcript_mode = ((0-->8) & 1);
   if (transcript_mode == false) return L__M(##ScriptOff,1);
@@ -798,6 +1009,117 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   if ((0-->8) & 1) return L__M(##ScriptOff,3);
   transcript_mode = false;
 ];
+
+#ifnot; ! TARGET_GLULX;
+
+[ QuitSub;
+  L__M(##Quit,2);
+  if (YesOrNo()~=0) {
+    quit;
+  }
+];
+
+[ RestartSub;
+  L__M(##Restart,1);
+  if (YesOrNo()~=0) { 
+    @restart; 
+    L__M(##Restart,2);
+  }
+];
+
+[ RestoreSub res fref;
+  fref = glk($0062, $01, $02, 0); ! fileref_create_by_prompt
+  if (fref == 0) 
+    jump RFailed;
+  gg_savestr = glk($0042, fref, $02, GG_SAVESTR_ROCK); ! stream_open_file
+  glk($0063, fref); ! fileref_destroy
+  if (gg_savestr == 0) {
+    jump RFailed;
+  }
+
+  @restore gg_savestr res;
+
+  glk($0044, gg_savestr, 0); ! stream_close
+  gg_savestr = 0;
+
+.RFailed;
+  L__M(##Restore,1);  
+];
+
+[ SaveSub res fref;
+  fref = glk($0062, $01, $01, 0); ! fileref_create_by_prompt
+  if (fref == 0) 
+    jump SFailed;
+  gg_savestr = glk($0042, fref, $01, GG_SAVESTR_ROCK); ! stream_open_file
+  glk($0063, fref); ! fileref_destroy
+  if (gg_savestr == 0) {
+    jump SFailed;
+  }
+
+  @save gg_savestr res;
+
+  if (res == -1) {
+    ! The player actually just typed "restore". We're going to print
+    !  L__M(##Restore,2); the Z-Code Inform library does this correctly
+    ! now. But first, we have to recover all the Glk objects; the values
+    ! in our global variables are all wrong.
+    GGRecoverObjects();
+    glk($0044, gg_savestr, 0); ! stream_close
+    gg_savestr = 0;
+    return L__M(##Restore,2);
+  }
+
+  glk($0044, gg_savestr, 0); ! stream_close
+  gg_savestr = 0;
+
+  if (res == 0)
+    return L__M(##Save,2);
+
+.SFailed;
+  L__M(##Save,1);
+];
+
+[ VerifySub res;
+  @verify res;
+  if (res == 0)
+    return L__M(##Verify,1);
+  L__M(##Verify,2);
+];
+
+[ ScriptOnSub;
+  if (gg_scriptstr ~= 0)
+    return L__M(##ScriptOn,1);
+
+  if (gg_scriptfref == 0) {
+    ! fileref_create_by_prompt
+    gg_scriptfref = glk($0062, $102, $05, GG_SCRIPTFREF_ROCK); 
+    if (gg_scriptfref == 0) 
+      jump S1Failed;
+  }
+  ! stream_open_file
+  gg_scriptstr = glk($0042, gg_scriptfref, $05, GG_SCRIPTSTR_ROCK); 
+  if (gg_scriptstr == 0)
+    jump S1Failed;
+
+  glk($002D, gg_mainwin, gg_scriptstr); ! window_set_echo_stream
+  L__M(##ScriptOn,2);
+  VersionSub();
+  return;
+
+.S1Failed;
+  L__M(##ScriptOn,3);  
+];
+
+[ ScriptOffSub;
+  if (gg_scriptstr == 0)
+    return L__M(##ScriptOff,1);
+  
+  L__M(##ScriptOff,2);
+  glk($0044, gg_scriptstr, 0); ! stream_close
+  gg_scriptstr = 0;
+];
+
+#endif; ! TARGET_;
 
 [ NotifyOnSub; notify_mode=1; L__M(##NotifyOn); ];
 [ NotifyOffSub; notify_mode=0; L__M(##NotifyOff); ];
@@ -951,7 +1273,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   while (parent(i) ~= 0) i=parent(i);
   objectloop (j .& add_to_scope)
   {   l = j.&add_to_scope;
-      k = (j.#add_to_scope)/2;
+      k = (j.#add_to_scope)/WORDSIZE;
       if (l-->0 ofclass Routine) continue;
       for (m=0:m<k:m++)
           if (l-->m == i)
@@ -1585,13 +1907,21 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   !   Octagonal Room (on the table) (as Frodo)
 
   new_line;
+#ifdef TARGET_ZCODE;
   style bold;
+#ifnot; ! TARGET_GLULX;
+  glk($0086, 4); ! set subheader style
+#endif; ! TARGET_
   if (visibility_levels == 0) print (name) thedark;
   else
   {   if (visibility_ceiling ~= location) print (The) visibility_ceiling;
       else print (name) visibility_ceiling;
   }
+#ifdef TARGET_ZCODE;
   style roman;
+#ifnot; ! TARGET_GLULX;
+  glk($0086, 0); ! set normal style
+#endif; ! TARGET_
 
   for (j=1, i=parent(player):j<visibility_levels:j++, i=parent(i))
       if (i has supporter) L__M(##Look,1,i);
@@ -1937,6 +2267,8 @@ IFNOT;
 [ ChangesOnSub; "[Changes listing only available under Inform 6.2.]"; ];
 [ ChangesOffSub; "[Changes listing only available under Inform 6.2.]"; ];
 ENDIF;
+
+#ifdef TARGET_ZCODE;
 [ CommandsOnSub;
   @output_stream 4; xcommsdir=1; "[Command recording on.]"; ];
 [ CommandsOffSub;
@@ -1947,6 +2279,59 @@ ENDIF;
   @input_stream 1; xcommsdir=2; "[Replaying commands.]"; ];
 [ PredictableSub i; i=random(-100);
   "[Random number generator now predictable.]"; ];
+#ifnot; ! TARGET_GLULX;
+[ CommandsOnSub fref;
+  if (gg_commandstr ~= 0) {
+    if (gg_command_reading)
+      "[Commands are currently replaying.]";
+    "[Command recording already on.]";
+  }
+  ! fileref_create_by_prompt
+  fref = glk($0062, $103, $01, 0);
+  if (fref == 0)
+    "[Command recording failed.]";
+  gg_command_reading = false;
+  ! stream_open_file
+  gg_commandstr = glk($0042, fref, $01, GG_COMMANDWSTR_ROCK);
+  glk($0063, fref); ! fileref_destroy
+  if (gg_commandstr == 0)
+    "[Command recording failed.]";
+  "[Command recording on.]";
+];
+[ CommandsOffSub;
+  if (gg_commandstr == 0)
+    "[Command recording already off.]";
+  if (gg_command_reading)
+    "[Commands are currently replaying.]";
+  glk($0044, gg_commandstr, 0); ! stream_close
+  gg_commandstr = 0;
+  gg_command_reading = false;
+  "[Command recording off.]";
+];
+[ CommandsReadSub fref;
+  if (gg_commandstr ~= 0) {
+    if (gg_command_reading)
+      "[Commands are already replaying.]";
+    "[Command recording currently on.]";
+  }
+  ! fileref_create_by_prompt
+  fref = glk($0062, $103, $02, 0);
+  if (fref == 0)
+    "[Command recording failed.]";
+  gg_command_reading = true;
+  ! stream_open_file
+  gg_commandstr = glk($0042, fref, $02, GG_COMMANDRSTR_ROCK);
+  glk($0063, fref); ! fileref_destroy
+  if (gg_commandstr == 0)
+    "[Command recording failed.]";
+  "[Command recording on.]";
+];
+[ PredictableSub;
+  @setrandom 100;
+  "[Random number generator now predictable.]";
+];
+#endif; ! TARGET_;
+
 [ XTestMove obj dest;
   if ((obj<=InformLibrary) || (obj == LibraryMessages) || (obj in 1))
      "[Can't move ", (name) obj, ": it's a system object.]";
@@ -1993,6 +2378,52 @@ ENDIF;
 [ ScopeSub; x_scope_count=0; LoopOverScope(#r$Print_ScL, noun);
   if (x_scope_count==0) "Nothing is in scope.";
 ];
+
+#ifdef TARGET_GLULX;
+[ GlkListSub id val;
+  id = glk($0020, 0, gg_arguments); ! window_iterate
+  while (id) {
+    print "Window ", id, " (", gg_arguments-->0, "): ";
+    val = glk($0028, id); ! window_get_type
+    switch (val) {
+      1: print "pair";
+      2: print "blank";
+      3: print "textbuffer";
+      4: print "textgrid";
+      5: print "graphics";
+      default: print "unknown";
+    }
+    val = glk($0029, id); ! window_get_parent
+    if (val) print ", parent is window ", val;
+    else print ", no parent (root)";
+    val = glk($002C, id); ! window_get_stream
+    print ", stream ", val;
+    val = glk($002E, id); ! window_get_echo_stream
+    if (val) print ", echo stream ", val;
+    print "^";
+    id = glk($0020, id, gg_arguments); ! window_iterate
+  }
+  id = glk($0040, 0, gg_arguments); ! stream_iterate
+  while (id) {
+    print "Stream ", id, " (", gg_arguments-->0, ")^";
+    id = glk($0040, id, gg_arguments); ! stream_iterate
+  }
+  id = glk($0064, 0, gg_arguments); ! fileref_iterate
+  while (id) {
+    print "Fileref ", id, " (", gg_arguments-->0, ")^";
+    id = glk($0064, id, gg_arguments); ! fileref_iterate
+  }
+  val = glk($0004, 8, 0); ! gestalt, Sound
+  if (val) {
+    id = glk($00F0, 0, gg_arguments); ! schannel_iterate
+    while (id) {
+      print "Soundchannel ", id, " (", gg_arguments-->0, ")^";
+      id = glk($00F0, id, gg_arguments); ! schannel_iterate
+    }
+  }
+];
+#endif; ! TARGET_;
+
 #ENDIF;
 
 ! ----------------------------------------------------------------------------

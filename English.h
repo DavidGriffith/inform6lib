@@ -1,5 +1,5 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 991113
+!   Inform Language Definition File: English 000629
 !
 !   (c) Graham Nelson 1997, 1998, 1999
 !
@@ -350,7 +350,11 @@ Constant WHICH__TX    = "which ";
                       print ", see some suggestions for AMUSING things to do";
                   " or QUIT?";
                6: "[Your interpreter does not provide ~undo~.  Sorry!]";
+#ifdef TARGET_ZCODE;
                7: "~Undo~ failed.  [Not all interpreters provide it.]";
+#ifnot; ! TARGET_GLULX
+               7: "[You cannot ~undo~ any further.]";
+#endif; ! TARGET_
                8: "Please give one of the answers above.";
                9: "^It is now pitch dark in here!";
               10: "I beg your pardon?";
@@ -667,7 +671,7 @@ Constant WHICH__TX    = "which ";
   Look:    switch(n)
            {   1: print " (on ", (the) x1, ")";
                2: print " (in ", (the) x1, ")";
-               3: print " (as "; @print_obj x1; print ")";
+               3: print " (as ", (object) x1, ")";
                4: print "^On ", (the) x1;
                   WriteListFrom(child(x1),
                       ENGLISH_BIT + RECURSE_BIT + PARTINV_BIT

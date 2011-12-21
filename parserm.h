@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 991113
+!  Supplied for use with Inform 6                         Serial number 000629
 !                                                                 Release 6/10
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
@@ -45,7 +45,6 @@
 ! ----------------------------------------------------------------------------
 
 System_file;
-Constant NULL = $ffff;
 
 IFDEF MODULE_MODE;
 Constant DEBUG;
@@ -63,16 +62,46 @@ Global sline2;                       ! Must be third
 ! ------------------------------------------------------------------------------
 !   Z-Machine and interpreter issues
 ! ------------------------------------------------------------------------------
+#ifdef TARGET_ZCODE;
 Global top_object;                   ! Largest valid number of any tree object
 Global standard_interpreter;         ! The version number of the Z-Machine
                                      ! Standard which the interpreter claims
                                      ! to support, in form (upper byte).(lower)
+! ### these globals are not meaningful... well, maybe standard_interpreter,
+! but I'll decide that later.
+#endif; ! TARGET_ZCODE
 Global undo_flag;                    ! Can the interpreter provide "undo"?
 Global just_undone;                  ! Can't have two successive UNDOs
+#ifdef TARGET_ZCODE;
 Global transcript_mode;              ! true when game scripting is on
 IFDEF DEBUG;
 Global xcommsdir;                    ! true if command recording is on
 ENDIF;
+#endif; ! TARGET_ZCODE
+#ifdef TARGET_GLULX;
+Constant GG_MAINWIN_ROCK  201;
+Constant GG_STATUSWIN_ROCK  202;
+Constant GG_QUOTEWIN_ROCK  203;
+Constant GG_SAVESTR_ROCK 301;
+Constant GG_SCRIPTSTR_ROCK 302;
+Constant GG_COMMANDWSTR_ROCK 303;
+Constant GG_COMMANDRSTR_ROCK 304;
+Constant GG_SCRIPTFREF_ROCK 401;
+Array gg_event --> 4;
+Array gg_arguments --> 8;
+Global gg_mainwin = 0;
+Global gg_statuswin = 0;
+Global gg_quotewin = 0;
+Global gg_scriptfref = 0;
+Global gg_scriptstr = 0;
+Global gg_savestr = 0;
+Global gg_statuswin_cursize = 0;
+Global gg_statuswin_size = 1;
+IFDEF DEBUG;
+Global gg_commandstr = 0;
+Global gg_command_reading = 0; ! true if gg_commandstr is being replayed
+ENDIF;
+#endif; ! TARGET_GLULX
 ! ------------------------------------------------------------------------------
 !   Time and score
 ! (for linkage reasons, the task_* arrays are created not here but in verblib.h)
@@ -195,7 +224,7 @@ Global toomany_flag;                 ! Flag for "multiple match too large"
 Global special_word;                 ! Dictionary address for "special" token
 Global special_number;               ! Number typed for "special" token
 Global parsed_number;                ! For user-supplied parsing routines
-Global consult_from;                 ! Word that a "consult" topic starts on
+Global consult_from;                 ! Word that a "consult" topic starts on
 Global consult_words;                ! ...and number of words in topic
 ! ------------------------------------------------------------------------------
 !   Implicit taking
@@ -269,9 +298,17 @@ Global found_tdata;                  ! and data (by AnalyseToken)
 Global token_filter;                 ! For noun filtering by user routines
 
 Global length_of_noun;               ! Set by NounDomain to no of words in noun
+#ifdef TARGET_ZCODE;
 Constant REPARSE_CODE = 10000;       ! Signals "reparse the text" as a reply
                                      ! from NounDomain
-
+#ifnot; ! TARGET_GLULX
+Constant REPARSE_CODE = $40000000;   ! The parser rather gunkily adds addresses
+                                     ! to REPARSE_CODE for some purposes.
+                                     ! And expects the result to be greater
+                                     ! than REPARSE_CODE (signed comparison).
+                                     ! So Glulx Inform is limited to a single
+                                     ! gigabyte of storage, for the moment.
+#endif; ! TARGET_
 Global lookahead;                    ! The token after the one now being matched
 
 Global multi_mode;                   ! Multiple mode
@@ -342,11 +379,31 @@ Global bestguess_score;              ! What did the best-guess object score?
 ! ------------------------------------------------------------------------------
 !   Low level textual manipulation
 ! ------------------------------------------------------------------------------
+#ifdef TARGET_ZCODE;
+
+Constant INPUT_BUFFER_LEN = 120;     ! Length of buffer array (although we
+                                     ! leave an extra byte to allow for
+                                     ! interpreter bugs)
+
 Array  buffer    -> 121;             ! Buffer for parsing main line of input
 Array  parse     -> 65;              ! Parse table mirroring it
 Array  buffer2   -> 121;             ! Buffers for supplementary questions
 Array  parse2    -> 65;              !
 Array  buffer3   -> 121;             ! Buffer retaining input for "again"
+
+#ifnot; ! TARGET_GLULX
+
+Constant INPUT_BUFFER_LEN = 260;     ! No extra byte necessary
+Constant MAX_BUFFER_WORDS = 20;
+Constant PARSE_BUFFER_LEN = 244;     ! 4 + MAX_BUFFER_WORDS*4;
+
+Array  buffer    -> INPUT_BUFFER_LEN;
+Array  parse     -> PARSE_BUFFER_LEN;
+Array  buffer2   -> INPUT_BUFFER_LEN;
+Array  parse2    -> PARSE_BUFFER_LEN;
+Array  buffer3   -> INPUT_BUFFER_LEN;
+
+#endif; ! TARGET_
 
 Constant comma_word = 'comma,';      ! An "untypeable word" used to substitute
                                      ! for commas in parse buffers
@@ -543,6 +600,7 @@ Constant ENDIT_TOKEN       = 15;     ! Value used to mean "end of grammar line"
     found_ttype = (token->0) & $$1111;
     found_tdata = (token+1)-->0;
 ];
+#ifdef TARGET_ZCODE;
 [ UnpackGrammarLine line_address i;
   for (i = 0 : i < 32 : i++)
   {   line_token-->i = ENDIT_TOKEN;
@@ -565,11 +623,113 @@ Constant ENDIT_TOKEN       = 15;     ! Value used to mean "end of grammar line"
   }
   return line_address + 1;
 ];
+#ifnot; ! TARGET_GLULX
+[ UnpackGrammarLine line_address i;
+  for (i = 0 : i < 32 : i++)
+  {   line_token-->i = ENDIT_TOKEN;
+      line_ttype-->i = ELEMENTARY_TT;
+      line_tdata-->i = ENDIT_TOKEN;
+  }
+  @aloads line_address 0 action_to_be;
+  action_reversed = (((line_address->2) & 1) ~= 0);
+  line_address = line_address - 2;
+  params_wanted = 0;
+  for (i=0::i++)
+  {   line_address = line_address + 5;
+      if (line_address->0 == ENDIT_TOKEN) break;
+      line_token-->i = line_address;
+      AnalyseToken(line_address);
+      if (found_ttype ~= PREPOSITION_TT) params_wanted++;
+      line_ttype-->i = found_ttype;
+      line_tdata-->i = found_tdata;
+  }
+  return line_address + 1;
+];
+#endif; ! TARGET_
 #Endif;
 
 !  To protect against a bug in early versions of the "Zip" interpreter:
+!  Of course, in Glulx, this routine actually performs work.
+
+#ifdef TARGET_ZCODE;
 
 [ Tokenise__ b p; b->(2 + b->1) = 0; @tokenise b p; ];
+
+#endif; ! TARGET_ZCODE
+
+#ifdef TARGET_GLULX;
+
+Array gg_tokenbuf -> DICT_WORD_SIZE;
+
+[ GGWordCompare str1 str2 ix jx;
+  for (ix=0 : ix < DICT_WORD_SIZE : ix++) {
+    jx = (str1->ix) - (str2->ix);
+    if (jx ~= 0)
+      return jx;
+  }
+  return 0;
+];
+
+[ Tokenise__ buf tab 
+    cx numwords len bx ix wx wpos wlen val res dictlen entrylen;
+  len = buf-->0;
+  buf = buf+WORDSIZE;
+
+  ! First, split the buffer up into words. We use the standard Infocom
+  ! list of word separators (comma, period, double-quote).
+
+  cx = 0;
+  numwords = 0;
+  while (cx < len) {
+    while (cx < len && buf->cx == ' ')
+      cx++;
+    if (cx >= len)
+      break;
+    bx = cx;
+    if (buf->cx == '.' or ',' or '"') {
+      cx++;
+    }
+    else {
+      while (cx < len && buf->cx ~= ' ' or '.' or ',' or '"')
+        cx++;
+    }
+    tab-->(numwords*3+2) = (cx-bx);
+    tab-->(numwords*3+3) = WORDSIZE+bx;
+    numwords++;
+    if (numwords >= MAX_BUFFER_WORDS)
+      break;
+  }
+  tab-->0 = numwords;  
+
+  ! Now we look each word up in the dictionary.
+
+  dictlen = #dictionary_table-->0;
+  entrylen = DICT_WORD_SIZE + 7;
+
+  for (wx=0 : wx < numwords : wx++) {
+    wlen = tab-->(wx*3+2);
+    wpos = tab-->(wx*3+3);
+
+    ! Copy the word into the gg_tokenbuf array, clipping to DICT_WORD_SIZE
+    ! characters and lower case.
+    if (wlen > DICT_WORD_SIZE)
+      wlen = DICT_WORD_SIZE;
+    cx = wpos-WORDSIZE;
+    for (ix=0 : ix < wlen : ix++) {
+      gg_tokenbuf->ix = glk($00A0, buf->(cx+ix));
+    }
+    for ( : ix < DICT_WORD_SIZE : ix++) {
+      gg_tokenbuf->ix = 0;
+    }
+
+    val = #dictionary_table + WORDSIZE;
+    @binarysearch gg_tokenbuf DICT_WORD_SIZE val entrylen dictlen
+      1 1 res;
+    tab-->(wx*3+1) = res;
+  }
+];
+
+#endif; ! TARGET_GLULX
 
 ! ============================================================================
 !  The InformParser object abstracts the front end of the parser.
@@ -603,9 +763,179 @@ Object InformParser "(Inform Parser)"
 !  Return the number of words typed
 ! ----------------------------------------------------------------------------
 
+#ifdef TARGET_ZCODE;
+
 [ KeyboardPrimitive  a_buffer a_table;
   read a_buffer a_table;
 ];
+
+#ifnot; ! TARGET_GLULX
+
+[ KeyCharPrimitive win nostat done res ix jx ch;
+  jx = ch; ! squash compiler warnings
+  if (win == 0)
+    win = gg_mainwin;
+#IFDEF DEBUG;
+  if (gg_commandstr ~= 0 && gg_command_reading ~= false) {
+    ! get_line_stream
+    done = glk($0091, gg_commandstr, gg_arguments, 31);
+    if (done == 0) {
+      glk($0044, gg_commandstr, 0); ! stream_close
+      gg_commandstr = 0;
+      gg_command_reading = false;
+      ! fall through to normal user input.
+    }
+    else {
+      ! Trim the trailing newline
+      if (gg_arguments->(done-1) == 10)
+        done = done-1;
+      res = gg_arguments->0;
+      if (res == '\') {
+        res = 0;
+        for (ix=1 : ix<done : ix++) {
+          ch = gg_arguments->ix;
+          if (ch >= '0' && ch <= '9') {
+            @shiftl res 4 res;
+            res = res + (ch-'0');
+          }
+          else if (ch >= 'a' && ch <= 'f') {
+            @shiftl res 4 res;
+            res = res + (ch+10-'a');
+          }
+          else if (ch >= 'A' && ch <= 'F') {
+            @shiftl res 4 res;
+            res = res + (ch+10-'A');
+          }
+        }
+      }
+      jump KCPContinue;
+    }
+  }
+#ENDIF;
+  done = false;
+  glk($00D2, win); ! request_char_event
+  while (~~done) {
+    glk($00C0, gg_event); ! select
+    switch (gg_event-->0) {
+      5: ! evtype_Arrange
+        if (nostat) {
+          glk($00D3, win); ! cancel_char_event
+          res = $80000000;
+          done = true;
+          break;
+        }
+        DrawStatusLine();
+      2: ! evtype_CharInput
+        if (gg_event-->1 == win) {
+          res = gg_event-->2;
+          done = true;
+        }
+    }
+    ix = HandleGlkEvent(gg_event, 1, gg_arguments);
+    if (ix == 2) {
+      res = gg_arguments-->0;
+      done = true;
+    }
+    else if (ix == -1) {
+      done = false;
+    }
+  }
+#IFDEF DEBUG;
+  if (gg_commandstr ~= 0 && gg_command_reading == false) {
+    if (res < 32 || res >= 256 || (res == '\' or ' ')) {
+      glk($0081, gg_commandstr, '\'); ! put_buffer_char
+      done = 0;
+      jx = res;
+      for (ix=0 : ix<8 : ix++) {
+        @ushiftr jx 28 ch;
+        @shiftl jx 4 jx;
+        ch = ch & $0F;
+        if (ch ~= 0 || ix == 7) done = 1;
+        if (done) {
+          if (ch >= 0 && ch <= 9)
+            ch = ch + '0';
+          else
+            ch = (ch - 10) + 'A';
+          glk($0081, gg_commandstr, ch); ! put_buffer_char
+        }
+      }
+    }
+    else {
+      glk($0081, gg_commandstr, res); ! put_buffer_char
+    }
+    glk($0081, gg_commandstr, 10); ! put_char_stream (newline)
+  }
+#ENDIF;
+.KCPContinue;
+  return res;
+];
+
+[ KeyboardPrimitive  a_buffer a_table done ix;
+#IFDEF DEBUG;
+  if (gg_commandstr ~= 0 && gg_command_reading ~= false) {
+    ! get_line_stream
+    done = glk($0091, gg_commandstr, a_buffer+WORDSIZE,
+      (INPUT_BUFFER_LEN-WORDSIZE)-1);
+    if (done == 0) {
+      glk($0044, gg_commandstr, 0); ! stream_close
+      gg_commandstr = 0;
+      gg_command_reading = false;
+      print "[Command replay complete.]^";
+      ! fall through to normal user input.
+    }
+    else {
+      ! Trim the trailing newline
+      if ((a_buffer+WORDSIZE)->(done-1) == 10)
+        done = done-1;
+      a_buffer-->0 = done;
+      glk($0086, 8); ! set input style
+      glk($0084, a_buffer+WORDSIZE, done); ! put_buffer
+      glk($0086, 0); ! set normal style
+      print "^";
+      jump KPContinue;
+    }
+  }
+#ENDIF;
+  done = false;
+  glk($00D0, gg_mainwin, a_buffer+WORDSIZE, INPUT_BUFFER_LEN-WORDSIZE, 
+    0); ! request_line_event
+  while (~~done) {
+    glk($00C0, gg_event); ! select
+    switch (gg_event-->0) {
+      5: ! evtype_Arrange
+        DrawStatusLine();
+      3: ! evtype_LineInput
+        if (gg_event-->1 == gg_mainwin) {
+          a_buffer-->0 = gg_event-->2;
+          done = true;
+        }
+    }
+    ix = HandleGlkEvent(gg_event, 0, a_buffer);
+    if (ix == 2) {
+      done = true;
+    }
+    else if (ix == -1) {
+      done = false;
+    }
+  }
+#IFDEF DEBUG;
+  if (gg_commandstr ~= 0 && gg_command_reading == false) {
+    ! put_buffer_stream
+    glk($0085, gg_commandstr, a_buffer+WORDSIZE, a_buffer-->0); 
+    glk($0081, gg_commandstr, 10); ! put_char_stream (newline)
+  }
+#ENDIF;
+.KPContinue;
+  Tokenise__(a_buffer,a_table);
+  ! It's time to close any quote window we've got going.
+  if (gg_quotewin) {
+    glk($0024, gg_quotewin, 0); ! close_window
+    gg_quotewin = 0;
+  }
+];
+
+#endif; ! TARGET_
+
 [ Keyboard  a_buffer a_table  nw i w w2 x1 x2;
 
     DisplayStatus();
@@ -619,8 +949,10 @@ Object InformParser "(Inform Parser)"
 !  In case of an array entry corruption that shouldn't happen, but would be
 !  disastrous if it did:
 
-   a_buffer->0 = 120;
+#ifdef TARGET_ZCODE;
+   a_buffer->0 = INPUT_BUFFER_LEN;
    a_table->0 = 15;  ! Allow to split input into this many words
+#endif; ! TARGET_
 
 !  Print the prompt, and read in the words and dictionary addresses
 
@@ -628,13 +960,18 @@ Object InformParser "(Inform Parser)"
     AfterPrompt();
     #IFV5; DrawStatusLine(); #ENDIF;
     KeyboardPrimitive(a_buffer, a_table);
+#ifdef TARGET_ZCODE;
     nw=a_table->1;
+#ifnot; ! TARGET_GLULX
+    nw=a_table-->0;
+#endif; ! TARGET_
 
 !  If the line was blank, get a fresh line
     if (nw == 0)
     { L__M(##Miscellany,10); jump FreshInput; }
 
 !  Unless the opening word was "oops", return
+!  Conveniently, a_table-->1 is the first word in both ZCODE and GLULX.
 
     w=a_table-->1;
     if (w == OOPS1__WD or OOPS2__WD or OOPS3__WD) jump DoOops;
@@ -642,7 +979,12 @@ Object InformParser "(Inform Parser)"
 #IFV5;
 !  Undo handling
 
-    if ((w == UNDO1__WD or UNDO2__WD or UNDO3__WD) && (parse->1==1))
+!  In Graham's 6/9 code, the following line tests (parse->1==1) instead
+!  of (nw==1). I believe that's wrong. In particular, it prevents "undo"
+!  from working during "Which do you mean...?" disambiguation, because
+!  input at that prompt goes into parse2 instead of parse.
+
+    if ((w == UNDO1__WD or UNDO2__WD or UNDO3__WD) && (nw==1))
     {   if (turns==1)
         {   L__M(##Miscellany,11); jump FreshInput;
         }
@@ -650,25 +992,52 @@ Object InformParser "(Inform Parser)"
         {   L__M(##Miscellany,6); jump FreshInput;
         }
         if (undo_flag==1) jump UndoFailed;
+#ifdef TARGET_ZCODE;
+        ! The just_undone check shouldn't be done in Glulx, as multiple
+        ! undo is possible.
         if (just_undone==1)
         {   L__M(##Miscellany,12); jump FreshInput;
         }
         @restore_undo i;
+#ifnot; ! TARGET_GLULX
+        @restoreundo i;
+        i = (~~i);
+#endif; ! TARGET_
         if (i==0)
         {   .UndoFailed;
             L__M(##Miscellany,7);
         }
         jump FreshInput;
     }
+#ifdef TARGET_ZCODE;
     @save_undo i;
+#ifnot; ! TARGET_GLULX
+    @saveundo i;
+    if (i == -1) {
+        GGRecoverObjects();
+        i = 2;
+    }
+    else {
+        i = (~~i);
+    }
+#endif; ! TARGET_
     just_undone=0;
     undo_flag=2;
     if (i==-1) undo_flag=0;
     if (i==0) undo_flag=1;
     if (i==2)
-    {   style bold;
+    {
+#ifdef TARGET_ZCODE;
+        style bold;
+#ifnot; ! TARGET_GLULX
+        glk($0086, 4); ! set subheader style
+#endif; ! TARGET_
         print (name) location, "^";
+#ifdef TARGET_ZCODE;
         style roman;
+#ifnot; ! TARGET_GLULX
+        glk($0086, 0); ! set normal style
+#endif; ! TARGET_
         L__M(##Miscellany,13);
         just_undone=1;
         jump FreshInput;
@@ -688,9 +1057,14 @@ Object InformParser "(Inform Parser)"
 !  So now we know: there was a previous mistake, and the player has
 !  attempted to correct a single word of it.
 
-    for (i=0:i<=120:i++) buffer2->i = a_buffer->i;
+    for (i=0:i<INPUT_BUFFER_LEN:i++) buffer2->i = a_buffer->i;
+#ifdef TARGET_ZCODE;
     x1 = a_table->9; ! Start of word following "oops"
     x2 = a_table->8; ! Length of word following "oops"
+#ifnot; ! TARGET_GLULX
+    x1 = a_table-->6; ! Start of word following "oops"
+    x2 = a_table-->5; ! Length of word following "oops"
+#endif; ! TARGET_
 
 !  Repair the buffer to the text that was in it before the "oops"
 !  was typed:
@@ -700,8 +1074,13 @@ Object InformParser "(Inform Parser)"
 
 !  Work out the position in the buffer of the word to be corrected:
 
+#ifdef TARGET_ZCODE;
     w = a_table->(4*oops_from + 1); ! Start of word to go
     w2 = a_table->(4*oops_from);    ! Length of word to go
+#ifnot; ! TARGET_GLULX
+    w = a_table-->(3*oops_from);      ! Start of word to go
+    w2 = a_table-->(3*oops_from - 1); ! Length of word to go
+#endif; ! TARGET_
 
 !  Write spaces over the word to be corrected:
 
@@ -710,12 +1089,17 @@ Object InformParser "(Inform Parser)"
     if (w2 < x2)
     {   ! If the replacement is longer than the original, move up...
 
-        for (i=120:i>=w+x2:i--)
+        for (i=INPUT_BUFFER_LEN-1:i>=w+x2:i--)
             a_buffer->i = a_buffer->(i-x2+w2);
 
         ! ...increasing buffer size accordingly.
 
+#ifdef TARGET_ZCODE;
         a_buffer->1 = (a_buffer->1) + (x2-w2);
+#ifnot; ! TARGET_GLULX
+        a_buffer-->0 = (a_buffer-->0) + (x2-w2);
+#endif; ! TARGET_
+
     }
 
 !  Write the correction in:
@@ -723,10 +1107,16 @@ Object InformParser "(Inform Parser)"
     for (i=0:i<x2:i++) a_buffer->(i+w) = buffer2->(i+x1);
 
     Tokenise__(a_buffer,a_table);
+#ifdef TARGET_ZCODE;
     nw=a_table->1;
+#ifnot; ! TARGET_GLULX
+    nw=a_table-->0;
+#endif; ! TARGET_
 
     return nw;
 ];
+
+
 
 ! ----------------------------------------------------------------------------
 !  To simplify the picture a little, a rough map of the main routine:
@@ -779,7 +1169,11 @@ Object InformParser "(Inform Parser)"
 !  Initially assume the command is aimed at the player, and the verb
 !  is the first word
 
+#ifdef TARGET_ZCODE;
     num_words=parse->1;
+#ifnot; ! TARGET_GLULX
+    num_words=parse-->0;
+#endif; ! TARGET_
     wn=1;
 #ifdef LanguageToInformese;
     LanguageToInformese();
@@ -790,23 +1184,38 @@ Object InformParser "(Inform Parser)"
 #endif;
 
     BeforeParsing();
+#ifdef TARGET_ZCODE;
     num_words=parse->1;
+#ifnot; ! TARGET_GLULX
+    num_words=parse-->0;
+#endif; ! TARGET_
 
     k=0;
 #ifdef DEBUG;
     if (parser_trace>=2)
     {   print "[ ";
         for (i=0:i<num_words:i++)
-        {   j=parse-->(i*2 + 1);
+        {
+#ifdef TARGET_ZCODE;
+            j=parse-->(i*2 + 1);
+#ifnot; ! TARGET_GLULX
+            j=parse-->(i*3 + 1);
+#endif; ! TARGET_
             k=WordAddress(i+1);
             l=WordLength(i+1);
             print "~"; for (m=0:m<l:m++) print (char) k->m; print "~ ";
 
             if (j == 0) print "?";
             else
-            {   if (UnsignedCompare(j, 0-->4)>=0
+            {
+#ifdef TARGET_ZCODE;
+                if (UnsignedCompare(j, 0-->4)>=0
                     && UnsignedCompare(j, 0-->2)<0) print (address) j;
                 else print j;
+#ifnot; ! TARGET_GLULX
+                if (j->0 == $60) print (address) j;
+                else print j;
+#endif; ! TARGET_
             }
             if (i ~= num_words-1) print " / ";
         }
@@ -843,16 +1252,21 @@ Object InformParser "(Inform Parser)"
     if (verb_word==AGAIN1__WD)
     {   if (actor~=player)
         {   L__M(##Miscellany,20); jump ReType; }
+#ifdef TARGET_ZCODE;
         if (buffer3->1==0)
         {   L__M(##Miscellany,21); jump ReType; }
-        for (i=0:i<120:i++) buffer->i=buffer3->i;
+#ifnot; ! TARGET_GLULX
+        if (buffer3-->0==0)
+        {   L__M(##Miscellany,21); jump ReType; }
+#endif; ! TARGET_
+        for (i=0:i<INPUT_BUFFER_LEN:i++) buffer->i=buffer3->i;
         jump ReParse;
     }
 
 !  Save the present input in case of an "again" next time
 
     if (verb_word~=AGAIN1__WD)
-        for (i=0:i<120:i++) buffer3->i=buffer->i;
+        for (i=0:i<INPUT_BUFFER_LEN:i++) buffer3->i=buffer->i;
 
     if (usual_grammar_after==0)
     {   i = RunRoutines(actor, grammar);
@@ -986,6 +1400,7 @@ Object InformParser "(Inform Parser)"
         jump BeginCommand;
     }
 
+
 !  **** (D) ****
 
    .VerbAccepted;
@@ -1009,7 +1424,11 @@ Object InformParser "(Inform Parser)"
 !  7 in the Z-machine (in the header), so as to get the address of the syntax
 !  table for the given verb...
 
+#ifdef TARGET_ZCODE;
     syntax=(0-->7)-->i;
+#ifnot; ! TARGET_GLULX
+    syntax=(#grammar_table)-->(i+1);
+#endif; ! TARGET_
 
 !  ...and then see how many lines (ie, different patterns corresponding to the
 !  same verb) are stored in the parse table...
@@ -1442,7 +1861,8 @@ Object InformParser "(Inform Parser)"
            !   prevents an infinite loop on "i. again"
 
            i = WordAddress(wn-2)-buffer;
-           if (wn > num_words) j = 119; else j = WordAddress(wn)-buffer;
+           if (wn > num_words) j = INPUT_BUFFER_LEN-1; 
+           else j = WordAddress(wn)-buffer;
            for (:i<j:i++) buffer3->i = ' ';
        }
        Tokenise__(buffer,parse); held_back_mode = true; return;
@@ -1628,7 +2048,7 @@ Constant UNLIT_BIT  =  32;
 
                NUMBER_TOKEN:
                    l=TryNumber(wn++);
-                   if (l==-1000) { etype=NUMBER_PE; return GPR_FAIL; }
+                   if (l==-1000) { etype=NUMBER_PE; return GPR_FAIL; } 
                    #ifdef DEBUG;
                    if (parser_trace>=3) print "  [Read number as ", l, "]^";
                    #endif;
@@ -1776,7 +2196,7 @@ Constant UNLIT_BIT  =  32;
             for (l=1:l<=LanguageDescriptors-->0:l=l+4)
                 if (o == LanguageDescriptors-->l) jump AssumeDescriptor;
             pronoun__word=pronoun_word; pronoun__obj=pronoun_obj;
-            etype=VAGUE_PE; return GPR_FAIL;
+            etype=VAGUE_PE; return GPR_FAIL; 
         }
     }
 
@@ -1790,7 +2210,7 @@ Constant UNLIT_BIT  =  32;
 
     .TryAgain;
 !   First, we parse any descriptive words (like "the", "five" or "every"):
-    l = Descriptors(token_allows_multiple);
+    l = Descriptors(token_allows_multiple); 
     if (l~=0) { etype=l; return GPR_FAIL; }
 
     .TryAgain2;
@@ -2140,9 +2560,12 @@ Constant UNLIT_BIT  =  32;
 !  ...and get an answer:
 
   .WhichOne;
-  for (i=2:i<120:i++) buffer2->i=' ';
+#ifdef TARGET_ZCODE;
+  for (i=2:i<INPUT_BUFFER_LEN:i++) buffer2->i=' ';
+#endif; ! TARGET_ZCODE
   answer_words=Keyboard(buffer2, parse2);
 
+!  Conveniently, parse2-->1 is the first word in both ZCODE and GLULX.
   first_word=(parse2-->1);
 
 !  Take care of "all", because that does something too clever here to do
@@ -2193,13 +2616,30 @@ Constant UNLIT_BIT  =  32;
 !  becomes "take music red button".  The parser will thus have three
 !  words to work from next time, not two.)
 
-  k = WordAddress(match_from) - buffer; l=buffer2->1+1;
+#ifdef TARGET_ZCODE;
+
+  k = WordAddress(match_from) - buffer; l=buffer2->1+1; 
   for (j=buffer + buffer->0 - 1: j>= buffer+k+l: j--)
       j->0 = 0->(j-l);
   for (i=0:i<l:i++) buffer->(k+i) = buffer2->(2+i);
   buffer->(k+l-1) = ' ';
   buffer->1 = buffer->1 + l;
   if (buffer->1 >= (buffer->0 - 1)) buffer->1 = buffer->0;
+
+#ifnot; ! TARGET_GLULX
+
+  k = WordAddress(match_from) - buffer;
+  l = (buffer2-->0) + 1;
+  for (j=buffer+INPUT_BUFFER_LEN-1 : j >= buffer+k+l : j--)
+      j->0 = j->(-l);
+  for (i=0:i<l:i++) 
+      buffer->(k+i) = buffer2->(WORDSIZE+i);
+  buffer->(k+l-1) = ' ';
+  buffer-->0 = buffer-->0 + l;
+  if (buffer-->0 > (INPUT_BUFFER_LEN-WORDSIZE)) 
+      buffer-->0 = (INPUT_BUFFER_LEN-WORDSIZE);
+
+#endif; ! TARGET_
 
 !  Having reconstructed the input, we warn the parser accordingly
 !  and get out.
@@ -2215,7 +2655,9 @@ Constant UNLIT_BIT  =  32;
   if (context==CREATURE_TOKEN)
       L__M(##Miscellany, 48); else L__M(##Miscellany, 49);
 
-  for (i=2:i<120:i++) buffer2->i=' ';
+#ifdef TARGET_ZCODE;
+  for (i=2:i<INPUT_BUFFER_LEN:i++) buffer2->i=' ';
+#endif; ! TARGET_ZCODE
   answer_words=Keyboard(buffer2, parse2);
 
   first_word=(parse2-->1);
@@ -2243,10 +2685,17 @@ Constant UNLIT_BIT  =  32;
   if (inferfrom ~= 0)
   {   for (j = inferfrom: j<pcount: j++)
       {   if (pattern-->j == PATTERN_NULL) continue;
+#ifdef TARGET_ZCODE;
           i=2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
+#ifnot; ! TARGET_GLULX
+          i = WORDSIZE + buffer-->0;
+          (buffer-->0)++; buffer->(i++) = ' ';
+#endif; ! TARGET_
     
           if (parser_trace >= 5)
           print "[Gluing in inference with pattern code ", pattern-->j, "]^";
+
+! Conveniently, parse2-->1 is the first word in both ZCODE and GLULX.
 
           parse2-->1 = 0;
 
@@ -2271,33 +2720,52 @@ Constant UNLIT_BIT  =  32;
           }
     
           ! parse2-->1 now holds the dictionary address of the word to glue in.
-    
+
           if (parse2-->1 ~= 0)
           {   k = buffer + i;
+#ifdef TARGET_ZCODE;
               @output_stream 3 k;
               print (address) parse2-->1;
               @output_stream -3;
               k = k-->0;
               for (l=i:l<i+k:l++) buffer->l = buffer->(l+2);
               i = i + k; buffer->1 = i-2;
+#ifnot; ! TARGET_GLULX
+              k = PrintAnyToArray(buffer+i, INPUT_BUFFER_LEN-i, parse2-->1);
+              i = i + k; buffer-->0 = i - WORDSIZE;
+#endif; ! TARGET_
           }
       }
   }
 
 !  (2) we must glue the newly-typed text onto the end.
 
+#ifdef TARGET_ZCODE;
   i=2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
   for (j=0: j<buffer2->1: i++, j++)
   {   buffer->i = buffer2->(j+2);
       (buffer->1)++;
-      if (buffer->1 == 120) break;
+      if (buffer->1 == INPUT_BUFFER_LEN) break;
   }    
+#ifnot; ! TARGET_GLULX
+  i = WORDSIZE + buffer-->0;
+  (buffer-->0)++; buffer->(i++) = ' ';
+  for (j=0: j<buffer2-->0: i++, j++)
+  {   buffer->i = buffer2->(j+WORDSIZE);
+      (buffer-->0)++;
+      if (buffer-->0 == INPUT_BUFFER_LEN) break;
+  }    
+#endif; ! TARGET_
+
+#ifdef TARGET_ZCODE;
 
 !  (3) we fill up the buffer with spaces, which is unnecessary, but may
 !      help incorrectly-written interpreters to cope.
 
-  for (:i<120:i++) buffer->i = ' ';
+  for (:i<INPUT_BUFFER_LEN:i++) buffer->i = ' ';
 
+#endif; ! TARGET_ZCODE
+ 
   return REPARSE_CODE;
 ];
 
@@ -2762,8 +3230,8 @@ Constant SCORE__DIVISOR = 20;
 !  "name" (i.e. property no. 1) properties.  (Note that the following allows
 !  for repeated words and words in different orders.)
 
-  p1 = o1.&1; n1 = (o1.#1)/2;
-  p2 = o2.&1; n2 = (o2.#1)/2;
+  p1 = o1.&1; n1 = (o1.#1)/WORDSIZE;
+  p2 = o2.&1; n2 = (o2.#1)/WORDSIZE;
 
 !  for (i=0:i<n1:i++) { print (address) p1-->i, " "; } new_line;
 !  for (i=0:i<n2:i++) { print (address) p2-->i, " "; } new_line;
@@ -2929,11 +3397,24 @@ Constant SCORE__DIVISOR = 20;
 !  (the main parse buffer)
 ! ----------------------------------------------------------------------------
 
+#ifdef TARGET_ZCODE;
+
 [ MoveWord at1 b2 at2 x y;
   x=at1*2-1; y=at2*2-1;
   parse-->x++ = b2-->y++;
   parse-->x = b2-->y;
 ];
+
+#ifnot; ! TARGET_GLULX
+
+[ MoveWord at1 b2 at2 x y;
+  x=at1*3-2; y=at2*3-2;
+  parse-->x++ = b2-->y++;
+  parse-->x++ = b2-->y++;
+  parse-->x = b2-->y;
+];
+
+#endif; ! TARGET_
 
 ! ----------------------------------------------------------------------------
 !  SearchScope  domain1 domain2 context
@@ -2951,9 +3432,16 @@ Constant SCORE__DIVISOR = 20;
   if (scope_reason==PARSING_REASON
       && verb_word == 'purloin' or 'tree' or 'abstract'
                        or 'gonear' or 'scope' or 'showobj')
-  {   for (i=selfobj:i<=top_object:i++)
+  {
+#ifdef TARGET_ZCODE;
+      for (i=selfobj:i<=top_object:i++)
           if (i ofclass Object && (parent(i)==0 || parent(i) ofclass Object))
               PlaceInScope(i);
+#ifnot; ! TARGET_GLULX
+      objectloop (i)
+          if (i ofclass Object && (parent(i)==0 || parent(i) ofclass Object))
+              PlaceInScope(i);
+#endif; ! TARGET_
       rtrue;
   }
 #endif;
@@ -3159,14 +3647,22 @@ Constant SCORE__DIVISOR = 20;
 
    ad = domain.&add_to_scope;
    if (ad ~= 0)
-   {   if (UnsignedCompare(ad-->0,top_object) > 0)
+   {   
+       ! Test if the property value is not an object.
+#ifdef TARGET_ZCODE;
+       i = (UnsignedCompare(ad-->0,top_object) > 0);
+#ifnot; ! TARGET_GLULX
+       i = (((ad-->0)->0) ~= $70); 
+#endif; ! TARGET_
+
+       if (i)
        {   ats_flag = 2+context;
            RunRoutines(domain, add_to_scope);
            ats_flag = 0;
        }
        else
        {   n=domain.#add_to_scope;
-           for (i=0:(2*i)<n:i++)
+           for (i=0:(WORDSIZE*i)<n:i++)
                ScopeWithin_O(ad-->i,0,context);
        }
    }
@@ -3349,18 +3845,21 @@ Constant SCORE__DIVISOR = 20;
         if (k>=0) return k;
         m = -k;
     } else m = parser_inflection;
-    k=obj.&m; l=(obj.#m)/2-1;
+    k=obj.&m; l=(obj.#m)/WORDSIZE-1;
     for (m=0:m<=l:m++)
         if (wd==k-->m) rtrue;
     rfalse;
 ];
 
 [ WordInProperty wd obj prop k l m;
-    k=obj.&prop; l=(obj.#prop)/2-1;
+    k=obj.&prop; l=(obj.#prop)/WORDSIZE-1;
     for (m=0:m<=l:m++)
         if (wd==k-->m) rtrue;
     rfalse;
 ];
+
+
+#ifdef TARGET_ZCODE;
 
 [ DictionaryLookup b l i;
   for (i=0:i<l:i++) buffer2->(2+i) = b->i;
@@ -3368,6 +3867,18 @@ Constant SCORE__DIVISOR = 20;
   Tokenise__(buffer2,parse2);
   return parse2-->1;
 ];
+
+#ifnot; ! TARGET_GLULX
+
+[ DictionaryLookup b l i;
+  for (i=0:i<l:i++) buffer2->(WORDSIZE+i) = b->i;
+  buffer2-->0 = l;
+  Tokenise__(buffer2,parse2);
+  return parse2-->1;
+];
+
+#endif; ! TARGET_
+
 
 ! ----------------------------------------------------------------------------
 !  NounWord (which takes no arguments) returns:
@@ -3406,6 +3917,8 @@ Constant SCORE__DIVISOR = 20;
 !  NextWordStopped does the same, but returns -1 when input has run out
 ! ----------------------------------------------------------------------------
 
+#ifdef TARGET_ZCODE;
+
 [ NextWord i j;
    if (wn > parse->1) { wn++; rfalse; }
    i=wn*2-1; wn++;
@@ -3427,6 +3940,32 @@ Constant SCORE__DIVISOR = 20;
 [ WordLength wordnum;
    return parse->(wordnum*4);
 ];
+
+#ifnot; ! TARGET_GLULX
+
+[ NextWord i j;
+   if (wn > parse-->0) { wn++; rfalse; }
+   i=wn*3-2; wn++;
+   j=parse-->i;
+   if (j == ',//') j=comma_word;
+   if (j == './/') j=THEN1__WD;
+   return j;
+];   
+
+[ NextWordStopped;
+   if (wn > parse-->0) { wn++; return -1; }
+   return NextWord();
+];
+
+[ WordAddress wordnum;
+   return buffer + parse-->(wordnum*3);
+];
+
+[ WordLength wordnum;
+   return parse-->(wordnum*3-1);
+];
+
+#endif; ! TARGET_
 
 ! ----------------------------------------------------------------------------
 !  TryNumber is the only routine which really does any character-level
@@ -3452,7 +3991,11 @@ Constant SCORE__DIVISOR = 20;
    i=wn; wn=wordnum; j=NextWord(); wn=i;
    j=NumberWord(j); if (j>=1) return j;
 
+#ifdef TARGET_ZCODE;
    i=wordnum*4+1; j=parse->i; num=j+buffer; len=parse->(i-1);
+#ifnot; ! TARGET_GLULX
+   i=wordnum*3; j=parse-->i; num=j+buffer; len=parse-->(i-1);
+#endif; ! TARGET_
 
    tot=ParseNumber(num, len);  if (tot~=0) return tot;
 
@@ -3512,21 +4055,44 @@ Constant SCORE__DIVISOR = 20;
 !  Converting between dictionary addresses and entry numbers
 ! ----------------------------------------------------------------------------
 
+#ifdef TARGET_ZCODE;
+
 [ Dword__No w; return (w-(0-->4 + 7))/9; ];
 [ No__Dword n; return 0-->4 + 7 + 9*n; ];
+
+#ifnot; ! TARGET_GLULX
+
+! In Glulx, dictionary entries *are* addresses.
+[ Dword__No w; return w; ];
+[ No__Dword n; return n; ];
+
+#endif; ! TARGET_
 
 ! ----------------------------------------------------------------------------
 !  For copying buffers
 ! ----------------------------------------------------------------------------
+
+#ifdef TARGET_ZCODE;
 
 [ CopyBuffer bto bfrom i size;
    size=bto->0;
    for (i=1:i<=size:i++) bto->i=bfrom->i;
 ];
 
+#ifnot; ! TARGET_GLULX
+
+[ CopyBuffer bto bfrom i;
+   for (i=0:i<INPUT_BUFFER_LEN:i++) 
+       bto->i=bfrom->i;
+];
+
+#endif; ! TARGET_
+
 ! ----------------------------------------------------------------------------
 !  Provided for use by language definition files
 ! ----------------------------------------------------------------------------
+
+#ifdef TARGET_ZCODE;
 
 [ LTI_Insert i ch  b y;
 
@@ -3549,6 +4115,34 @@ Constant SCORE__DIVISOR = 20;
   !   And the text is now one character longer:
       if (b->1 < b->0) (b->1)++;
 ];
+
+#ifnot; ! TARGET_GLULX
+
+[ LTI_Insert i ch  b y;
+
+  !   Protect us from strict mode, as this isn't an array in quite the
+  !   sense it expects
+      b = buffer;
+
+  !   Insert character ch into buffer at point i.
+
+  !   Being careful not to let the buffer possibly overflow:
+
+      y = b-->0;
+      if (y > INPUT_BUFFER_LEN) y = INPUT_BUFFER_LEN;
+
+  !   Move the subsequent text along one character:
+
+      for (y=y+WORDSIZE: y>i : y--) b->y = b->(y-1);
+
+      b->i = ch;
+
+  !   And the text is now one character longer:
+      if (b-->0 < INPUT_BUFFER_LEN)
+          (b-->0)++;
+];
+
+#endif; ! TARGET_
 
 ! ============================================================================
 
@@ -3632,21 +4226,30 @@ Constant SCORE__DIVISOR = 20;
 Object InformLibrary "(Inform Library)"
   with play
        [ i j k l;
+#ifdef TARGET_ZCODE;
        standard_interpreter = $32-->0;
        transcript_mode = ((0-->8) & 1);
+#ifnot; ! TARGET_GLULX
+       GGInitialise();
+#endif; ! TARGET_
+
        ChangeDefault(cant_go, CANTGO__TX);
 
-       buffer->0 = 120;
-       buffer2->0 = 120;
-       buffer3->0 = 120;
+#ifdef TARGET_ZCODE;
+       buffer->0 = INPUT_BUFFER_LEN;
+       buffer2->0 = INPUT_BUFFER_LEN;
+       buffer3->0 = INPUT_BUFFER_LEN;
        parse->0 = 64;
        parse2->0 = 64;
+#endif; ! TARGET_ZCODE
        
        real_location = thedark;
        player = selfobj; actor = player;
     
+#ifdef TARGET_ZCODE;
        top_object = #largest_object-255;
-       selfobj.capacity = MAX_CARRIED;
+#endif; ! TARGET_ZCODE
+       selfobj.capacity = MAX_CARRIED; ! ### change?
        #ifdef LanguageInitialise;
        LanguageInitialise();
        #endif;
@@ -3828,13 +4431,21 @@ Object InformLibrary "(Inform Library)"
            if (deadflag==0) jump very__late__error;
     
            print "^^    ";
+#ifdef TARGET_ZCODE;
            #IFV5; style bold; #ENDIF;
+#ifnot; ! TARGET_GLULX
+           glk($0086, 5); ! set alert style
+#endif; ! TARGET_
            print "***";
            if (deadflag==1) L__M(##Miscellany,3);
            if (deadflag==2) L__M(##Miscellany,4);
            if (deadflag>2)  { print " "; DeathMessage(); print " "; }
            print "***";
+#ifdef TARGET_ZCODE;
            #IFV5; style roman; #ENDIF;
+#ifnot; ! TARGET_GLULX
+           glk($0086, 0); ! set normal style
+#endif; ! TARGET_
            print "^^^";
            ScoreSub();
            DisplayStatus();
@@ -3862,8 +4473,8 @@ Object InformLibrary "(Inform Library)"
            {   for (i=0: i<active_timers: i++)
                {   j=the_timers-->i;
                    if (j~=0)
-                   {   print (name) (j&$7fff), ": ";
-                       if (j & $8000) print "daemon";
+                   {   print (name) (j&~WORD_HIGHBIT), ": ";
+                       if (j & WORD_HIGHBIT) print "daemon";
                        else
                        {   print "timer with ",
                                  j.time_left, " turns to go"; }
@@ -3877,7 +4488,7 @@ Object InformLibrary "(Inform Library)"
            {   if (deadflag) return;
                j=the_timers-->i;
                if (j~=0)
-               {   if (j & $8000) RunRoutines(j&$7fff,daemon);
+               {   if (j & WORD_HIGHBIT) RunRoutines(j&~WORD_HIGHBIT,daemon);
                    else
                    {   if (j.time_left==0)
                        {   StopTimer(j);
@@ -3928,21 +4539,49 @@ Object InformLibrary "(Inform Library)"
        ],
   has  proper;
 
+#ifdef TARGET_ZCODE;
+
 [ ActionPrimitive;
   indirect(#actions_table-->action);
 ];
        
+#ifnot; ! TARGET_GLULX
+
+[ ActionPrimitive;
+  indirect(#actions_table-->(action+1));
+];
+       
+#endif; ! TARGET_
+
 [ AfterGameOver i;
    .RRQPL;
    L__M(##Miscellany,5);
    .RRQL;
    print "> ";
+#ifdef TARGET_ZCODE;
    #IFV3; read buffer parse; #ENDIF;
    temp_global=0;
    #IFV5; read buffer parse DrawStatusLine; #ENDIF;
+#ifnot; ! TARGET_GLULX
+   KeyboardPrimitive(buffer, parse);
+#endif; ! TARGET_
    i=parse-->1;
-   if (i==QUIT1__WD or QUIT2__WD) quit;
-   if (i==RESTART__WD)      @restart;
+   if (i==QUIT1__WD or QUIT2__WD) 
+   {
+#ifdef TARGET_ZCODE;
+       quit;
+#ifnot; ! TARGET_GLULX
+       quit;
+#endif; ! TARGET_
+   }
+   if (i==RESTART__WD)
+   {
+#ifdef TARGET_ZCODE;
+       @restart;
+#ifnot; ! TARGET_GLULX
+       @restart;
+#endif; ! TARGET_
+   }
    if (i==RESTORE__WD)      { RestoreSub(); jump RRQPL; }
    if (i==FULLSCORE1__WD or FULLSCORE2__WD && TASKS_PROVIDED==0)
    {   new_line; FullScoreSub(); jump RRQPL; }
@@ -3955,7 +4594,12 @@ Object InformLibrary "(Inform Library)"
            jump RRQPL;
        }
        if (undo_flag==1) jump UndoFailed2;
+#ifdef TARGET_ZCODE;
        @restore_undo i;
+#ifnot; ! TARGET_GLULX
+       @restoreundo i;
+       i = (~~i);
+#endif; ! TARGET_
        if (i==0)
        {   .UndoFailed2; L__M(##Miscellany,7);
        }
@@ -4041,7 +4685,7 @@ Object InformLibrary "(Inform Library)"
 ];
 
 [ PrintOrRun obj prop flag;
-  if (obj.#prop > 2) return RunRoutines(obj,prop);
+  if (obj.#prop > WORDSIZE) return RunRoutines(obj,prop);
   if (obj.prop==NULL) rfalse;
   switch(metaclass(obj.prop))
   {   Class, Object, nothing: return RunTimeError(2,obj,prop);
@@ -4051,6 +4695,7 @@ Object InformLibrary "(Inform Library)"
 ];
 
 [ ValueOrRun obj prop;
+  !### this is entirely unlikely to work. Does anyone care?
   if (obj.prop < 256) return obj.prop;
   return RunRoutines(obj, prop);
 ];
@@ -4062,12 +4707,26 @@ Object InformLibrary "(Inform Library)"
    return obj.prop();
 ];
 
+#ifdef TARGET_ZCODE;
+
 [ ChangeDefault prop val a b;
    ! Use assembly-language here because -S compilation won't allow this:
    @loadw 0 5 -> a;
    b = prop-1;
    @storew a b val;
 ];
+
+#endif; ! TARGET_ZCODE
+
+#ifdef TARGET_GLULX;
+
+[ ChangeDefault prop val;
+   ! Use assembly-language here because -S compilation won't allow this:
+   ! #cpv__start-->prop = val;
+   @astore #cpv__start prop val;
+];
+
+#endif; ! TARGET_GLULX
 
 ! ----------------------------------------------------------------------------
 
@@ -4094,19 +4753,19 @@ Object InformLibrary "(Inform Library)"
 
 [ StartDaemon obj i;
    for (i=0:i<active_timers:i++)
-       if (the_timers-->i == $8000 + obj)
+       if (the_timers-->i == WORD_HIGHBIT + obj)
            rfalse;
    for (i=0:i<active_timers:i++)
        if (the_timers-->i==0) jump FoundTSlot3;
    i=active_timers++;
    if (i >= MAX_TIMERS) RunTimeError(4);
    .FoundTSlot3;
-   the_timers-->i = $8000 + obj;
+   the_timers-->i = WORD_HIGHBIT + obj;
 ];
 
 [ StopDaemon obj i;
    for (i=0:i<active_timers:i++)
-       if (the_timers-->i == $8000 + obj) jump FoundTSlot4;
+       if (the_timers-->i == WORD_HIGHBIT + obj) jump FoundTSlot4;
    rfalse;
    .FoundTSlot4;
    the_timers-->i=0;
@@ -4127,7 +4786,13 @@ Object InformLibrary "(Inform Library)"
 ];
 
 [ NotifyTheScore;
+#ifdef TARGET_GLULX;
+   glk($0086, 6); ! set note style
+#endif; ! TARGET_GLULX
    print "^[";  L__M(##Miscellany, 50, score-last_score);  print ".]^";
+#ifdef TARGET_GLULX;
+   glk($0086, 0); ! set normal style
+#endif; ! TARGET_GLULX
 ];
 
 ! ----------------------------------------------------------------------------
@@ -4186,7 +4851,7 @@ Object InformLibrary "(Inform Library)"
            ats_flag = 0; if (ats_hls == 1) rtrue;
        }
        else
-       {   for (j=0:(2*j)<i.#add_to_scope:j++)
+       {   for (j=0:(WORDSIZE*j)<i.#add_to_scope:j++)
                if (HasLightSource(ad-->j)==1) rtrue;
        }
    }
@@ -4216,6 +4881,7 @@ Object InformLibrary "(Inform Library)"
 ! ----------------------------------------------------------------------------
 
 #IFDEF DEBUG;
+#ifdef TARGET_ZCODE;
 [ DebugParameter w x n l;
   x=0-->4; x=x+(x->0)+1; l=x->0; n=(x+1)-->0; x=w-(x+3);
   print w;
@@ -4239,6 +4905,35 @@ Object InformLibrary "(Inform Library)"
       print (string) anames-->a;
   }
 ];
+#ifnot; ! TARGET_GLULX
+[ DebugParameter w endmem;
+  print w;
+  @getmemsize endmem;
+  if (w >= 1 && w < endmem) {
+    if (w->0 >= $70 && w->0 < $7F) print " (", (name) w, ")";
+    if (w->0 >= $60 && w->0 < $6F) print " ('", (address) w, "')";
+  }
+];
+[ DebugAction a str;
+  if (a>=4096) { print "<fake action ", a-4096, ">"; return; }
+  if (a<0 || a>=#identifiers_table-->7) print "<invalid action ", a, ">";
+  else {
+    str = #identifiers_table-->6;
+    str = str-->a;
+    if (str) print (string) str;
+    else print "<unnamed action ", a, ">";
+  }
+];
+[ DebugAttribute a str;
+  if (a<0 || a>=NUM_ATTR_BYTES*8) print "<invalid attribute ", a, ">";
+  else {
+    str = #identifiers_table-->4;
+    str = str-->a;
+    if (str) print (string) str;
+    else print "<unnamed attribute ", a, ">";
+  }
+];
+#endif; ! TARGET_
 [ TraceAction source ar;
   if (source<2) print "[ Action ", (DebugAction) action;
   else
@@ -4295,6 +4990,7 @@ Object InformLibrary "(Inform Library)"
   print "-> ", (DebugAction) action_to_be;
   if (action_reversed) print " reverse";
 ];
+#ifdef TARGET_ZCODE;
 [ ShowVerbSub address lines da meta i j;
     if (((noun->#dict_par1) & 1) == 0)
       "Try typing ~showverb~ and then the name of a verb.";
@@ -4316,7 +5012,33 @@ Object InformLibrary "(Inform Library)"
         print "    "; DebugGrammarLine(); new_line;
     }
 ];
-[ ShowobjSub c f l a n x;
+#ifnot; ! TARGET_GLULX
+[ ShowVerbSub address lines i j meta wd dictlen entrylen;
+  if (noun == 0 || ((noun->#dict_par1) & 1) == 0)
+    "Try typing ~showverb~ and then the name of a verb.";
+  meta=((noun->#dict_par1) & 2)/2;
+  i = $ff-(noun->#dict_par2);
+  address = (#grammar_table)-->(i+1);
+  lines = address->0;
+  address++;
+  print "Verb ";
+  if (meta) print "meta ";
+  dictlen = #dictionary_table-->0;
+  entrylen = DICT_WORD_SIZE + 7;
+  for (j=0:j<dictlen:j++) {
+    wd = #dictionary_table + WORDSIZE + entrylen*j;
+    if (wd->#dict_par2 == $ff-i)
+      print "'", (address) wd, "' ";
+  }
+  new_line;
+  if (lines == 0) "has no grammar lines.";
+  for (:lines > 0:lines--) {
+    address = UnpackGrammarLine(address);
+    print "    "; DebugGrammarLine(); new_line;
+  }
+];
+#endif; ! TARGET_
+[ ShowobjSub c f l a n x numattr;
    if (noun==0) noun=location;
    objectloop (c ofclass Class) if (noun ofclass c) { f++; l=c; }
    if (f == 1) print (name) l, " ~"; else print "Object ~";
@@ -4328,21 +5050,31 @@ Object InformLibrary "(Inform Library)"
        objectloop (c ofclass Class) if (noun ofclass c) print (name) c, " ";
        new_line;
    }
-   for (a=0,f=0:a<48:a++) if (noun has a) f=1;
+#ifdef TARGET_ZCODE;
+   numattr = 48;
+#ifnot; ! TARGET_GLULX
+   numattr = NUM_ATTR_BYTES * 8;
+#endif; ! TARGET_
+   for (a=0,f=0:a<numattr:a++) if (noun has a) f=1;
    if (f)
    {   print "  has ";
-       for (a=0:a<48:a++) if (noun has a) print (DebugAttribute) a, " ";
+       for (a=0:a<numattr:a++) if (noun has a) print (DebugAttribute) a, " ";
        new_line;
    }
    if (noun ofclass Class) return;
 
-   f=0; l = #identifiers_table-->0;
+   f=0; 
+#ifdef TARGET_ZCODE;
+   l = #identifiers_table-->0;
+#ifnot; ! TARGET_GLULX
+   l = INDIV_PROP_START + #identifiers_table-->3;
+#endif; ! TARGET_
    for (a=1:a<=l:a++)
    {   if ((a~=2 or 3) && noun.&a)
        {   if (f==0) { print "  with "; f=1; }
            print (property) a;
            n = noun.#a;
-           for (c=0:2*c<n:c++)
+           for (c=0:WORDSIZE*c<n:c++)
            {   print " ";
                x = (noun.&a)-->c;
                if (a==name) print "'", (address) x, "'";
@@ -4379,6 +5111,8 @@ Object InformLibrary "(Inform Library)"
 !  drawn in hardware
 ! ----------------------------------------------------------------------------
 
+#ifdef TARGET_ZCODE;
+
 #IFV5;
 [ DrawStatusLine width posa posb;
    @split_window 1; @set_window 1; @set_cursor 1 1; style reverse;
@@ -4410,6 +5144,339 @@ Object InformLibrary "(Inform Library)"
 ];
 #ENDIF;
 
+#endif; ! TARGET_ZCODE
+
+#ifdef TARGET_GLULX;
+
+[ StatusLineHeight hgt parwin;
+  if (gg_statuswin == 0)
+    return;
+  if (hgt == gg_statuswin_cursize)
+    return;
+  parwin = glk($0029, gg_statuswin); ! window_get_parent
+  glk($0026, parwin, $12, hgt, 0); ! window_set_arrangement
+  gg_statuswin_cursize = hgt;
+];
+
+[ DrawStatusLine width height posa posb;
+    ! If we have no status window, we must not try to redraw it.
+    if (gg_statuswin == 0)
+        return;
+
+    ! If there is no player location, we shouldn't try either.
+    if (location == nothing || parent(player) == nothing)
+        return;
+
+    glk($002F, gg_statuswin); ! set_window
+    StatusLineHeight(gg_statuswin_size);
+
+    glk($0025, gg_statuswin, gg_arguments, gg_arguments+4); ! window_get_size
+    width = gg_arguments-->0;
+    height = gg_arguments-->1;
+    posa = width-26; posb = width-13;
+
+    glk($002A, gg_statuswin); ! window_clear
+
+    glk($002B, gg_statuswin, 1, 0); ! window_move_cursor
+    if (location == thedark) {
+        print (name) location;
+    }
+    else {
+        FindVisibilityLevels();
+        if (visibility_ceiling == location)
+            print (name) location;
+        else 
+            print (The) visibility_ceiling;
+    }
+
+    if (width > 66) {
+        glk($002B, gg_statuswin, posa-1, 0); ! window_move_cursor
+        print (string) SCORE__TX, sline1;
+        glk($002B, gg_statuswin, posb-1, 0); ! window_move_cursor
+        print (string) MOVES__TX, sline2;
+    }
+    if (width > 53 && width <= 66) {
+        glk($002B, gg_statuswin, posb-1, 0); ! window_move_cursor
+        print sline1, "/", sline2;
+    }
+
+    glk($002F, gg_mainwin); ! set_window
+];
+
+[ Box__Routine maxwid arr ix lines lastnl parwin;
+    maxwid = 0; ! squash compiler warning
+    lines = arr-->0;
+
+    if (gg_quotewin == 0) {
+        gg_arguments-->0 = lines;
+        ix = InitGlkWindow(GG_QUOTEWIN_ROCK);
+        if (ix == 0) 
+            gg_quotewin = glk($0023, gg_mainwin, $12, lines, 3, 
+                GG_QUOTEWIN_ROCK); ! window_open
+    }
+    else {
+        parwin = glk($0029, gg_quotewin); ! window_get_parent
+        glk($0026, parwin, $12, lines, 0); ! window_set_arrangement
+    }
+
+    lastnl = true;
+    if (gg_quotewin) {
+        glk($002A, gg_quotewin); ! window_clear
+        glk($002F, gg_quotewin); ! set_window
+        lastnl = false;
+    }
+
+    ! If gg_quotewin is zero here, the quote just appears in the story window.
+
+    glk($0086, 7); ! set blockquote style
+    for (ix=0 : ix<lines : ix++) {
+        print (string) arr-->(ix+1);
+        if (ix < lines-1 || lastnl) new_line;
+    }
+    glk($0086, 0); ! set normal style
+
+    if (gg_quotewin) {
+        glk($002F, gg_mainwin); ! set_window
+    }
+];
+
+#endif; ! TARGET_GLULX
+
+#ifdef TARGET_GLULX;
+
+[ GGInitialise res;
+    @gestalt 4 2 res; ! Test if this interpreter has Glk.
+    if (res == 0) {
+      ! Without Glk, we're entirely screwed.
+      quit;
+    }
+    ! Set the VM's I/O system to be Glk.
+    @setiosys 2 0;
+
+    ! First, we must go through all the Glk objects that exist, and see
+    ! if we created any of them. One might think this strange, since the
+    ! program has just started running, but remember that the player might 
+    ! have just typed "restart".
+    GGRecoverObjects();
+
+    res = InitGlkWindow(0);
+    if (res ~= 0)
+        return;
+
+    ! Now, gg_mainwin and gg_storywin might already be set. If not, set them.
+
+    if (gg_mainwin == 0) {
+        ! Open the story window.
+        res = InitGlkWindow(GG_MAINWIN_ROCK);
+        if (res == 0)
+            gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
+        if (gg_mainwin == 0) {
+            ! If we can't even open one window, there's no point in going on.
+            quit;
+        }
+    }
+    else {
+        ! There was already a story window. We should erase it.
+        glk($002A, gg_mainwin); ! window_clear
+    }
+
+    if (gg_statuswin == 0) {
+        res = InitGlkWindow(GG_STATUSWIN_ROCK);
+        if (res == 0) {
+            gg_statuswin_cursize = gg_statuswin_size;
+            gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize, 
+                4, GG_STATUSWIN_ROCK); ! window_open
+        }
+    }
+    ! It's possible that the status window couldn't be opened, in which case
+    ! gg_statuswin is now zero. We must allow for that later on.
+
+    glk($002F, gg_mainwin); ! set_window
+
+    InitGlkWindow(1);
+];
+
+[ GGRecoverObjects id;
+    ! If GGRecoverObjects() has been called, all these stored IDs are
+    ! invalid, so we start by clearing them all out. 
+    ! (In fact, after a restoreundo, some of them may still be good.
+    ! For simplicity, though, we assume the general case.)
+    gg_mainwin = 0;
+    gg_statuswin = 0;
+    gg_quotewin = 0;
+    gg_scriptfref = 0;
+    gg_scriptstr = 0;
+    gg_savestr = 0;
+    gg_statuswin_cursize = 0;
+#IFDEF DEBUG;
+    gg_commandstr = 0;
+    gg_command_reading = false;
+#ENDIF;
+    ! Also tell the game to clear its object references.
+    IdentifyGlkObject(0);
+
+    id = glk($0040, 0, gg_arguments); ! stream_iterate
+    while (id) {
+        switch (gg_arguments-->0) {
+            GG_SAVESTR_ROCK: gg_savestr = id;
+            GG_SCRIPTSTR_ROCK: gg_scriptstr = id;
+#IFDEF DEBUG;
+            GG_COMMANDWSTR_ROCK: gg_commandstr = id;
+                                 gg_command_reading = false;
+            GG_COMMANDRSTR_ROCK: gg_commandstr = id;
+                                 gg_command_reading = true;
+#ENDIF;
+            default: IdentifyGlkObject(1, 1, id, gg_arguments-->0); 
+        }
+        id = glk($0040, id, gg_arguments); ! stream_iterate
+    }
+
+    id = glk($0020, 0, gg_arguments); ! window_iterate
+    while (id) {
+        switch (gg_arguments-->0) {
+            GG_MAINWIN_ROCK: gg_mainwin = id;
+            GG_STATUSWIN_ROCK: gg_statuswin = id;
+            GG_QUOTEWIN_ROCK: gg_quotewin = id;
+            default: IdentifyGlkObject(1, 0, id, gg_arguments-->0); 
+        }
+        id = glk($0020, id, gg_arguments); ! window_iterate
+    }
+
+    id = glk($0064, 0, gg_arguments); ! fileref_iterate
+    while (id) {
+        switch (gg_arguments-->0) {
+            GG_SCRIPTFREF_ROCK: gg_scriptfref = id;
+            default: IdentifyGlkObject(1, 2, id, gg_arguments-->0); 
+        }
+        id = glk($0064, id, gg_arguments); ! fileref_iterate
+    }
+
+    ! Tell the game to tie up any loose ends.
+    IdentifyGlkObject(2);
+];
+
+! This is a trivial function which just prints a number, in decimal
+! digits. It may be useful as a stub to pass to PrintAnything.
+[ DecimalNumber num;
+    print num;
+];
+
+! This somewhat obfuscated function will print anything.
+! It handles strings, functions (with optional arguments), objects,
+! object properties (with optional arguments), and dictionary words.
+! It does *not* handle plain integers, but you can use
+! DecimalNumber or EnglishNumber to handle that case.
+!
+! Calling:                           Is equivalent to:
+! -------                            ----------------
+! PrintAnything()                    <nothing printed>
+! PrintAnything(0)                   <nothing printed>
+! PrintAnything("string");           print (string) "string";
+! PrintAnything('word')              print (address) 'word';
+! PrintAnything(obj)                 print (name) obj;
+! PrintAnything(obj, prop)           obj.prop();
+! PrintAnything(obj, prop, args...)  obj.prop(args...);
+! PrintAnything(func)                func();
+! PrintAnything(func, args...)       func(args...);
+! 
+[ PrintAnything _vararg_count obj mclass;
+    if (_vararg_count == 0)
+        return;
+    @copy sp obj;
+    _vararg_count--;
+    if (obj == 0)
+        return;
+   
+    if (obj->0 == $60) {
+        ! Dictionary word. Metaclass() can't catch this case, so we do
+        ! it manually.
+        print (address) obj;
+        return;
+    }
+
+    mclass = metaclass(obj);
+    switch (mclass) {
+        nothing:
+            return;
+        String:
+            print (string) obj;
+            return;
+        Routine:
+            ! Call the function with all the arguments which are already
+            ! on the stack.
+            @call obj _vararg_count 0;
+            return;
+        Object:
+            if (_vararg_count == 0) {
+                print (name) obj;
+            }
+            else {
+                ! Push the object back onto the stack, and call the
+                ! veneer routine that handles obj.prop() calls.
+                @copy obj sp;
+                _vararg_count++;
+                @call CA__Pr _vararg_count 0;
+            }
+            return;
+    }
+];
+
+! This does the same as PrintAnything, but the output is sent to a
+! byte array in memory. The first two arguments must be the array
+! address and length; the following arguments are interpreted as 
+! for PrintAnything. The return value is the number of characters
+! output.
+! If the output is longer than the array length given, the extra 
+! characters are discarded, so the array does not overflow. 
+! (However, the return value is the total length of the output, 
+! including discarded characters.)
+
+[ PrintAnyToArray _vararg_count arr arrlen str oldstr len;
+
+   @copy sp arr;
+   @copy sp arrlen;
+   _vararg_count = _vararg_count - 2;
+
+   oldstr = glk($0048); ! stream_get_current
+   str = glk($0043, arr, arrlen, 1, 0); ! stream_open_memory
+   if (str == 0)
+       return 0;
+
+   glk($0047, str); ! stream_set_current
+
+   @call PrintAnything _vararg_count 0;
+
+   glk($0047, oldstr); ! stream_set_current
+   @copy $ffffffff sp;
+   @copy str sp;
+   @glk $0044 2 0; ! stream_close
+   @copy sp len;
+   @copy sp 0;
+
+   return len;
+];
+
+! And this calls PrintAnyToArray on a particular array, jiggering
+! the result to be a Glulx C-style ($E0) string.
+
+Constant GG_ANYTOSTRING_LEN 66;
+Array AnyToStrArr --> GG_ANYTOSTRING_LEN;
+[ ChangeAnyToCString _vararg_count ix len;
+   ix = GG_ANYTOSTRING_LEN-2;
+   @copy ix sp;
+   ix = AnyToStrArr+1;
+   @copy ix sp;
+   ix = _vararg_count+2;
+   @call PrintAnyToArray ix len;
+   AnyToStrArr->0 = $E0;
+   if (len >= GG_ANYTOSTRING_LEN)
+     len = GG_ANYTOSTRING_LEN-1;
+   AnyToStrArr->(len+1) = 0;
+   return AnyToStrArr;
+];
+
+#endif; ! TARGET_GLULX
+
 #ifv5;
 Array StorageForShortName --> 161;
 #endif;
@@ -4430,7 +5497,7 @@ Array StorageForShortName --> 161;
    i = LanguageGNAsToArticles-->i;
 
    artform = LanguageArticles
-             + 6*LanguageContractionForms*(short_name_case + i*LanguageCases);
+             + 3*WORDSIZE*LanguageContractionForms*(short_name_case + i*LanguageCases);
 
 #iftrue LanguageContractionForms == 2;
    if (artform-->acode ~= artform-->(acode+3)) findout = true;
@@ -4447,6 +5514,8 @@ Array StorageForShortName --> 161;
 #iftrue LanguageContractionForms > 4;
    findout = true;
 #endif;
+
+#ifdef TARGET_ZCODE;
    if (standard_interpreter ~= 0 && findout)
    {   StorageForShortName-->0 = 160;
        @output_stream 3 StorageForShortName;
@@ -4454,6 +5523,15 @@ Array StorageForShortName --> 161;
        @output_stream -3;
        acode = acode + 3*LanguageContraction(StorageForShortName + 2);
    }
+#ifnot; ! TARGET_GLULX
+   if (findout)
+   {   if (pluralise)
+           PrintAnyToArray(StorageForShortName, 160, EnglishNumber, pluralise);
+       else
+           PrintAnyToArray(StorageForShortName, 160, PSN__, o);
+       acode = acode + 3*LanguageContraction(StorageForShortName);
+   }
+#endif; ! TARGET_
 
    print (string) artform-->acode;
    if (pluralise) return;
@@ -4474,7 +5552,7 @@ Array StorageForShortName --> 161;
    if (indef_mode && o.&short_name_indef~=0
        && PrintOrRun(o, short_name_indef, 1)~=0) rtrue;
    if (o.&short_name~=0 && PrintOrRun(o,short_name,1)~=0) rtrue;
-   @print_obj o;
+   print (object) o;
 ];
 
 [ Indefart o i;
@@ -4527,9 +5605,70 @@ Array StorageForShortName --> 161;
   if (x==y) return 0;
   if (x<0 && y>=0) return 1;
   if (x>=0 && y<0) return -1;
-  u = x&$7fff; v= y&$7fff;
+  u = x&~WORD_HIGHBIT; v= y&~WORD_HIGHBIT;
   if (u>v) return 1;
   return -1;
 ];
+
+#ifdef NITFOL_HOOKS;          ! Code contributed by Evin Robertson
+#ifdef TARGET_GLULX;          ! Might be nice for Z-machine games too,
+                              ! but I'm not going to try to make this work
+                              ! given #ifdef funniness.
+
+Array magic_array -->         ! This is so nitfol can do typo correction /
+                              ! automapping / debugging on Glulx games
+    $6e66726d $4d616763 $ff0010 ! Goes to 'NfrmMagc'  10 refers to length
+    Magic_Global_Dispatch__
+    DI__check_word            ! DI__check_word(buf, length)
+    PrintShortName
+    WV__Pr RV__Pr CA__Pr      ! obj.prop = x; x = obj.prop; obj.prop(x)
+    RA__Pr RL__Pr RA__Sc      ! obj.&prop; obj.#prop; class::prop
+    OP__Pr OC__Cl             ! obj provides prop; obj ofclass class
+    OB__Move OB__Remove
+    OB__Parent__ OB__Child__ OB__Sibling__  ! No explicit veneer for these
+    ;
+
+[ OB__Parent__ obj;
+    return parent(obj);
+];
+
+[ OB__Child__ obj;
+    return child(obj);
+];
+
+[ OB__Sibling__ obj;
+    return sibling(obj);
+];
+
+[ Magic_Global_Dispatch__ glbl;
+    switch(glbl) {
+     0: if(location==TheDark) return real_location;
+        return location;
+     1: return Player;
+     -1: return CompassDirection::number; ! Silliness to make exist RA__Sc
+                                          ! Should never be called.
+    }
+    return magic_array;       ! Silences a warning.
+];
+
+[ DI__check_word buf wlen  ix val res dictlen entrylen;
+    ! Just like in Tokenise__.  In fact, Tokenise__ could call this if
+    ! it wanted, instead of doing this itself.
+    if (wlen > DICT_WORD_SIZE)
+        wlen = DICT_WORD_SIZE;
+    for (ix=0 : ix < wlen : ix++) {
+        gg_tokenbuf->ix = glk($00A0, buf->ix);
+    }
+    for ( : ix < DICT_WORD_SIZE : ix++) {
+        gg_tokenbuf->ix = 0;
+    }
+    val = #dictionary_table + WORDSIZE;
+    entrylen = DICT_WORD_SIZE + 7;
+    @binarysearch gg_tokenbuf DICT_WORD_SIZE val entrylen dictlen 1 1 res;
+    return res;
+];
+
+#endif;
+#endif;
 
 ! ----------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------------
 !  LINKLPA:  Link declarations of common properties and attributes.
 !
-!  Supplied for use with Inform 6                         Serial number 991113
+!  Supplied for use with Inform 6                         Serial number 000629
 !                                                                 Release 6/10
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
@@ -49,7 +49,15 @@ Attribute female;
 Attribute neuter;
 Attribute pluralname;
 
-Property additive before $ffff;
+#ifdef TARGET_ZCODE;
+Constant NULL = $ffff;
+Constant WORD_HIGHBIT = $8000;
+#ifnot; ! TARGET_GLULX
+Constant NULL = $ffffffff;
+Constant WORD_HIGHBIT = $80000000;
+#endif; ! TARGET_
+
+Property additive before NULL;
 Ifdef USE_MODULES;
    Iffalse before==4;
    Message error "Please move your Property declarations after the
@@ -57,8 +65,8 @@ Ifdef USE_MODULES;
                   to USE_MODULES";
    Endif;
 Endif;
-Property additive after  $ffff;
-Property additive life   $ffff;
+Property additive after  NULL;
+Property additive life   NULL;
 
 Property n_to;  Property s_to;
 Property e_to;  Property w_to;
@@ -85,7 +93,7 @@ Property when_closed;
 Property when_on;
 Property when_off;
 Property description;
-Property additive describe $ffff;
+Property additive describe NULL;
 Property article "a";
 
 Property cant_go;
@@ -94,9 +102,9 @@ Property found_in;         !  For fiddly reasons this can't alias
 
 Property time_left;
 Property number;
-Property additive time_out $ffff;
+Property additive time_out NULL;
 Property daemon;
-Property additive each_turn $ffff;
+Property additive each_turn NULL;
 
 Property capacity 100;
 

@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------------
 !  GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 991113
+!  Supplied for use with Inform 6                         Serial number 000629
 !                                                                 Release 6/10
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
@@ -105,6 +105,10 @@ Verb meta 'showverb'
 Verb meta 'showobj'
                 *                                -> Showobj
                 * multi                          -> Showobj;
+#ifdef TARGET_GLULX;
+Verb meta 'glklist'
+                *                                -> Glklist;
+#endif; ! TARGET_;
 #endif;
 
 ! ----------------------------------------------------------------------------
@@ -374,6 +378,13 @@ Verb 'dig'      * noun                           -> Dig
 #Stub ParserError     1;
 #Stub ParseNumber     2;
 #Stub ChooseObjects   2;
+
+#ifdef TARGET_GLULX;
+#Stub IdentifyGlkObject 4;
+#Stub HandleGlkEvent  2;
+#Stub InitGlkWindow   1;
+#endif; ! TARGET_GLULX
+
 #IFNDEF PrintRank;
 Constant Make__PR;
 #ENDIF;

@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIB:  Front end to standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 991113
+!  Supplied for use with Inform 6                         Serial number 000629
 !                                                                 Release 6/10
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)

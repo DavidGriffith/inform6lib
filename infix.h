@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------------
 !  INFIX:  Support for the optional library extension "Infix".
 !
-!  Supplied for use with Inform 6                         Serial number 991113
+!  Supplied for use with Inform 6                         Serial number 000629
 !                                                                 Release 6/10
 !  (c) Graham Nelson 1999
 !      but freely usable (see manuals)

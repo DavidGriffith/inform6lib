@@ -9,7 +9,7 @@
 System_file;
 IFDEF INFIX; IFNDEF DEBUG; Constant DEBUG; ENDIF; ENDIF;
 IFDEF STRICT_MODE; IFNDEF DEBUG; Constant DEBUG; ENDIF; ENDIF;
-Constant LibSerial  = "991113";
+Constant LibSerial  = "000710(bp)";
 Constant LibRelease = "6/10";
 Constant Grammar__Version = 2;
 IFNDEF VN_1610;
