@@ -1,9 +1,9 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 981213
-!                                                                  Release 6/8
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998
+!  Supplied for use with Inform 6                         Serial number 990428
+!                                                                  Release 6/9
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 !  Inclusion of "linklpa"
@@ -460,9 +460,11 @@ Constant SPECIAL_TOKEN     = 7;
 Constant NUMBER_TOKEN      = 8;
 Constant TOPIC_TOKEN       = 9;
 
+
 Constant GPR_FAIL          = -1;     ! Return values from General Parsing
 Constant GPR_PREPOSITION   = 0;      ! Routines
 Constant GPR_NUMBER        = 1;
+Constant GPR_MULTIPLE      = 2;
 Constant GPR_REPARSE       = REPARSE_CODE;
 Constant GPR_NOUN          = $ff00;
 Constant GPR_HELD          = $ff01;
@@ -600,6 +602,9 @@ Object InformParser "(Inform Parser)"
 !  Return the number of words typed
 ! ----------------------------------------------------------------------------
 
+[ KeyboardPrimitive  a_buffer a_table;
+  read a_buffer a_table;
+];
 [ Keyboard  a_buffer a_table  nw i w w2 x1 x2;
 
     DisplayStatus();
@@ -620,9 +625,8 @@ Object InformParser "(Inform Parser)"
 
     L__M(##Prompt);
     AfterPrompt();
-    #IFV3; read a_buffer a_table; #ENDIF;
-    temp_global = 0;
-    #IFV5; read a_buffer a_table DrawStatusLine; #ENDIF;
+    #IFV5; DrawStatusLine(); #ENDIF;
+    KeyboardPrimitive(a_buffer, a_table);
     nw=a_table->1;
 
 !  If the line was blank, get a fresh line
@@ -1175,8 +1179,32 @@ Object InformParser "(Inform Parser)"
 
             if (token ~= ENDIT_TOKEN)
             {   scope_reason = PARSING_REASON;
-                l = ParseToken(results, pcount-1);
+                AnalyseToken(token);
+                l = ParseToken(found_ttype, found_tdata, pcount-1, token);
+                while (l<-200) l = ParseToken(ELEMENTARY_TT, l + 256);
                 scope_reason = PARSING_REASON;
+
+                if (l==GPR_PREPOSITION)
+                {   if (found_ttype~=PREPOSITION_TT
+                        && (found_ttype~=ELEMENTARY_TT
+                            || found_tdata~=TOPIC_TOKEN)) params_wanted--;
+                    l = true;
+                }
+                else
+                if (l<0) l = false;
+                else
+                if (l~=GPR_REPARSE)
+                {   if (l==GPR_NUMBER)
+                    {   if (nsns==0) special_number1=parsed_number;
+                        else special_number2=parsed_number;
+                        nsns++; l = 1;
+                    }
+                    if (l==GPR_MULTIPLE) l = 0;
+                    results-->(parameters+2) = l;
+                    parameters++;
+                    pattern-->pcount = l;
+                    l = true;
+                }
 
                 #ifdef DEBUG;
                 if (parser_trace >= 3)
@@ -1188,7 +1216,7 @@ Object InformParser "(Inform Parser)"
                 #endif;
 
                 if (l==REPARSE_CODE) jump ReParse;
-                if (l==0)    break;
+                if (l==false) break;
             }
             else
             {
@@ -1536,12 +1564,20 @@ Constant UNLIT_BIT  =  32;
 ];
 
 ! ----------------------------------------------------------------------------
-!  ParseToken: Parses the given token, from the current word number wn
+!  ParseToken(type, data):
+!      Parses the given token, from the current word number wn, with exactly
+!      the specification of a general parsing routine.
+!      (Except that for "topic" tokens and prepositions, you need to supply
+!      a position in a valid grammar line as third argument.)
 !
 !  Returns:
-!    REPARSE_CODE for "reconstructed input, please re-parse from scratch"
-!    1            for "token accepted"
-!    0            for "token failed"
+!    GPR_REPARSE  for "reconstructed input, please re-parse from scratch"
+!    GPR_PREPOSITION  for "token accepted with no result"
+!    $ff00 + x    for "please parse ParseToken(ELEMENTARY_TT, x) instead"
+!    0            for "token accepted, result is the multiple object list"
+!    1            for "token accepted, result is the number in parsed_number"
+!    object num   for "token accepted with this object as result"
+!    -1           for "token rejected"
 !
 !  (A)            Analyse the token; handle all tokens not involving
 !                 object lists and break down others into elementary tokens
@@ -1552,21 +1588,18 @@ Constant UNLIT_BIT  =  32;
 !  (F)            Return the conclusion of parsing an object list
 ! ----------------------------------------------------------------------------
 
-[ ParseToken results token_n token
-             l o i j k and_parity single_object desc_wn many_flag
+[ ParseToken given_ttype given_tdata token_n
+             token l o i j k and_parity single_object desc_wn many_flag
              token_allows_multiple;
-
-   token = line_token-->token_n;
-   AnalyseToken(token);
 
 !  **** (A) ****
 
    token_filter = 0;
    parser_inflection = name;
 
-   switch(found_ttype)
+   switch(given_ttype)
    {   ELEMENTARY_TT:
-           switch(found_tdata)
+           switch(given_tdata)
            {   SPECIAL_TOKEN:
                    l=TryNumber(wn);
                    special_word=NextWord();
@@ -1582,10 +1615,7 @@ Constant UNLIT_BIT  =  32;
                        #endif;
                        l = special_word;
                    }
-                   special_number=l;
-                   if (nsns==0) special_number1=l; else special_number2=l;
-                   nsns++;
-                   single_object=1; jump PassToken;
+                   parsed_number = l; return 1;
 
                NUMBER_TOKEN:
                    l=TryNumber(wn++);
@@ -1593,8 +1623,7 @@ Constant UNLIT_BIT  =  32;
                    #ifdef DEBUG;
                    if (parser_trace>=3) print "  [Read number as ", l, "]^";
                    #endif;
-                   if (nsns++==0) special_number1=l; else special_number2=l;
-                   single_object=1; jump PassToken;
+                   parsed_number = l; return 1;
 
                CREATURE_TOKEN:
                    if (action_to_be==##Answer or ##Ask or ##AskFor or ##Tell)
@@ -1609,24 +1638,23 @@ Constant UNLIT_BIT  =  32;
                    until (o==-1 || PrepositionChain(o, token_n+1) ~= -1);
                    wn--;
                    consult_words = wn-consult_from;
-                   if (consult_words==0) return 1;
+                   if (consult_words==0) return GPR_PREPOSITION;
                    if (action_to_be==##Ask or ##Answer or ##Tell)
                    {   o=wn; wn=consult_from; parsed_number=NextWord();
+                       #IFDEF EnglishNaturalLanguage;
                        if (parsed_number=='the' && consult_words>1)
                            parsed_number=NextWord();
-                       wn=o;
-                       if (nsns++==0) special_number1 = parsed_number;
-                       else special_number2 = parsed_number;
-                       single_object = 1; jump PassToken;
+                       #ENDIF;
+                       wn=o; return 1;
                    }
-                   return 1;
+                   return GPR_PREPOSITION;
            }
 
        PREPOSITION_TT:
            #Iffalse Grammar__Version==1;
 !  Is it an unnecessary alternative preposition, when a previous choice
 !  has already been matched?
-           if ((token->0) & $10) return 1;
+           if ((token->0) & $10) return GPR_PREPOSITION;
            #Endif;
 
 !  If we've run out of the player's input, but still have parameters to
@@ -1636,17 +1664,17 @@ Constant UNLIT_BIT  =  32;
            if (wn > num_words)
            {   if (inferfrom==0 && parameters<params_wanted)
                {   inferfrom = pcount; inferword = token;
-                   pattern-->pcount = REPARSE_CODE + Dword__No(found_tdata);
+                   pattern-->pcount = REPARSE_CODE + Dword__No(given_tdata);
                }
 
 !  If we are not inferring, then the line is wrong...
 
-               if (inferfrom==0) return 0;
+               if (inferfrom==0) return -1;
 
 !  If not, then the line is right but we mark in the preposition...
 
-               pattern-->pcount = REPARSE_CODE + Dword__No(found_tdata);
-               return 1;
+               pattern-->pcount = REPARSE_CODE + Dword__No(given_tdata);
+               return GPR_PREPOSITION;
            }
 
            o = NextWord();
@@ -1657,50 +1685,41 @@ Constant UNLIT_BIT  =  32;
 !  required preposition... if it's wrong, the line must be wrong,
 !  but if it's right, the token is passed (jump to finish this token).
 
-           if (o == found_tdata) return 1;
+           if (o == given_tdata) return GPR_PREPOSITION;
            #Iffalse Grammar__Version==1;
-           if (PrepositionChain(o, token_n) ~= -1) return 1;
+           if (PrepositionChain(o, token_n) ~= -1)
+               return GPR_PREPOSITION;
            #Endif;
-           return 0;
+           return -1;
 
        GPR_TT:
-           l=indirect(found_tdata);
+           l=indirect(given_tdata);
            #ifdef DEBUG;
            if (parser_trace>=3)
                print "  [Outside parsing routine returned ", l, "]^";
            #endif;
-           if (l<-200) { found_tdata = l + 256; break; }
-           if (l<0) rfalse;
-           if (l==GPR_PREPOSITION)
-           {   params_wanted--; rtrue; }
-           if (l==GPR_NUMBER)
-           {   if (nsns==0) special_number1=parsed_number;
-               else special_number2=parsed_number;
-               nsns++;
-           }
-           if (l==GPR_REPARSE) return l;
-           single_object=l; jump PassToken;
+           return l;
 
        SCOPE_TT:
-           scope_token = found_tdata;
+           scope_token = given_tdata;
            scope_stage = 1;
            l = indirect(scope_token);
            #ifdef DEBUG;
            if (parser_trace>=3)
                print "  [Scope routine returned multiple-flag of ", l, "]^";
            #endif;
-           if (l==1) found_tdata = MULTI_TOKEN; else found_tdata = NOUN_TOKEN;
+           if (l==1) given_tdata = MULTI_TOKEN; else given_tdata = NOUN_TOKEN;
 
        ATTR_FILTER_TT:
-           token_filter = 1 + found_tdata;
-           found_tdata = NOUN_TOKEN;
+           token_filter = 1 + given_tdata;
+           given_tdata = NOUN_TOKEN;
 
        ROUTINE_FILTER_TT:
-           token_filter = found_tdata;
-           found_tdata = NOUN_TOKEN;
+           token_filter = given_tdata;
+           given_tdata = NOUN_TOKEN;
    }
 
-   token = found_tdata;
+   token = given_tdata;
 
 !  **** (B) ****
 
@@ -1943,7 +1962,7 @@ Constant UNLIT_BIT  =  32;
     .PassToken;
 
     if (many_flag)
-    {   single_object = 0;
+    {   single_object = GPR_MULTIPLE;
         multi_context = token;
     }
     else
@@ -1955,10 +1974,7 @@ Constant UNLIT_BIT  =  32;
             }
         }
     }
-    results-->(parameters+2) = single_object;
-    parameters++;
-    pattern-->pcount = single_object;
-    return 1;
+    return single_object;
 
     .FailToken;
 
@@ -1969,7 +1985,7 @@ Constant UNLIT_BIT  =  32;
     if (allow_plurals && indef_guess_p==1)
     {   allow_plurals=false; wn=desc_wn; jump TryAgain;
     }
-    return 0;
+    return -1;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -3625,9 +3641,9 @@ Object InformLibrary "(Inform Library)"
        new_line;
        j=Initialise();
        last_score = score;
-
        move player to location;
        while (parent(location)~=0) location=parent(location);
+       real_location = location;
        objectloop (i in player) give i moved ~concealed;
     
        if (j~=2) Banner();
@@ -3881,7 +3897,7 @@ Object InformLibrary "(Inform Library)"
        ],
 
        begin_action
-       [ a n s source   sa sn ss r;
+       [ a n s source   sa sn ss;
            sa = action; sn = noun; ss = second;
            action = a; noun = n; second = s;
            #IFDEF DEBUG;
@@ -3891,18 +3907,18 @@ Object InformLibrary "(Inform Library)"
            #ENDIF;
            #IFTRUE Grammar__Version == 1;
            if ((meta || BeforeRoutines()==false) && action<256)
-           {   indirect(#actions_table-->action); r = false;
-           }
-           else r = true;
+               ActionPrimitive();
            #IFNOT;
            if ((meta || BeforeRoutines()==false) && action<4096)
-           {   indirect(#actions_table-->action); r = false;
-           }
-           else r = true;
+               ActionPrimitive();
            #ENDIF;
            action = sa; noun = sn; second = ss;
        ],
   has  proper;
+
+[ ActionPrimitive;
+  indirect(#actions_table-->action);
+];
        
 [ AfterGameOver i;
    .RRQPL;
@@ -4152,7 +4168,7 @@ Object InformLibrary "(Inform Library)"
                if (HasLightSource(j)==1) rtrue;
    ad = i.&add_to_scope;
    if (parent(i)~=0 && ad ~= 0)
-   {   if (ad-->0 > top_object)
+   {   if (metaclass(ad-->0) == Routine)
        {   ats_hls = 0; ats_flag = 1;
            RunRoutines(i, add_to_scope);
            ats_flag = 0; if (ats_hls == 1) rtrue;
@@ -4246,13 +4262,16 @@ Object InformLibrary "(Inform Library)"
       PREPOSITION_TT:
           print "'", (address) found_tdata, "'";
       ROUTINE_FILTER_TT:
-          print "noun=Routine(", found_tdata, ")";
+      #ifdef INFIX; print "noun=", (InfixPrintPA) found_tdata;
+      #ifnot; print "noun=Routine(", found_tdata, ")"; #endif;
       ATTR_FILTER_TT:
           print (DebugAttribute) found_tdata;
       SCOPE_TT:
-          print "scope=Routine(", found_tdata, ")";
+      #ifdef INFIX; print "scope=", (InfixPrintPA) found_tdata;
+      #ifnot; print "scope=Routine(", found_tdata, ")"; #endif;
       GPR_TT:
-          print "Routine(", found_tdata, ")";
+      #ifdef INFIX; print (InfixPrintPA) found_tdata;
+      #ifnot; print "Routine(", found_tdata, ")"; #endif;
   }
 ];
 [ DebugGrammarLine pcount;
@@ -4288,7 +4307,7 @@ Object InformLibrary "(Inform Library)"
 [ ShowobjSub c f l a n x;
    if (noun==0) noun=location;
    objectloop (c ofclass Class) if (noun ofclass c) { f++; l=c; }
-   new_line;if (f == 1) print (name) l, " ~"; else print "Object ~";
+   if (f == 1) print (name) l, " ~"; else print "Object ~";
    print (name) noun, "~ (", noun, ")";
    if (parent(noun)~=0) print " in ~", (name) parent(noun), "~";
    new_line;
@@ -4337,7 +4356,7 @@ Object InformLibrary "(Inform Library)"
            print ",^       ";
        }
    }
-   if (f==1) new_line;
+!   if (f==1) new_line;
 ];
 #ENDIF;
 

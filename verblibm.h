@@ -1,9 +1,9 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIBM:  Core of standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 981213
-!                                                                  Release 6/8
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998
+!  Supplied for use with Inform 6                         Serial number 990428
+!                                                                  Release 6/9
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
@@ -34,8 +34,12 @@ System_file;
 #ifdef STRICT_MODE;
    print "S";
 #endif;
+#ifdef INFIX;
+   print "X";
+#ifnot;
 #ifdef DEBUG;
    print "D";
+#endif;
 #endif;
    new_line;
 ];

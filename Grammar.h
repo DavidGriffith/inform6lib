@@ -1,9 +1,9 @@
 ! ----------------------------------------------------------------------------
 !  GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 981213
-!                                                                  Release 6/8
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998
+!  Supplied for use with Inform 6                         Serial number 990428
+!                                                                  Release 6/9
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 !  The "meta-verbs", commands to the game rather than in the game, come first:
@@ -388,4 +388,7 @@ Constant Make__PN;
 #ENDIF;
 #Default Story 0;
 #Default Headline 0;
+#IFDEF INFIX;
+#Include "infix";
+#ENDIF;
 ! ----------------------------------------------------------------------------
