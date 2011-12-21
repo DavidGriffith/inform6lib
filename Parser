@@ -9,11 +9,11 @@
 System_file;
 IFDEF INFIX; IFNDEF DEBUG; Constant DEBUG; ENDIF; ENDIF;
 IFDEF STRICT_MODE; IFNDEF DEBUG; Constant DEBUG; ENDIF; ENDIF;
-Constant LibSerial  = "990428";
-Constant LibRelease = "6/9";
+Constant LibSerial  = "991113";
+Constant LibRelease = "6/10";
 Constant Grammar__Version = 2;
 IFNDEF VN_1610;
-Message fatalerror "*** Library 6/9 needs Inform v6.10 or later to work ***";
+Message fatalerror "*** Library 6/10 needs Inform v6.10 or later to work ***";
 ENDIF;
 Include "linklpa";
 Fake_Action LetGo;

@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  PARSERM:  Core of parser.
 !
-!  Supplied for use with Inform 6                         Serial number 990428
-!                                                                  Release 6/9
+!  Supplied for use with Inform 6                         Serial number 991113
+!                                                                 Release 6/10
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -338,6 +338,7 @@ Global number_matched;               ! How many items in it?  (0 means none)
 Global number_of_classes;            ! How many equivalence classes?
 Global match_length;                 ! How many words long are these matches?
 Global match_from;                   ! At what word of the input do they begin?
+Global bestguess_score;              ! What did the best-guess object score?
 ! ------------------------------------------------------------------------------
 !   Low level textual manipulation
 ! ------------------------------------------------------------------------------
@@ -902,6 +903,7 @@ Object InformParser "(Inform Parser)"
 
         if (l~=0)
         {   results-->0 = ##Go;
+            action_to_be = ##Go;
             results-->1 = 1;
             results-->2 = l;
             jump LookForMore;
@@ -1179,9 +1181,10 @@ Object InformParser "(Inform Parser)"
 
             if (token ~= ENDIT_TOKEN)
             {   scope_reason = PARSING_REASON;
+                parser_inflection = name;
                 AnalyseToken(token);
-                l = ParseToken(found_ttype, found_tdata, pcount-1, token);
-                while (l<-200) l = ParseToken(ELEMENTARY_TT, l + 256);
+                l = ParseToken__(found_ttype, found_tdata, pcount-1, token);
+                while (l<-200) l = ParseToken__(ELEMENTARY_TT, l + 256);
                 scope_reason = PARSING_REASON;
 
                 if (l==GPR_PREPOSITION)
@@ -1524,7 +1527,7 @@ Constant UNLIT_BIT  =  32;
                                   take_all_rule = 2;
                               indef_type = indef_type | PLURAL_BIT; }
        if (allow_plurals && allow_multiple)
-       {   n=NumberWord(o);
+       {   n=TryNumber(wn-1);
            if (n==1)        { indef_mode=1; flag=1; }
            if (n>1)         { indef_guess_p=1;
                               indef_mode=1; flag=1; indef_wanted=n;
@@ -1588,14 +1591,20 @@ Constant UNLIT_BIT  =  32;
 !  (F)            Return the conclusion of parsing an object list
 ! ----------------------------------------------------------------------------
 
-[ ParseToken given_ttype given_tdata token_n
+[ ParseToken given_ttype given_tdata token_n x y;
+  x = lookahead; lookahead = NOUN_TOKEN;
+  y = ParseToken__(given_ttype,given_tdata,token_n);
+  if (y == GPR_REPARSE) Tokenise__(buffer,parse);
+  lookahead = x; return y;
+];
+
+[ ParseToken__ given_ttype given_tdata token_n
              token l o i j k and_parity single_object desc_wn many_flag
              token_allows_multiple;
 
 !  **** (A) ****
 
    token_filter = 0;
-   parser_inflection = name;
 
    switch(given_ttype)
    {   ELEMENTARY_TT:
@@ -1615,15 +1624,15 @@ Constant UNLIT_BIT  =  32;
                        #endif;
                        l = special_word;
                    }
-                   parsed_number = l; return 1;
+                   parsed_number = l; return GPR_NUMBER;
 
                NUMBER_TOKEN:
                    l=TryNumber(wn++);
-                   if (l==-1000) { etype=NUMBER_PE; rfalse; }
+                   if (l==-1000) { etype=NUMBER_PE; return GPR_FAIL; }
                    #ifdef DEBUG;
                    if (parser_trace>=3) print "  [Read number as ", l, "]^";
                    #endif;
-                   parsed_number = l; return 1;
+                   parsed_number = l; return GPR_NUMBER;
 
                CREATURE_TOKEN:
                    if (action_to_be==##Answer or ##Ask or ##AskFor or ##Tell)
@@ -1638,7 +1647,7 @@ Constant UNLIT_BIT  =  32;
                    until (o==-1 || PrepositionChain(o, token_n+1) ~= -1);
                    wn--;
                    consult_words = wn-consult_from;
-                   if (consult_words==0) return GPR_PREPOSITION;
+                   if (consult_words==0) return GPR_FAIL;
                    if (action_to_be==##Ask or ##Answer or ##Tell)
                    {   o=wn; wn=consult_from; parsed_number=NextWord();
                        #IFDEF EnglishNaturalLanguage;
@@ -1767,7 +1776,7 @@ Constant UNLIT_BIT  =  32;
             for (l=1:l<=LanguageDescriptors-->0:l=l+4)
                 if (o == LanguageDescriptors-->l) jump AssumeDescriptor;
             pronoun__word=pronoun_word; pronoun__obj=pronoun_obj;
-            etype=VAGUE_PE; return 0;
+            etype=VAGUE_PE; return GPR_FAIL;
         }
     }
 
@@ -1781,7 +1790,8 @@ Constant UNLIT_BIT  =  32;
 
     .TryAgain;
 !   First, we parse any descriptive words (like "the", "five" or "every"):
-    l = Descriptors(token_allows_multiple); if (l~=0) { etype=l; return 0; }
+    l = Descriptors(token_allows_multiple);
+    if (l~=0) { etype=l; return GPR_FAIL; }
 
     .TryAgain2;
 
@@ -1878,11 +1888,11 @@ Constant UNLIT_BIT  =  32;
     else
 
     {   l=NounDomain(actor,actors_location,token);       ! Same as above...
-        if (l==REPARSE_CODE) return l;
+        if (l==REPARSE_CODE) return GPR_REPARSE;
         if (l==0)
         {   if (indef_possambig)
             {   ResetDescriptors(); wn = desc_wn; jump TryAgain2; }
-            etype=CantSee(); return l;                   ! Choose best error
+            etype=CantSee(); return GPR_FAIL;            ! Choose best error
         }
 
 !  ...until it produces something not held by the actor.  Then an implicit
@@ -2318,8 +2328,18 @@ Constant UNLIT_BIT  =  32;
 !
 !  Returns -1 if an error occurred
 ! ----------------------------------------------------------------------------
+Constant SCORE__CHOOSEOBJ = 1000;
+Constant SCORE__IFGOOD = 500;
+Constant SCORE__UNCONCEALED = 100;
+Constant SCORE__BESTLOC = 60;
+Constant SCORE__NEXTBESTLOC = 40;
+Constant SCORE__NOTCOMPASS = 20;
+Constant SCORE__NOTSCENERY = 10;
+Constant SCORE__NOTACTOR = 5;
+Constant SCORE__GNA = 1;
+Constant SCORE__DIVISOR = 20;
 
-[ Adjudicate context i j k good_ones last n ultimate flag offset;
+[ Adjudicate context i j k good_flag good_ones last n flag offset sovert;
 
 #ifdef DEBUG;
   if (parser_trace>=4)
@@ -2348,41 +2368,33 @@ Constant UNLIT_BIT  =  32;
   j=number_matched-1; good_ones=0; last=match_list-->0;
   for (i=0:i<=j:i++)
   {   n=match_list-->i;
-      match_scores-->i = good_ones;
+      match_scores-->i = 0;
 
-      ultimate=ScopeCeiling(n);
+      good_flag = false;
 
-!      if (context==NOUN_TOKEN && ultimate==ScopeCeiling(actor)
-!          && n~=actor && n hasnt concealed && n hasnt scenery &&
-!          (token_filter==0 || UserFilter(n)==1)) { good_ones++; last=n; }
-      if (context==HELD_TOKEN && parent(n)==actor)
-      {   good_ones++; last=n; }
-      if (context==MULTI_TOKEN && ultimate==ScopeCeiling(actor)
-          && n~=actor && n hasnt concealed && n hasnt scenery) 
-      {   good_ones++; last=n; }
-      if (context==MULTIHELD_TOKEN && parent(n)==actor)
-      {   good_ones++; last=n; }
-
-      if (context==MULTIEXCEPT_TOKEN or MULTIINSIDE_TOKEN)
-      {   if (advance_warning==-1)
-          {   if (context==MULTIEXCEPT_TOKEN)
-              {   good_ones++; last=n;
+      switch(context) {
+          HELD_TOKEN, MULTIHELD_TOKEN:
+              if (parent(n)==actor) good_flag = true;
+          MULTIEXCEPT_TOKEN:
+              if (advance_warning == -1) {
+                  good_flag = true;
+              } else {
+                  if (n ~= advance_warning) good_flag = true;
               }
-              if (context==MULTIINSIDE_TOKEN)
-              {   if (parent(n)~=actor) { good_ones++; last=n; }
+          MULTIINSIDE_TOKEN:
+              if (advance_warning == -1) {
+                  if (parent(n) ~= actor) good_flag = true;
+              } else {
+                  if (n in advance_warning) good_flag = true;
               }
-          }
-          else
-          {   if (context==MULTIEXCEPT_TOKEN && n~=advance_warning)
-              {   good_ones++; last=n; }
-              if (context==MULTIINSIDE_TOKEN && n in advance_warning)
-              {   good_ones++; last=n; }
-          }
+          CREATURE_TOKEN: if (CreatureTest(n)==1) good_flag = true;
+          default: good_flag = true;
       }
-      if (context==CREATURE_TOKEN && CreatureTest(n)==1)
-      {   good_ones++; last=n; }
 
-      match_scores-->i = 1000*(good_ones - match_scores-->i);
+      if (good_flag) {
+          match_scores-->i = SCORE__IFGOOD;
+          good_ones++; last = n;
+      }
   }
   if (good_ones==1) return last;
 
@@ -2394,7 +2406,7 @@ Constant UNLIT_BIT  =  32;
 
   if (indef_mode==0) indef_type=0;
 
-  ScoreMatchL();
+  ScoreMatchL(context);
   if (number_matched == 0) return -1;
 
   if (indef_mode == 0)
@@ -2414,13 +2426,19 @@ Constant UNLIT_BIT  =  32;
   {   if (context ~= MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
                      or MULTIINSIDE_TOKEN)
       {   etype=MULTI_PE; return -1; }
-      i=0; offset=multiple_object-->0;
+      i=0; offset=multiple_object-->0; sovert = -1;
       for (j=BestGuess():j~=-1 && i<indef_wanted
            && i+offset<63:j=BestGuess())
       {   flag=0;
           if (j hasnt concealed && j hasnt worn) flag=1;
+          if (sovert == -1) sovert = bestguess_score/SCORE__DIVISOR;
+          else {
+              if (indef_wanted == 100
+                  && bestguess_score/SCORE__DIVISOR < sovert) flag=0;
+          }
           if (context==MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
               && parent(j)~=actor) flag=0;
+          if (action_to_be == ##Take or ##Remove && parent(j)==actor) flag=0;
           k=ChooseObjects(j,flag);
           if (k==1) flag=1; else { if (k==2) flag=0; }
           if (flag==1)
@@ -2577,42 +2595,38 @@ Constant UNLIT_BIT  =  32;
 !  entries which fail the basic requirements of the descriptors.
 ! ----------------------------------------------------------------------------
 
-[ ScoreMatchL  its_owner its_score obj i j threshold a_s l_s;
+[ ScoreMatchL context its_owner its_score obj i j threshold met a_s l_s;
 
-!  if (indef_type & OTHER_BIT ~= 0) threshold=45;
-  if (indef_type & MY_BIT ~= 0)    threshold=threshold+45;
-  if (indef_type & THAT_BIT ~= 0)  threshold=threshold+45;
-  if (indef_type & LIT_BIT ~= 0)   threshold=threshold+45;
-  if (indef_type & UNLIT_BIT ~= 0) threshold=threshold+45;
-  if (indef_owner ~= nothing)      threshold=threshold+45;
+!  if (indef_type & OTHER_BIT ~= 0) threshold++;
+  if (indef_type & MY_BIT ~= 0)    threshold++;
+  if (indef_type & THAT_BIT ~= 0)  threshold++;
+  if (indef_type & LIT_BIT ~= 0)   threshold++;
+  if (indef_type & UNLIT_BIT ~= 0) threshold++;
+  if (indef_owner ~= nothing)      threshold++;
 
 #ifdef DEBUG;
   if (parser_trace>=4) print "   Scoring match list: indef mode ", indef_mode,
       " type ", indef_type,
-      ", threshold ", threshold, ":^";
+      ", satisfying ", threshold, " requirements:^";
 #endif;
 
-  a_s = 30; l_s = 20;
-  if (action_to_be == ##Take or ##Remove) { a_s=20; l_s=30; }
+  a_s = SCORE__NEXTBESTLOC; l_s = SCORE__BESTLOC;
+  if (context == HELD_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN) {
+      a_s = SCORE__BESTLOC; l_s = SCORE__NEXTBESTLOC;
+  }
 
-  for (i=0:i<number_matched:i++)
-  {   obj = match_list-->i; its_owner = parent(obj); its_score=0;
+  for (i=0: i<number_matched: i++) {
+      obj = match_list-->i; its_owner = parent(obj); its_score=0;
 
 !      if (indef_type & OTHER_BIT ~=0
-!          &&  obj~=itobj or himobj or herobj)
-!          its_score=its_score+45;
-      if (indef_type & MY_BIT ~=0  &&  its_owner==actor)
-          its_score=its_score+45;
-      if (indef_type & THAT_BIT ~=0  &&  its_owner==actors_location)
-          its_score=its_score+45;
-      if (indef_type & LIT_BIT ~=0  &&  obj has light)
-          its_score=its_score+45;
-      if (indef_type & UNLIT_BIT ~=0  &&  obj hasnt light)
-          its_score=its_score+45;
-      if (indef_owner~=0 && its_owner == indef_owner)
-          its_score=its_score+45;
+!          &&  obj~=itobj or himobj or herobj) met++;
+      if (indef_type & MY_BIT ~=0  &&  its_owner==actor) met++;
+      if (indef_type & THAT_BIT ~=0  &&  its_owner==actors_location) met++;
+      if (indef_type & LIT_BIT ~=0  &&  obj has light) met++;
+      if (indef_type & UNLIT_BIT ~=0  &&  obj hasnt light) met++;
+      if (indef_owner~=0 && its_owner == indef_owner) met++;
 
-      if (its_score < threshold)
+      if (met < threshold)
       {
 #ifdef DEBUG;
           if (parser_trace >= 4)
@@ -2623,28 +2637,25 @@ Constant UNLIT_BIT  =  32;
           match_list-->i=-1;
       }
       else
-      {   !   Now forget all of that: the object passes descriptors
-          !   and we can score it properly.
+      {   its_score = 0;
+          if (obj hasnt concealed) its_score = SCORE__UNCONCEALED;
 
-          its_score = 0;
-          if (obj hasnt concealed) its_score=50;
-
-          if (its_owner==actor)   its_score = its_score+a_s;
+          if (its_owner==actor)   its_score = its_score + a_s;
           else
-          if (its_owner==actors_location) its_score = its_score+l_s;
+          if (its_owner==actors_location) its_score = its_score + l_s;
           else
-          if (its_score==0 && its_owner~=compass) its_score = its_score+10;
+          if (its_owner~=compass) its_score = its_score + SCORE__NOTCOMPASS;
 
-          !   The entry point "ChooseObjects" can contribute 0 to 9 points
-          !   to refine the score
-          its_score = its_score + ChooseObjects(obj,2);
+          its_score = its_score + SCORE__CHOOSEOBJ * ChooseObjects(obj, 2);
+
+          if (obj hasnt scenery) its_score = its_score + SCORE__NOTSCENERY;
+          if (obj ~= actor) its_score = its_score + SCORE__NOTACTOR;
 
           !   A small bonus for having the correct GNA,
           !   for sorting out ambiguous articles and the like.
 
-          its_score = 2*its_score;
           if (indef_cases & (PowersOfTwo_TB-->(GetGNAOfObject(obj))))
-              its_score++;
+              its_score = its_score + SCORE__GNA;
 
           match_scores-->i = match_scores-->i + its_score;
 #ifdef DEBUG;
@@ -2696,6 +2707,7 @@ Constant UNLIT_BIT  =  32;
   if (best<0) return -1;
   i=match_list-->earliest;
   match_list-->earliest=-1;
+  bestguess_score = best;
   return i;
 ];
 
@@ -2712,6 +2724,7 @@ Constant UNLIT_BIT  =  32;
       if (its_score==best) { earliest = -1; }
       if (its_score>best) { best=its_score; earliest=match_list-->i; }
   }
+  bestguess_score = best;
   return earliest;
 ];
 
@@ -3036,7 +3049,7 @@ Constant UNLIT_BIT  =  32;
 #endif;
           if (parser_one==0) parser_one = RunRoutines(thing,react_after);
       EACH_TURN_REASON:
-          if (thing.&each_turn==0) return;
+          if (thing.each_turn == 0 or NULL) return;
 #ifdef DEBUG;
           if (parser_trace>=2)
           {   print "[Considering each_turn for ", (the) thing, "]^"; }
@@ -3385,23 +3398,20 @@ Constant UNLIT_BIT  =  32;
 !  NextWord (which takes no arguments) returns:
 !
 !  0            if the next word is unrecognised,
-!  comma_word   if it is a comma character
-!               (which is treated oddly by the Z-machine, hence the code)
+!  comma_word   if a comma
+!  THEN1__WD    if a full stop
 !  or the dictionary address if it is recognised.
 !  The "current word" marker is moved on.
 !
 !  NextWordStopped does the same, but returns -1 when input has run out
 ! ----------------------------------------------------------------------------
 
-[ NextWord i j k;
+[ NextWord i j;
    if (wn > parse->1) { wn++; rfalse; }
    i=wn*2-1; wn++;
    j=parse-->i;
-   if (j==0)
-   {   k=wn*4-3; i=buffer->(parse->k);
-       if (i==',') j=comma_word;
-       if (i=='.') j=THEN1__WD;
-   }
+   if (j == ',//') j=comma_word;
+   if (j == './/') j=THEN1__WD;
    return j;
 ];   
 
@@ -3518,24 +3528,26 @@ Constant UNLIT_BIT  =  32;
 !  Provided for use by language definition files
 ! ----------------------------------------------------------------------------
 
-[ LTI_Insert i ch  y;
+[ LTI_Insert i ch  b y;
+
+  !   Protect us from strict mode, as this isn't an array in quite the
+  !   sense it expects
+      b = buffer;
 
   !   Insert character ch into buffer at point i.
 
   !   Being careful not to let the buffer possibly overflow:
 
-      y = buffer->1;
-      if (y > buffer->0) y = buffer->0;
+      y = b->1;
+      if (y > b->0) y = b->0;
 
   !   Move the subsequent text along one character:
 
-      for (y=y+2: y>i : y--) buffer->y = buffer->(y-1);
-
-      buffer->i = ch;
+      for (y=y+2: y>i : y--) b->y = b->(y-1);
+      b->i = ch;
 
   !   And the text is now one character longer:
-      if (buffer->1 < buffer->0)
-          (buffer->1)++;
+      if (b->1 < b->0) (b->1)++;
 ];
 
 ! ============================================================================
@@ -4065,9 +4077,9 @@ Object InformLibrary "(Inform Library)"
    for (i=0:i<active_timers:i++)
        if (the_timers-->i==0) jump FoundTSlot;
    i=active_timers++;
-   if (i >= MAX_TIMERS) RunTimeError(4);
+   if (i >= MAX_TIMERS) { RunTimeError(4); return; }
    .FoundTSlot;
-   if (obj.&time_left==0) RunTimeError(5,obj);
+   if (obj.&time_left==0) { RunTimeError(5,obj); return; }
    the_timers-->i=obj; obj.time_left=timer;
 ];
 
@@ -4076,7 +4088,7 @@ Object InformLibrary "(Inform Library)"
        if (the_timers-->i==obj) jump FoundTSlot2;
    rfalse;
    .FoundTSlot2;
-   if (obj.&time_left==0) RunTimeError(5,obj);
+   if (obj.&time_left==0) { RunTimeError(5,obj); return; }
    the_timers-->i=0; obj.time_left=0;
 ];
 

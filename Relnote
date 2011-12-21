@@ -1,0 +1,93 @@
+New releases: Inform library 6/10
+=================================
+
+This is a "maintenance release" of the Inform library, fixing
+a number of known and fairly minor (if annoying) problems with
+library 6/9.  I was greatly helped in all this by Adam Cadre's
+"Inform Library Patch Page", at
+
+   http://www.adamcadre.ac/inform.html
+
+where bugs are both reported and solved.  If Adam can spare the
+time to keep this page going, and if people are willing to
+report library mistakes to it, this excellent arrangement should
+mean that designers won't have to wait for the next maintenance
+release (often months away) for small problems to be worked out.
+It also saves me from duplicating the work of a lot of people
+who know Inform's insides rather better than I do.
+
+In particular all bugs currently reported on that page are
+fixed, or should be, in library 6/10 (with the exception that
+I reluctantly disagreed with Gunther Schmidl about the ideal
+behaviour of "it").
+
+286. The largest modification is that a new parser disambiguation 
+algorithm replaces the old one, which many people disliked and
+which made some rum choices sometimes.  (This new algorithm is
+the same one which was available as a test release in September.)
+Basically, "all" works better (particularly "take all"), the
+assumptions made in choosing a noun for a verb like "sit" are
+more realistic, and ChooseObjects is returned "to its former
+utility and glory" (Neil Cerutti) by re-acquiring power to
+override almost everything else in disambiguation.  This is
+helpful if, like Ethan Dicks, you have an object representing
+the eastern wall which isn't the same as the compass object
+responding to the same name.
+
+Some miscellaneous smaller modifications, and their requesters:
+
+287. ParseToken() no longer returning bogus values which led
+   indirectly to vile zero errors.  (Neil Cerutti)
+288. The YesOrNo() routine no longer crashes if called from early on
+   in a game's Initialise() routine.  (Peter Killworth)
+289. Digits are now allowed as well as wordy numbers when typing
+   something like "take three coins", i.e., "take 3 coins"
+   is now allowed.  (Irene Callaci)
+290. The "successful save" message is no longer printed in response
+   to a successful restore: instead a quite different message,
+   which just so happens to have identical wording, is printed.
+   (Trust me -- this matters to Torbjorn Andersson.)
+291. The response to an impossible "enter" (That's not something you
+   can enter.) is adjusted to better match what was typed, so
+   that it can become "That's not something you can stand on."
+   and so forth.  (Andy Fischer)
+292. If both are given, the after rule for Remove takes precedence
+   over the after rule for Take on a successful Remove action.
+   (Previously the precedence was the other way round, and this
+   change is arcane but sensible.  Adam Cadre's doing)
+293. "action_to_be" not set to ##Go on an implicit request to go
+   somewhere, that is, on typing "north" rather than "go north".
+   (Adam Cadre)
+294. An empty text now fails parsing against "topic".  (Me)
+295. The variable "real_location" now always, in all cases and at all
+   times, holds the location of the player.  That is, it is equal
+   to "location" unless the player is in darkness, in which case
+   "location" is equal to "thedark" and "real_location" holds
+   what "location" would be, if there were light to see by.  (Me.
+   Previously its contents were undefined in the light, which was
+   unhelpful, because it meant that tests like
+   
+      if (real_location == Hall_of_Mists) ...
+
+   didn't work.  Now they do work, i.e., this test is passed
+   exactly when the player is in the Hall of Mists, whether there
+   is light or not.)
+296. Full stop and comma not parsing properly in Infix mode.  (Everyone
+   reported this one.)
+297. An "each_turn" rule can now be killed by setting it to 0 or NULL;
+   either will do.  (Me; for consistency with other such rules.)
+
+I'm not sure whether to be pleased or not that we haven't reached
+the 300th library bug-fix.  Over a period of six years, this suggests
+that I commit on average one bug per week...  Library 6/10 is at:
+
+   ftp://ftp.gmd.de/incoming/if-archive/lib610.zip
+
+On some machines, these files will also need ".h" attached.
+(Volker and David normally expand this archive for the benefit
+of those uncomfortable with zips when it is put into its
+permanent position.)
+
+
+                                             Graham Nelson
+                                             6 November 1999

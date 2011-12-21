@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIBM:  Core of standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 990428
-!                                                                  Release 6/9
+!  Supplied for use with Inform 6                         Serial number 991113
+!                                                                 Release 6/10
 !  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -737,9 +737,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
 [ YesOrNo i;
   for (::)
-  {
-   #IFV3; read buffer parse; #ENDIF;
-   #IFV5; read buffer parse DrawStatusLine; #ENDIF;
+  {   if (location == nothing || parent(player) == nothing) read buffer parse;
+      else read buffer parse DrawStatusLine;
       i=parse-->1;
       if (i==YES1__WD or YES2__WD or YES3__WD) rtrue;
       if (i==NO1__WD or NO2__WD or NO3__WD) rfalse;
@@ -759,10 +758,19 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   .RMaybe; L__M(##Restore,2);
 ];
 
-[ SaveSub;
+[ SaveSub flag;
+  #IFV5;
+  @save -> flag;
+  switch (flag) {
+      0: L__M(##Save,1);
+      1: L__M(##Save,2);
+      2: L__M(##Restore,2);
+  }
+  #IFNOT;
   save Smaybe;
   return L__M(##Save,1);
   .SMaybe; L__M(##Save,2);
+  #ENDIF;
 ];
 
 [ VerifySub;
@@ -1118,8 +1126,8 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   if (i~=second) return L__M(##Remove,2,noun);
   if (i has animate) return L__M(##Take,6,i);
   if (AttemptToTakeObject(noun)) rtrue;
-  action=##Take;   if (AfterRoutines()==1) rtrue;
   action=##Remove; if (AfterRoutines()==1) rtrue;
+  action=##Take;   if (AfterRoutines()==1) rtrue;
 
   if (keep_silent==1) rtrue;
   return L__M(##Remove,3,noun);
@@ -1411,7 +1419,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   location=j; MoveFloatingObjects();
   df=OffersLight(j);
-  if (df~=0) { location=j; lightflag=1; }
+  if (df~=0) { location=j; real_location=j; lightflag=1; }
   else
   {   if (old_loc == thedark)
       {   DarkToDark();

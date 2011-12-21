@@ -1,8 +1,8 @@
 ! ----------------------------------------------------------------------------
 !  INFIX:  Support for the optional library extension "Infix".
 !
-!  Supplied for use with Inform 6                         Serial number 990428
-!                                                                  Release 6/9
+!  Supplied for use with Inform 6                         Serial number 991113
+!                                                                 Release 6/10
 !  (c) Graham Nelson 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
@@ -988,28 +988,28 @@ Array InfixRV_commas --> 32;
       #fake_action_names_array);
 ];
 
-Verb ";i" ";inv" ";inventory"
+Verb meta ";i" ";inv" ";inventory"
      * -> InfixInv;
-Verb ";x" ";examine"
+Verb meta ";x" ";examine"
      * InfixRvalue -> InfixExamine;
-Verb ";xo" ";examineo"
+Verb meta ";xo" ";examineo"
      * InfixRvalue -> InfixExamineO;
-Verb ";xs" ";examines"
+Verb meta ";xs" ";examines"
      * InfixRvalue -> InfixExamineS;
-Verb ";<"
+Verb meta ";<"
      * InfixActionToken -> InfixAction
      * InfixActionToken InfixRvalue -> InfixAction
      * InfixActionToken InfixRvalue InfixRvalue -> InfixAction;
-Verb ";"
+Verb meta ";"
      * -> InfixWelcome
      * InfixRvalue -> InfixEval;
-Verb ";give"
+Verb meta ";give"
      * InfixRvalue InfixRvalue -> InfixGive;
-Verb ";move"
+Verb meta ";move"
      * InfixRvalue "to" InfixRvalue -> InfixMove;
-Verb ";remove"
+Verb meta ";remove"
      * InfixRvalue -> InfixRemove;
-Verb ";watch" ";w"
+Verb meta ";watch" ";w"
      * -> InfixWatchOn
      * "timers"/"daemons" -> TimersOn
      * "timers"/"daemons" "off" -> TimersOff

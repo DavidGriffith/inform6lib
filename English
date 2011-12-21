@@ -1,7 +1,7 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 981213
+!   Inform Language Definition File: English 991113
 !
-!   (c) Graham Nelson 1997, 1998
+!   (c) Graham Nelson 1997, 1998, 1999
 !
 !   Define the constant DIALECT_US before including "Parser" to
 !   obtain American English
@@ -611,9 +611,15 @@ Constant WHICH__TX    = "which ";
                   if (x1 has supporter) print "on "; else print "in ";
                   print_ret (the) x1, ".";
                2: if (x1 has pluralname) print "They're"; else print "That's";
-                  " not something you can enter.";
+                  print " not something you can ";
+                  switch (verb_word) {
+                      'stand': "stand on.";
+                      'sit': "sit down on.";
+                      'lie': "lie down on.";
+                      default: "enter.";
+                  }
                3: "You can't get into the closed ", (name) x1, ".";
-               4: "You can only get into something freestanding.";
+               4: "You can only get into something free-standing.";
                5: print "You get ";
                   if (x1 has supporter) print "onto "; else print "into ";
                   print_ret (the) x1, ".";

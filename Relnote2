@@ -1,0 +1,37 @@
+Minor revision of Inform library 6/10
+=====================================
+
+A number of small and easily corrected mistakes in library
+6/10 have been pointed out to me, and rather than wait months
+for 6/11 I've simply updated 6/10.  (The corrected version has
+serial number 991113 instead of 991106 but still has release
+number 6/10.)
+
+The modifications are:
+
+298. The Infix debugging verbs are now "meta", as they should
+have been all along.  (This means that they do not cause time
+to pass within the model world.)
+299. Some code testing the removal of hyphens and apostrophes
+had been accidentally left inside the release version of
+"English.h" in 6/10: I've removed this code again.  Hyphens
+and apostrophes should once again be parsed normally.
+300. A small bug in the disambiguation routines meant that
+"put all on table" wasn't working properly because it (wrongly)
+chose items which weren't held for the "all" part, and then
+rejected them as not being held.  Oops, etc.  Thanks to
+Neil Cerutti, who both found and found a way to fix this.
+
+And so I reach my 300th cockup after all.  The corrected
+library 6/10 (my third attempt by now) is at:
+
+   ftp://ftp.gmd.de/incoming/if-archive/l610_3.zip
+
+On some machines, these files will also need ".h" attached.
+(Volker and David normally expand this archive for the benefit
+of those uncomfortable with zips when it is put into its
+permanent position.)
+
+
+                                             Graham Nelson
+                                             13 November 1999
