@@ -1,0 +1,15 @@
+Life and Times of the Inform Library
+====================================
+
+This release of the Inform Library marks the first release of the Inform 
+6 library after custody was taken over by David Griffith.  This release 
+focuses mainly on bugs reported at 
+http://www.inform-fiction.org/patches/library.html.
+
+
+
+
+Changes in Release 6/12 (12????)
+================================
+
+
