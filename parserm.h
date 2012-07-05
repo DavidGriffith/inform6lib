@@ -52,6 +52,10 @@ Constant Grammar__Version 2;
 Include "linklpa";
 #Endif; ! MODULE_MODE
 
+#Ifdef COLOR;
+Constant COLOUR;
+#Endif;
+
 ! ------------------------------------------------------------------------------
 !   Global variables and their associated Constant and Array declarations
 ! ------------------------------------------------------------------------------
@@ -1406,8 +1410,9 @@ Object  InformParser "(Inform Parser)"
 
         if (i == 1) {
             results-->0 = action;
-            results-->1 = noun;
-            results-->2 = second;
+            results-->1 = 2;		! Number of parameters
+            results-->2 = noun;
+            results-->3 = second;
             rtrue;
         }
         if (i ~= 0) { verb_word = i; wn--; verb_wordnum--; }
@@ -3390,7 +3395,7 @@ Constant SCORE__DIVISOR = 20;
     for (i=0 : i<number_matched : i++) {
         while (match_list-->i == -1) {
             if (i == number_matched-1) { number_matched--; break; }
-            for (j=i : j<number_matched : j++) {
+            for (j=i : j<number_matched-1 : j++) {
                 match_list-->j = match_list-->(j+1);
                 match_scores-->j = match_scores-->(j+1);
             }
@@ -3797,7 +3802,7 @@ Constant SCORE__DIVISOR = 20;
         #Endif; ! DEBUG
         if (parser_one == 0) parser_one = RunRoutines(thing, react_after);
       EACH_TURN_REASON:
-        if (thing.each_turn == 0 or NULL) return;
+        if (thing.each_turn == 0) return;
         #Ifdef DEBUG;
         if (parser_trace >= 2)
               print "[Considering each_turn for ", (the) thing, "]^";
@@ -5477,8 +5482,12 @@ Object  InformLibrary "(Inform Library)"
 [ MoveCursor line column;  ! 1-based postion on text grid
     if (~~statuswin_current) {
          @set_window 1;
+#Ifdef COLOUR;
          if (clr_on && clr_bgstatus > 1) @set_colour clr_fgstatus clr_bgstatus;
          else                            style reverse;
+#Ifnot;
+style reverse;
+#Endif;
     }
     if (line == 0) {
         line = 1;
@@ -5495,8 +5504,12 @@ statuswin_current = true;
 
 [ MainWindow;
     if (statuswin_current) {
+#Ifdef COLOUR;
         if (clr_on && clr_bgstatus > 1) @set_colour clr_fg clr_bg;
         else                            style roman;
+#Ifnot;
+style roman;
+#Endif;
         @set_window 0;
         }
     statuswin_current = false;
@@ -5559,10 +5572,12 @@ statuswin_current = true;
             clr_fg = f;
             clr_bg = b;
         }
+#Ifdef COLOUR;
         if (statuswin_current)
             @set_colour clr_fgstatus clr_bgstatus;
         else
             @set_colour clr_fg clr_bg;
+#Endif;
     }
 ];
 
@@ -6229,9 +6244,9 @@ Array StorageForShortName -> 160 + WORDSIZE;
     if (o provides articles) {
         artval=(o.&articles)-->(acode+short_name_case*LanguageCases);
         if (capitalise)
-            print (Cap) artval, " ";
+            print (Cap) artval;
         else
-            print (string) artval, " ";
+            print (string) artval;
         if (pluralise) return;
         print (PSN__) o; return;
     }
@@ -6454,7 +6469,7 @@ Object  LibraryExtensions "(Library Extensions)"
                     rval = obj.prop(a1, a2, a3);
                     if (rval == exitval) return rval;
                 }
-            return ~exitval;
+            return ~~exitval;
         ],
         RunWhile [ prop exitval a1 a2 a3
             obj rval;

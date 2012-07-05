@@ -9,7 +9,79 @@ http://www.inform-fiction.org/patches/library.html.
 
 
 
-Changes in Release 6/12 (12????)
-================================
+Issues addressed in Release 6/12 (12????)
+=========================================
+Issue L61129
+Results from 'grammar' property are misplaced.
+Problem: An animate or talkable object's grammar property can return 1 
+to mean (quoting from DM4) "you can stop parsing now because I have done 
+it all, and put the resulting order into the variables action, noun and 
+second". However, the library code to handle this return value does not 
+work correctly.
 
+Issue L61101
+each_turn property causes runtime error.
+Problem: An each_turn property with both a local routine and a routine 
+inherited from a Class causes a runtime error in Strict mode.
 
+Issue L61105
+'Game uses colour' bit is always set.
+Problem: Every game compiled with the 6/11 library has the 'game uses 
+colour' bit set in the Flags2 header word.
+
+Issue L61106
+Improvement to LibraryExtensions.RunUntil
+Problem: The LibraryExtensions.RunUntil property (new at 6/11 and not 
+currently used by the library) should return simply true or false if it 
+does nothing.
+
+Issue L61112 
+WITHOUT_DIRECTIONS causes compilation error
+Problem: Version 6/11 of the Inform Library fails to compile if the 
+constant WITHOUT_DIRECTIONS is set and the objects 'u_obj' and 'd_obj' 
+aren't defined, because a few library routines expect those objects to 
+exist.
+
+Issue L61118
+'thedark.initial' is never called
+Problem: The library thoughtfully provides thedark.initial, but it is 
+never called unless you are diabolical enough to make thedark contained 
+by some location, which I'm sure is not what it was meant for. The DM is 
+a bit contradictory about the purpose of thedark.initial, but the 
+functionality that makes the most sense is that it is called at the 
+transition from lighted to darkened. This makes up a gap in 
+functionality: NewRoom() is called on light-to-light and dark-to-light; 
+DarkToDark() is called on dark-to-dark, but absolutely nothing is called 
+on light-to-dark.
+
+Issue L61121
+add_to_scope of parentless object causes error
+Problem: Consider an object which has no parent, and is brought into 
+scope by an add_to_scope property. An attempt to take that object causes 
+error messages:
+  [** Programming error: tried to test "has" or "hasnt" of nothing **]
+  [** Programming error: tried to test "has" or "hasnt" of nothing **]
+  That's hardly portable.
+
+Issue L61124
+Spurious space with 'articles' property
+Problem: The rarely-used articles property defines an array of strings. 
+(The property is provided for non-English languages where irregular 
+nouns may have unusual vowel-contraction rules with articles.) The DM4 
+gives an example appropriate for a French game, with three strings in 
+the array:
+Object  "haricot"
+    with  name 'haricot' 'legume',
+          articles "Le "   "le "   "un ",
+          ... ;
+Note that each string includes its individual trailing space, if 
+appropriate. This is important, because a definite article like l' must 
+be followed immediately by the object's name, without any intervening 
+space. However, in fact a space does appear.
+
+Issue L61125
+match_list and match_scores over-run
+Problem: The problem is that match_list-->number_matched is being 
+accessed, when match_list has length only number_matched (that is, 
+entries 0..number_matched-1). In particular this causes errors when the 
+match_list is of full length (64 entries). Similarly for match_scores.

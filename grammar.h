@@ -426,6 +426,8 @@ Verb 'wake' 'awake' 'awaken'
 
 #Default Story 0;
 #Default Headline 0;
+#Default d_obj NULL;
+#Default u_obj NULL;
 
 #Ifdef INFIX;
 #Include "infix";
