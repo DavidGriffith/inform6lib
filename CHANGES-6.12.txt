@@ -11,29 +11,43 @@ http://www.inform-fiction.org/patches/library.html.
 
 Issues addressed in Release 6/12 (12????)
 =========================================
-Issue L61129
-Results from 'grammar' property are misplaced.
-Problem: An animate or talkable object's grammar property can return 1 
-to mean (quoting from DM4) "you can stop parsing now because I have done 
-it all, and put the resulting order into the variables action, noun and 
-second". However, the library code to handle this return value does not 
-work correctly.
-
 Issue L61101
 each_turn property causes runtime error.
 Problem: An each_turn property with both a local routine and a routine 
 inherited from a Class causes a runtime error in Strict mode.
+Status: Fixed
+
+Issue L61102
+GET IN now matches Compass object
+Adding "in_obj.&name-->0 = '.ignore';" to Initialise() reverts back to 
+the previous behavior.  
+Status: Maybe fix?
 
 Issue L61105
 'Game uses colour' bit is always set.
 Problem: Every game compiled with the 6/11 library has the 'game uses 
 colour' bit set in the Flags2 header word.
+Fixed: From now on, if you want a game to use color, add "Constant 
+COLOUR;" or "Constant COLOR;" to the beginning of your code.
+Status: Fixed
 
 Issue L61106
 Improvement to LibraryExtensions.RunUntil
 Problem: The LibraryExtensions.RunUntil property (new at 6/11 and not 
 currently used by the library) should return simply true or false if it 
 does nothing.
+Status: Fixed
+
+Issue L61107
+(The) with 'proper' should capitalise object name
+Problem: In the case of an object with the 'proper' attribute and a 
+lower-case name (such as "your nose", "your corduroy trousers", "your 
+mother's purse"), the (The) print rule should capitalise the first 
+letter of the object name, so that library messages such as (The) x1, " 
+", (isorare) x1, " empty." correctly produce "Your mother's purse is 
+empty."
+Status: Almost fixed
+
 
 Issue L61112 
 WITHOUT_DIRECTIONS causes compilation error
@@ -41,6 +55,7 @@ Problem: Version 6/11 of the Inform Library fails to compile if the
 constant WITHOUT_DIRECTIONS is set and the objects 'u_obj' and 'd_obj' 
 aren't defined, because a few library routines expect those objects to 
 exist.
+Status: Fixed
 
 Issue L61118
 'thedark.initial' is never called
@@ -53,6 +68,7 @@ transition from lighted to darkened. This makes up a gap in
 functionality: NewRoom() is called on light-to-light and dark-to-light; 
 DarkToDark() is called on dark-to-dark, but absolutely nothing is called 
 on light-to-dark.
+Status: Fixed
 
 Issue L61121
 add_to_scope of parentless object causes error
@@ -62,6 +78,7 @@ error messages:
   [** Programming error: tried to test "has" or "hasnt" of nothing **]
   [** Programming error: tried to test "has" or "hasnt" of nothing **]
   That's hardly portable.
+Status: Fixed
 
 Issue L61124
 Spurious space with 'articles' property
@@ -78,6 +95,7 @@ Note that each string includes its individual trailing space, if
 appropriate. This is important, because a definite article like l' must 
 be followed immediately by the object's name, without any intervening 
 space. However, in fact a space does appear.
+Status: Fixed
 
 Issue L61125
 match_list and match_scores over-run
@@ -85,3 +103,13 @@ Problem: The problem is that match_list-->number_matched is being
 accessed, when match_list has length only number_matched (that is, 
 entries 0..number_matched-1). In particular this causes errors when the 
 match_list is of full length (64 entries). Similarly for match_scores.
+Status: Fixed
+
+Issue L61129
+Results from 'grammar' property are misplaced.
+Problem: An animate or talkable object's grammar property can return 1 
+to mean (quoting from DM4) "you can stop parsing now because I have done 
+it all, and put the resulting order into the variables action, noun and 
+second". However, the library code to handle this return value does not 
+work correctly.
+Status: Fixed

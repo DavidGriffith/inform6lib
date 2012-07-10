@@ -64,6 +64,9 @@ Global location = InformLibrary;    ! Must be first global defined
 Global sline1;                      ! Must be second
 Global sline2;                      ! Must be third
                                     ! (for status line display)
+
+Global caps_mode;                   ! Keep track of (The) with 'proper' caps
+
 ! ------------------------------------------------------------------------------
 !   Z-Machine and interpreter issues
 ! ------------------------------------------------------------------------------
@@ -6316,7 +6319,7 @@ Array StorageForShortName -> 160 + WORDSIZE;
 ];
 
 [ Indefart o i;
-    i = indef_mode; indef_mode = true;
+    i = indef_mode; indef_mode = true; caps_mode = false;
     if (o has proper) { indef_mode = NULL; print (PSN__) o; return; }
     if (o provides article) {
         PrintOrRun(o, article, 1); print " ", (PSN__) o; indef_mode = i;
@@ -6325,18 +6328,37 @@ Array StorageForShortName -> 160 + WORDSIZE;
     PrefaceByArticle(o, 2); indef_mode = i;
 ];
 
-[ CInDefArt o i;
-    i = indef_mode; indef_mode = true;
-    if (o has proper) { indef_mode = NULL; print (PSN__) o; return; }
-    if (o provides article) {
-        PrintCapitalised(o, article, 1); print " ", (PSN__) o; indef_mode = i;
+[ CInDefArt o saveIndef saveCaps;
+    saveIndef = indef_mode; indef_mode = true;
+    saveCaps = caps_mode; caps_mode = true;
+
+    if (o has proper) {
+        indef_mode = NULL;
+        PrintToBuffer(StorageForShortName, 160, PSN__, o);
+        if (caps_mode) {
+                StorageForShortName->WORDSIZE =
+                    UpperCase(StorageForShortName->WORDSIZE);
+        }
+        for (o=0 : o<StorageForShortName-->0 : o++)
+            print (char) StorageForShortName->(o+WORDSIZE);
+        caps_mode = saveCaps;
         return;
     }
-    PrefaceByArticle(o, 2, 0, 1); indef_mode = i;
+
+    if (o provides article) {
+        PrintCapitalised(o, article, 1);
+        print " ", (PSN__) o;
+        indef_mode = saveIndef;
+        caps_mode = saveCaps;
+        return;
+    }
+    PrefaceByArticle(o, 2, 0, 1);
+    caps_mode = saveCaps;
+    indef_mode = saveIndef;
 ];
 
 [ Defart o i;
-    i = indef_mode; indef_mode = false;
+    i = indef_mode; indef_mode = false; caps_mode = false;
     if ((~~o ofclass Object) || o has proper) {
         indef_mode = NULL; print (PSN__) o; indef_mode = i;
         return;
@@ -6344,19 +6366,32 @@ Array StorageForShortName -> 160 + WORDSIZE;
     PrefaceByArticle(o, 1); indef_mode = i;
 ];
 
-[ CDefart o i;
+[ CDefart o saveIndef saveCaps;
     #Ifdef YOU__TX;
     if (o == player) {
         print (string) YOU__TX;
         return;
     }
     #Endif;
-    i = indef_mode; indef_mode = false;
-    if ((~~o ofclass Object) || o has proper) {
-        indef_mode = NULL; print (PSN__) o; indef_mode = i;
-        return;
+    saveIndef = indef_mode; indef_mode = false;
+    saveCaps = caps_mode; caps_mode = true;
+    if (~~o ofclass Object) {
+        indef_mode = NULL; print (PSN__) o;
     }
-    PrefaceByArticle(o, 0); indef_mode = i;
+    else
+        if (o has proper) {
+            indef_mode = NULL;
+            PrintToBuffer(StorageForShortName, 160, PSN__, o);
+            if (caps_mode) {
+                StorageForShortName->WORDSIZE =
+                    UpperCase(StorageForShortName->WORDSIZE);
+            }
+            for (o=0 : o<StorageForShortName-->0 : o++)
+                print (char) StorageForShortName->(o+WORDSIZE);
+        }
+        else
+            PrefaceByArticle(o, 0);
+    indef_mode = saveIndef; caps_mode = saveCaps;
 ];
 
 [ PrintShortName o i;
