@@ -1,7 +1,7 @@
 ! ==============================================================================
 !   PARSER:  Front end to parser.
 !
-!   Supplied for use with Inform 6 -- Release 6/11 -- Serial number 040227
+!   Supplied for use with Inform 6 -- Release 6/12 -- Serial number 1208??
 !
 !   Copyright Graham Nelson 1993-2004 but freely usable (see manuals)
 !
@@ -15,9 +15,9 @@ System_file;
 
 ! ------------------------------------------------------------------------------
 
-Constant LibSerial       "040227";
-Constant LibRelease      "6/11";
-Constant LIBRARY_VERSION  611;
+Constant LibSerial       "1208??";
+Constant LibRelease      "6/12";
+Constant LIBRARY_VERSION  612;
 Constant Grammar__Version 2;
 
 Default COMMENT_CHARACTER '*';
