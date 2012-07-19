@@ -46,7 +46,20 @@ mother's purse"), the (The) print rule should capitalise the first
 letter of the object name, so that library messages such as (The) x1, " 
 ", (isorare) x1, " empty." correctly produce "Your mother's purse is 
 empty."
-Status: Almost fixed
+Status: Fixed
+
+Issue L61108
+indef_mode not restored
+Problem: When printing an object with the proper attribute, the 
+functions IndefArt( ) and CIndefArt( ) temporarily modify -- but do not 
+restore -- the value of the global variable indef_mode (see lines 6305 
+and 6315 in parserm.h).
+Status: Fixed
+
+Issue L61109
+Problem with 'Give reverse' grammar
+Status: Fixed
+
 
 
 Issue L61112 

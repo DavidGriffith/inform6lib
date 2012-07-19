@@ -1248,7 +1248,7 @@ Object  InformParser "(Inform Parser)"
 ! ----------------------------------------------------------------------------
 
 [ Parser__parse  results   syntax line num_lines line_address i j k
-                           token l m;
+                           token l m line_etype;
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -1655,7 +1655,7 @@ Object  InformParser "(Inform Parser)"
         nsns = 0; special_word = 0; special_number = 0;
         multiple_object-->0 = 0;
         multi_context = 0;
-        etype = STUCK_PE;
+        etype = STUCK_PE; line_etype = 100;
 
         ! Put the word marker back to just after the verb
 
@@ -1820,7 +1820,10 @@ Object  InformParser "(Inform Parser)"
                 #Endif; ! DEBUG
 
                 if (l == REPARSE_CODE) jump ReParse;
-                if (l == false) break;
+                if (l == false) {
+                    if (etype < line_etype) line_etype = etype;
+                    if (etype == STUCK_PE || wn >= num_words) break;
+                }
             }
             else {
 
@@ -1832,6 +1835,7 @@ Object  InformParser "(Inform Parser)"
                 ! However, if the superfluous text begins with a comma or "then" then
                 ! take that to be the start of another instruction
 
+                if (line_etype < 100) break;
                 if (wn <= num_words) {
                     l = NextWord();
                     if (l == THEN1__WD or THEN2__WD or THEN3__WD or comma_word) {
@@ -1945,6 +1949,7 @@ Object  InformParser "(Inform Parser)"
         ! The line has failed to match.
         ! We continue the outer "for" loop, trying the next line in the grammar.
 
+        if (line_etype < 100) etype = line_etype;
         if (etype > best_etype) best_etype = etype;
         if (etype ~= ASKSCOPE_PE && etype > nextbest_etype) nextbest_etype = etype;
 
@@ -2494,7 +2499,7 @@ Constant UNLIT_BIT  =  32;
                 jump TryAgain2;
             }
             if (etype == MULTI_PE or TOOFEW_PE && multiflag) etype = STUCK_PE;
-            etype=CantSee();
+            etype = CantSee();
             jump FailToken;
         } ! Choose best error
 
@@ -3588,7 +3593,6 @@ Constant SCORE__DIVISOR = 20;
         if (i has visited && Refers(i,wn) == 1) e = SCENERY_PE;
     }
     wn++;
-    if (etype > e) return etype;
     return e;
 ];
 
@@ -6320,7 +6324,10 @@ Array StorageForShortName -> 160 + WORDSIZE;
 
 [ Indefart o i;
     i = indef_mode; indef_mode = true; caps_mode = false;
-    if (o has proper) { indef_mode = NULL; print (PSN__) o; return; }
+    if (o has proper) {
+        indef_mode = NULL; print (PSN__) o; indef_mode = i; return;
+    }
+
     if (o provides article) {
         PrintOrRun(o, article, 1); print " ", (PSN__) o; indef_mode = i;
         return;
