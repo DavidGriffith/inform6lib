@@ -60,7 +60,9 @@ Issue L61109
 Problem with 'Give reverse' grammar
 Status: Fixed
 
-
+Issue L61111  
+Multiple AGAINs treated as one
+Status: Fixed
 
 Issue L61112 
 WITHOUT_DIRECTIONS causes compilation error
@@ -69,6 +71,27 @@ constant WITHOUT_DIRECTIONS is set and the objects 'u_obj' and 'd_obj'
 aren't defined, because a few library routines expect those objects to 
 exist.
 Status: Fixed
+
+Issue L61113
+Size of upper window not restored properly on UNDO
+Problem: Compile and run a trivial game with Nitfol. When the game 
+begins, type WAIT and then UNDO. Nitfol displays the message [ERROR: 
+output]: illegal line for set_cursor (1) 46968 (1,1) This happens in 
+DrawStatusLine() and the reason is that the upper window has height 0, 
+but the Library tries to position the cursor at (1,1).
+Comment: I couldn't get Nitfol to complain like this, but applied the 
+fix anyhow.
+Status: Fixed
+
+Issue L61114
+Numbers in the name property
+Problem: See file nametest.inf
+Status: trying to understand the problem
+
+
+
+
+
 
 Issue L61118
 'thedark.initial' is never called
