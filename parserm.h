@@ -1381,7 +1381,32 @@ Object  InformParser "(Inform Parser)"
             jump ReType;
         }
         #Endif; ! TARGET_
+
+        if (WordAddress(verb_wordnum) == buffer + WORDSIZE) { ! not held back
+            ! splice rest of buffer onto end of buffer3
+            #Ifdef TARGET_ZCODE;
+            i = buffer3->1;
+            #Ifnot; ! TARGET_GLULX
+            i = buffer3-->0;
+            #Endif;
+            while (buffer3->(i + WORDSIZE - 1) == ' ' or '.')
+                i--;
+            j = i - WordLength(verb_wordnum);  ! amount to move buffer up by
+            if (j > 0) {
+                for (m=INPUT_BUFFER_LEN-1 : m>=WORDSIZE+j : m--)
+                    buffer->m = buffer->(m-j);
+                #Ifdef TARGET_ZCODE;
+                buffer->1 = buffer->1 + j;
+                #Ifnot; ! TARGET_GLULX
+                buffer-->0 = buffer-->0 + j;
+                #Endif;
+            }
+            for (m=WORDSIZE : m<WORDSIZE+i : m++) buffer->m = buffer3->m;
+            if (j < 0) for (:m<WORDSIZE+i-j : m++) buffer->m = ' ';
+        }
+        else
         for (i=0 : i<INPUT_BUFFER_LEN : i++) buffer->i = buffer3->i;
+
         jump ReParse;
     }
 
