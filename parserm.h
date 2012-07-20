@@ -344,6 +344,8 @@ Global params_wanted;               ! Number of parameters needed (which may cha
 Global inferfrom;                   ! The point from which the rest of the command must be inferred
 Global inferword;                   ! And the preposition inferred
 Global dont_infer;                  ! Another dull flag
+Global no_infer_message;            ! Use in ChooseObjects to suppress
+                                    ! an inference message.
 
 Global action_to_be;                ! (If the current line were accepted.)
 Global action_reversed;             ! (Parameters would be reversed in order.)
@@ -1904,9 +1906,10 @@ Object  InformParser "(Inform Parser)"
 
                 ! ...explain any inferences made (using the pattern)...
 
-                if (inferfrom ~= 0) {
+                if (inferfrom ~= 0 && no_infer_message == false) {
                     print "("; PrintCommand(inferfrom); print ")^";
                 }
+		no_infer_message = false;
 
                 ! ...copy the action number, and the number of parameters...
 

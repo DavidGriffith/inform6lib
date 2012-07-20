@@ -8,6 +8,15 @@ http://www.inform-fiction.org/patches/library.html.
 
 
 
+New things added in Release 6/12
+================================
+
+There is now a Global no_infer_message which can be used in the 
+ChooseObjects() routine to suppress an inference message for a 
+particular match.
+
+
+
 
 Issues addressed in Release 6/12 (12????)
 =========================================
