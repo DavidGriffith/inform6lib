@@ -4508,6 +4508,8 @@ Constant SCORE__DIVISOR = 20;
 Object  InformLibrary "(Inform Library)"
   with  play [ i j k l;
 
+            no_infer_message = false;
+
             #Ifdef TARGET_ZCODE;
             standard_interpreter = HDR_TERPSTANDARD-->0;
             transcript_mode = ((HDR_GAMEFLAGS-->0) & 1);
