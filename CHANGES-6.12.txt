@@ -175,3 +175,15 @@ it all, and put the resulting order into the variables action, noun and
 second". However, the library code to handle this return value does not 
 work correctly.
 Status: Fixed
+
+
+
+Other bugs fixed in Release 6/12
+================================
+
+IFIX mode requires an "infix__watching" attribute to be declared.  It 
+seems to me that people who used this debugging mode were expected to 
+include a line reading "Attribute infix__watching;" somewhere at the 
+beginning of their programs.  This strikes me as weird, so I added an 
+Attribute declaration for infix__watching at the end of the series of 
+Attribute declarations in linklpa.h.
