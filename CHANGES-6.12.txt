@@ -150,6 +150,20 @@ entries 0..number_matched-1). In particular this causes errors when the
 match_list is of full length (64 entries). Similarly for match_scores.
 Status: Fixed
 
+Issue L61127 
+Improve multiexcept look-ahead
+Problem: When the parser processes a grammar line that uses multiexcept 
+or multiinside, it jumps ahead to match the second noun in order to 
+provide context for the first one. However, in doing so, it skips over 
+all the prepositions in the input, without caring whether they match the 
+prepositions in the grammar line. If the second noun is ambiguous, this 
+means the player may be asked a disambiguation question for a grammar 
+line that has no chance of succeeding, whereas the grammar line that 
+eventually succeeds might not even need disambiguation (thanks to a 
+different token type or ChooseObjects).
+This also fixes L61120
+Status: Fixed
+
 Issue L61129
 Results from 'grammar' property are misplaced.
 Problem: An animate or talkable object's grammar property can return 1 
