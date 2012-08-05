@@ -1735,7 +1735,7 @@ Object  InformParser "(Inform Parser)"
                             if (parser_trace >= 2)
                                 print " [Look-ahead aborted: prepositions missing]^";
                             #Endif;
-                            jump LineFailed;
+                            jump EmptyLine;
                         }
 
                         do {
@@ -1768,6 +1768,7 @@ Object  InformParser "(Inform Parser)"
                             l = NextWord();
                         } until (line_ttype-->pcount ~= PREPOSITION_TT);
 
+                        .EmptyLine;
                         ! put back the non-preposition we just read
                         wn--;
 

@@ -163,6 +163,9 @@ eventually succeeds might not even need disambiguation (thanks to a
 different token type or ChooseObjects).
 This also fixes L61120
 Status: Fixed
+I have also applied a fix submitted by Egon at 
+http://inform7.com/mantis/view.php?id=636.
+
 
 Issue L61129
 Results from 'grammar' property are misplaced.
