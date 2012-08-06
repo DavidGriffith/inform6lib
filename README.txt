@@ -5,8 +5,13 @@ http://www.inform-fiction.org
 and
 http://www.ifarchive.org/indexes/if-archiveXinfocomXcompilersXinform6.html
 
+The Git repository is at https://github.com/DavidGriffith/inform6lib
+
+For bug reports, please contact David Griffith <dave@661.org> or use the 
+Inform Bug Tracker at http://inform7.com/mantis/.
 
 Thanks go to:
 
-Sarganar, David Kinder, Fredrik Ramsberg, Roger Firth, Marshall 
-Vandegrift, Nathan Summers, Emerick Rogul, Martin Bays, Cedrick Knight
+Sarganar, David Kinder, Fredrik Ramsberg, Roger Firth, Marshall
+Vandegrift, Nathan Summers, Emerick Rogul, Martin Bays, Cedrick Knight, 
+Jesse McGrew, Nathan Schwartzman
