@@ -757,11 +757,12 @@ Constant COMMA__TX      = ", ";
         5:  ".";
     }
   Pull,Push,Turn: switch (n) {
-        1:  if (x1 has pluralname) print "Those are "; else print "It is ";
+        1:  "Punishing yourself that way isn't likely to help matters.";
+        2:  if (x1 has pluralname) print "Those are "; else print "It is ";
             "fixed in place.";
-        2:  "You are unable to.";
-        3:  "Nothing obvious happens.";
-        4:  "That would be less than courteous.";
+        3:  "You are unable to.";
+        4:  "Nothing obvious happens.";
+        5:  "That would be less than courteous.";
     }
 ! Push: see Pull
   PushDir: switch (n) {
@@ -925,6 +926,7 @@ Constant COMMA__TX      = ", ";
         2:  "You look ridiculous waving ", (the) x1, ".";
     }
   WaveHands:"You wave, feeling foolish.";
+  WaveAt:"You look ridiculous waving at ", (the) x1, ".";
   Wear: switch (n) {
         1:  "You can't wear ", (thatorthose) x1, "!";
         2:  "You're not holding ", (thatorthose) x1, "!";

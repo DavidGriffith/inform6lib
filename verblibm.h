@@ -2285,18 +2285,20 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ PullSub;
     if (ObjectIsUntouchable(noun)) return;
-    if (noun has static)  return L__M(##Pull, 1, noun);
-    if (noun has scenery) return L__M(##Pull, 2, noun);
-    if (noun has animate) return L__M(##Pull, 4, noun);
-    L__M(##Pull, 3, noun);
+    if (noun == player)   return L__M(##Pull, 1, noun);
+    if (noun has static)  return L__M(##Pull, 2, noun);
+    if (noun has scenery) return L__M(##Pull, 3, noun);
+    if (noun has animate) return L__M(##Pull, 5, noun);
+    L__M(##Pull, 4, noun);
 ];
 
 [ PushSub;
     if (ObjectIsUntouchable(noun)) return;
-    if (noun has static)  return L__M(##Push, 1, noun);
-    if (noun has scenery) return L__M(##Push, 2, noun);
-    if (noun has animate) return L__M(##Push, 4, noun);
-    L__M(##Push, 3, noun);
+    if (noun == player)   return L__M(##Push, 1, noun);
+    if (noun has static)  return L__M(##Push, 2, noun);
+    if (noun has scenery) return L__M(##Push, 3, noun);
+    if (noun has animate) return L__M(##Push, 5, noun);
+    L__M(##Push, 4, noun);
 ];
 
 [ PushDirSub; L__M(##PushDir, 1, noun); ];
@@ -2364,10 +2366,11 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ TurnSub;
     if (ObjectIsUntouchable(noun)) return;
-    if (noun has static)   return L__M(##Turn, 1, noun);
-    if (noun has scenery)  return L__M(##Turn, 2, noun);
-    if (noun has animate)  return L__M(##Turn, 4, noun);
-    L__M(##Turn, 3, noun);
+    if (noun == player)   return L__M(##Push, 1, noun);
+    if (noun has static)   return L__M(##Turn, 2, noun);
+    if (noun has scenery)  return L__M(##Turn, 3, noun);
+    if (noun has animate)  return L__M(##Turn, 5, noun);
+    L__M(##Turn, 4, noun);
 ];
 
 [ WaitSub;
@@ -2384,10 +2387,13 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 ];
 
 [ WaveSub;
+    if (noun == player) return L__M(##Wave, 2 ,noun);
     if (parent(noun) ~= player) return L__M(##Wave, 1, noun);
     L__M(##Wave, 2 ,noun); ];
 
 [ WaveHandsSub; L__M(##WaveHands, 1, noun); ];
+
+[ WaveAtSub; L__M(##WaveAt, 1, noun); ];
 
 [ YesSub; L__M(##Yes); ];
 

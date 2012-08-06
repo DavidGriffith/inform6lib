@@ -15,6 +15,7 @@ There is now a Global no_infer_message which can be used in the
 ChooseObjects() routine to suppress an inference message for a 
 particular match.
 
+There is a new action for the before() procedure and friends: "WaveAt".  
 
 
 
@@ -97,10 +98,11 @@ Numbers in the name property
 Problem: See file nametest.inf
 Status: trying to understand the problem
 
-
-
-
-
+Issue L61116
+Poor response from WAVE SELF
+Problem: The message produced by WAVE SELF -- "But you aren't holding 
+you" -- makes little sense.
+Status: Fixed
 
 Issue L61118
 'thedark.initial' is never called
@@ -114,6 +116,10 @@ functionality: NewRoom() is called on light-to-light and dark-to-light;
 DarkToDark() is called on dark-to-dark, but absolutely nothing is called 
 on light-to-dark.
 Status: Fixed
+
+Issue L61120
+Preposition parsing is too simplistic
+Status: Fixed (by way of L61127)
 
 Issue L61121
 add_to_scope of parentless object causes error
@@ -165,7 +171,6 @@ This also fixes L61120
 Status: Fixed
 I have also applied a fix submitted by Egon at 
 http://inform7.com/mantis/view.php?id=636.
-
 
 Issue L61129
 Results from 'grammar' property are misplaced.
