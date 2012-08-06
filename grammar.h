@@ -346,7 +346,8 @@ Verb 'turn' 'rotate' 'screw' 'twist' 'unscrew'
 Verb 'wave'
     *                                           -> WaveHands
     * noun                                      -> Wave
-    * 'at' noun                                 -> WaveAt;
+    * noun 'at' noun                            -> Wave
+    * 'at' noun                                 -> WaveHands;
 Verb 'wear' 'don'
     * held                                      -> Wear;
 Verb 'yes' 'y//'

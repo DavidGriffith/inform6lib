@@ -2391,9 +2391,9 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
     if (parent(noun) ~= player) return L__M(##Wave, 1, noun);
     L__M(##Wave, 2 ,noun); ];
 
-[ WaveHandsSub; L__M(##WaveHands, 1, noun); ];
-
-[ WaveAtSub; L__M(##WaveAt, 1, noun); ];
+[ WaveHandsSub;
+    if (noun) return L__M(##WaveHands, 2, noun);
+    L__M(##WaveHands, 1, noun); ];
 
 [ YesSub; L__M(##Yes); ];
 

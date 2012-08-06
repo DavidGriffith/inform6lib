@@ -925,8 +925,13 @@ Constant COMMA__TX      = ", ";
         1:  "But you aren't holding ", (thatorthose) x1, ".";
         2:  "You look ridiculous waving ", (the) x1, ".";
     }
-  WaveHands:"You wave, feeling foolish.";
-  WaveAt:"You look ridiculous waving at ", (the) x1, ".";
+  WaveHands:
+        print "You wave";
+        switch (n) {
+        1: ! nothing
+        2: print " at ", (the) x1;
+        }
+        ", feeling foolish.";
   Wear: switch (n) {
         1:  "You can't wear ", (thatorthose) x1, "!";
         2:  "You're not holding ", (thatorthose) x1, "!";

@@ -15,9 +15,6 @@ There is now a Global no_infer_message which can be used in the
 ChooseObjects() routine to suppress an inference message for a 
 particular match.
 
-There is a new action for the before() procedure and friends: "WaveAt".  
-
-
 
 Issues addressed in Release 6/12 (12????)
 =========================================
@@ -192,3 +189,5 @@ include a line reading "Attribute infix__watching;" somewhere at the
 beginning of their programs.  This strikes me as weird, so I added an 
 Attribute declaration for infix__watching at the end of the series of 
 Attribute declarations in linklpa.h.
+
+WAVE AT has been improved.
