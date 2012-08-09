@@ -2518,7 +2518,10 @@ Constant UNLIT_BIT  =  32;
 
     if (o == ME1__WD or ME2__WD or ME3__WD) { pronoun_word = o; pronoun_obj = player; }
 
-    allow_plurals = true; desc_wn = wn;
+!    L61114 fix by Nathan Schwartzman
+!    Not sure if this will cause any regressions
+!    allow_plurals = true;
+    desc_wn = wn;
 
   .TryAgain;
 
