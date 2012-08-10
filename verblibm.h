@@ -1884,66 +1884,67 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
     rtrue;
 ];
 
-[ Locale descin text1 text2 o k p j f2 flag;
+[ Locale descin text_without_ALSO text_with_ALSO
+    o p num_objs must_print_ALSO;
     objectloop (o in descin) give o ~workflag;
-    k=0;
+    num_objs = 0;
     objectloop (o in descin)
         if (o hasnt concealed && NotSupportingThePlayer(o)) {
             #Ifndef MANUAL_PRONOUNS;
             PronounNotice(o);
             #Endif;
-            if (o hasnt scenery) {
-                give o workflag; k++;
-                p = initial; f2 = 0;
-                if ((o has door || o has container) && o has open && o provides when_open) {
-                    p = when_open; f2 = 1; jump Prop_Chosen;
+            if (o has scenery) {
+                if (o has supporter && child(o)) SayWhatsOn(o);
+            }
+            else {
+                give o workflag; num_objs++;
+                p = initial;
+                if ((o has door or container) && o has open && o provides when_open) {
+                    p = when_open; jump Prop_Chosen;
                 }
-                if ((o has door || o has container) && o hasnt open && o provides when_closed) {
-                    p = when_closed; f2 = 1; jump Prop_Chosen;
+                if ((o has door or container) && o hasnt open && o provides when_closed) {
+                    p = when_closed; jump Prop_Chosen;
                 }
                 if (o has switchable && o has on && o provides when_on) {
-                    p = when_on; f2 = 1; jump Prop_Chosen;
+                    p = when_on; jump Prop_Chosen;
                 }
                 if (o has switchable && o hasnt on && o provides when_off) {
-                    p = when_off; f2 = 1;
+                    p = when_off;
                 }
 
               .Prop_Chosen;
 
-                if (o hasnt moved || o.&describe ~= 0 || f2 == 1) {
-                    if (o.&describe ~= 0 && RunRoutines(o, describe) ~= 0) {
-                        flag = 1;
-                        give o ~workflag; k--;
-                    }
-                    else {
-                      j = o.p;
-                        if (j ~= 0) {
-                            new_line;
-                            PrintOrRun(o, p);
-                            flag = 1;
-                            give o ~workflag; k--;
-                            if (o has supporter && child(o) ~= 0) SayWhatsOn(o);
-                        }
-                    }
+                if (o.&describe && RunRoutines(o, describe)) {
+                    must_print_ALSO = true;
+                    give o ~workflag; num_objs--;
+                    continue;
+                }
+                if (o.p && (o hasnt moved || p ~= initial)) {
+                    new_line;
+                    PrintOrRun(o, p);
+                    must_print_ALSO = true;
+                    give o ~workflag; num_objs--;
+                    if (o has supporter && child(o)) SayWhatsOn(o);
                 }
             }
-            else
-                if (o has supporter && child(o) ~= 0) SayWhatsOn(o);
         }
 
-    if (k == 0) return 0;
+    if (num_objs == 0) return 0;
 
-    if (text1 ~= 0) {
+    if (actor ~= player) give actor concealed;
+    if (text_without_ALSO) {
         new_line;
-        if (flag == 1) text1 = text2;
-        print (string) text1, " ";
+        if (must_print_ALSO) print (string) text_with_ALSO, " ";
+        else print (string) text_without_ALSO, " ";
         WriteListFrom(child(descin),
           ENGLISH_BIT+RECURSE_BIT+PARTINV_BIT+TERSE_BIT+CONCEAL_BIT+WORKFLAG_BIT);
-        return k;
     }
-
-    if (flag == 1) L__M(##Look, 5, descin);
-    else           L__M(##Look, 6, descin);
+    else {
+        if (must_print_ALSO) L__M(##Look, 5, descin);
+        else L__M(##Look, 6, descin);
+    }
+    if (actor ~= player) give actor ~concealed;
+    return num_objs;
 ];
 
 ! ----------------------------------------------------------------------------
