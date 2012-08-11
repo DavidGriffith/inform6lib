@@ -800,7 +800,7 @@ Constant COMMA__TX      = ", ";
         1:  "Restore failed.";
         2:  "Ok.";
     }
-  Rub:      "You achieve nothing by this.";
+  Rub,Squeeze: "You achieve nothing by this.";
   Save: switch (n) {
         1:  "Save failed.";
         2:  "Ok.";
@@ -849,10 +849,7 @@ Constant COMMA__TX      = ", ";
             #Ifnot;
   Sorry:    "Oh, don't apologise.";
             #Endif;
-  Squeeze: switch (n) {
-        1:  "Keep your hands to yourself.";
-        2:  "You achieve nothing by this.";
-    }
+  !Squeeze Rub
   Strong:   "Real adventurers do not use such language.";
   Swim:     "There's not enough water to swim in.";
   Swing:    "There's nothing sensible to swing here.";

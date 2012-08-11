@@ -2304,7 +2304,11 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ PushDirSub; L__M(##PushDir, 1, noun); ];
 
-[ RubSub; L__M(##Rub, 1, noun); ];
+[ RubSub;
+    if (ObjectIsUntouchable(noun)) return;
+    if (noun has animate && noun ~= player) return L__M(##Touch, 1, noun); 
+    L__M(##Rub, 1, noun);
+];
 
 [ SetSub; L__M(##Set, 1, noun); ];
 
@@ -2320,8 +2324,8 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ SqueezeSub;
     if (ObjectIsUntouchable(noun)) return;
-    if (noun has animate) return L__M(##Squeeze, 1, noun);
-    L__M(##Squeeze, 2, noun);
+    if (noun has animate && noun ~= player) return L__M(##Squeeze, 1, noun);
+    L__M(##Squeeze, 3, noun);
 ];
 
 [ StrongSub; L__M(##Strong, 1, noun); ];
@@ -2330,7 +2334,10 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ SwingSub; L__M(##Swing, 1, noun); ];
 
-[ TasteSub; L__M(##Taste, 1, noun); ];
+[ TasteSub;
+    if (noun has animate && noun ~= player) return L__M(##Take, 3, noun);
+    L__M(##Taste, 1, noun);
+];
 
 [ TellSub;
     if (noun == player) return L__M(##Tell, 1, noun);
