@@ -193,6 +193,7 @@ Verb 'get'
     * multi                                     -> Take
     * 'in'/'into'/'on'/'onto' noun              -> Enter
     * 'off' noun                                -> GetOff
+    * 'out' 'of' noun                           -> Exit
     * multiinside 'from' noun                   -> Remove;
 Verb 'give' 'feed' 'offer' 'pay'
     * held 'to' creature                        -> Give
