@@ -459,7 +459,10 @@ Constant COMMA__TX      = ", ";
   Drop: switch (n) {
         1:  if (x1 has pluralname) print (The) x1, " are "; else print (The) x1, " is ";
             "already here.";
-        2:  "You haven't got ", (thatorthose) x1, ".";
+        2:  print "Perhaps you should take ", (the) x1;
+            if (parent(x1) has supporter) print " off ";
+	    else print " out of ";
+	    print_ret (the) parent(x1), " first.";
         3:  "(first taking ", (the) x1, " off)";
         4:  "Dropped.";
     }
