@@ -4615,8 +4615,9 @@ Object  InformLibrary "(Inform Library)"
                 real_location = location;
                 location = thedark;
             }
+#Ifndef NOINITIAL_LOOK;
             <Look>;
-
+#Endif;
             for (i=1 : i<=100 : i++) j = random(i);
 
             #Ifdef EnglishNaturalLanguage;
