@@ -378,11 +378,8 @@ Constant COMMA__TX      = ", ";
 [ ItorThem obj;
     if (obj == player)            { print "yourself"; return; }
     if (obj has pluralname)       { print "them"; return; }
-    if (obj has animate) {
-        if (obj has female)       { print "her"; return; }
-        else
-            if (obj hasnt neuter) { print "him"; return; }
-    }
+    if (obj has female)           { print "her"; return; }
+    if (obj has male)             { print "him"; return; }
     print "it";
 ];
 
