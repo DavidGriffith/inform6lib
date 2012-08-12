@@ -395,6 +395,7 @@ Verb 'wake' 'awake' 'awaken'
 #Stub ChooseObjects     2;
 #Stub DarkToDark        0;
 #Stub DeathMessage      0;
+#Stub Epilogue          0;
 #Stub GamePostRoutine   0;
 #Stub GamePreRoutine    0;
 #Stub InScope           1;

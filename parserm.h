@@ -4815,6 +4815,7 @@ Object  InformLibrary "(Inform Library)"
             #Ifnot;
             print "^^^";
             #Endif; ! NO_SCORE
+            Epilogue();
             ScoreSub();
             DisplayStatus();
             AfterGameOver();
