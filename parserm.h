@@ -56,6 +56,10 @@ Include "linklpa";
 Constant COLOUR;
 #Endif;
 
+#Ifdef COLOUR;
+Global clr_on;
+#Endif;
+
 ! ------------------------------------------------------------------------------
 !   Global variables and their associated Constant and Array declarations
 ! ------------------------------------------------------------------------------
@@ -206,11 +210,14 @@ Global x_scope_count;               ! Used in printing a list of everything
 
 ! five for colour control
 ! see http://www.inform-fiction.org/patches/L61007.html
+! To enable colour define a constant or Global: COLOR or COLOUR
+!Global clr_on;                      ! has colour been enabled by the player?
+#Ifdef COLOUR;
 Global clr_fg = 1;                  ! foreground colour
 Global clr_bg = 1;                  ! background colour
 Global clr_fgstatus = 1;            ! foreground colour of statusline
 Global clr_bgstatus = 1;            ! background colour of statusline
-Global clr_on;                      ! has colour been enabled by the player?
+#Endif;
 Global statuswin_current;           ! if writing to top window
 
 Constant CLR_DEFAULT 1;
@@ -5563,13 +5570,13 @@ Object  InformLibrary "(Inform Library)"
 #Ifndef MoveCursor;
 [ MoveCursor line column;  ! 1-based postion on text grid
     if (~~statuswin_current) {
-         @set_window 1;
-#Ifdef COLOUR;
-         if (clr_on && clr_bgstatus > 1) @set_colour clr_fgstatus clr_bgstatus;
-         else                            style reverse;
-#Ifnot;
-style reverse;
-#Endif;
+        @set_window 1;
+        #Ifdef COLOUR;
+        if (clr_on && clr_bgstatus > 1)
+            @set_colour clr_fgstatus clr_bgstatus;
+        else
+        #Endif;
+            style reverse;
     }
     if (line == 0) {
         line = 1;
@@ -5580,7 +5587,7 @@ style reverse;
     #Ifnot;
     @set_cursor line column;
     #Endif;
-statuswin_current = true;
+    statuswin_current = true;
 ];
 #Endif;
 
@@ -5588,10 +5595,9 @@ statuswin_current = true;
     if (statuswin_current) {
 #Ifdef COLOUR;
         if (clr_on && clr_bgstatus > 1) @set_colour clr_fg clr_bg;
-        else                            style roman;
-#Ifnot;
-style roman;
+        else
 #Endif;
+            style roman;
         @set_window 0;
         }
     statuswin_current = false;
@@ -5640,8 +5646,9 @@ style roman;
 ];
 #Endif;
 
+#Ifdef COLOUR;
 [ SetColour f b window;
-    if (clr_on && f && b) {
+    if (f && b) {
         if (window == 0) {  ! if setting both together, set reverse
             clr_fgstatus = b;
             clr_bgstatus = f;
@@ -5654,14 +5661,15 @@ style roman;
             clr_fg = f;
             clr_bg = b;
         }
-#Ifdef COLOUR;
-        if (statuswin_current)
-            @set_colour clr_fgstatus clr_bgstatus;
-        else
-            @set_colour clr_fg clr_bg;
-#Endif;
+        if (clr_on) {
+            if (statuswin_current)
+                @set_colour clr_fgstatus clr_bgstatus;
+            else
+                @set_colour clr_fg clr_bg;
+        }
     }
 ];
+#Endif;
 
 
 #Ifnot; ! TARGET_GLULX
@@ -5712,36 +5720,39 @@ style roman;
     return gg_arguments-->0;
 ];
 
+#Ifdef COLOUR;
 [ SetColour f b window doclear  i fwd bwd swin;
-    if (clr_on && f && b) {
+    if (f && b) {
         if (window) swin = 5-window; ! 4 for TextGrid, 3 for TextBuffer
 
-        fwd = MakeColourWord(f);
-        bwd = MakeColourWord(b);
-        for (i=0 : i<=10: i++) {
-            if (f == CLR_DEFAULT || b == CLR_DEFAULT) {  ! remove style hints
-                glk($00B1, swin, i, 7);
-                glk($00B1, swin, i, 8);
+        if (clr_on) {
+            fwd = MakeColourWord(f);
+            bwd = MakeColourWord(b);
+            for (i=0 : i<=10: i++) {
+                if (f == CLR_DEFAULT || b == CLR_DEFAULT) { ! remove style hints
+                    glk($00B1, swin, i, 7);
+                    glk($00B1, swin, i, 8);
+                }
+                else {
+                    glk($00B0, swin, i, 7, fwd);
+                    glk($00B0, swin, i, 8, bwd);
+                }
+
+            ! Now re-open the windows to apply the hints
+            if (gg_statuswin) glk($0024, gg_statuswin, 0); ! close_window
+
+            if (doclear || ( window ~= 1 && (clr_fg ~= f || clr_bg ~= b) ) ) {
+                glk($0024, gg_mainwin, 0);
+                gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
+                if (gg_scriptstr ~= 0)
+                    glk($002D, gg_mainwin, gg_scriptstr); ! window_set_echo_stream
             }
-            else {
-                glk($00B0, swin, i, 7, fwd);
-                glk($00B0, swin, i, 8, bwd);
-            }
+
+            gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize,
+               4, GG_STATUSWIN_ROCK); ! window_open
+            if (statuswin_current && gg_statuswin)
+                MoveCursor(); else MainWindow();
         }
-
-        ! Now re-open the windows to apply the hints
-        if (gg_statuswin) glk($0024, gg_statuswin, 0); ! close_window
-
-        if (doclear || ( window ~= 1 && (clr_fg ~= f || clr_bg ~= b) ) ) {
-            glk($0024, gg_mainwin, 0);
-            gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
-            if (gg_scriptstr ~= 0)
-                glk($002D, gg_mainwin, gg_scriptstr); ! window_set_echo_stream
-        }
-
-        gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize,
-           4, GG_STATUSWIN_ROCK); ! window_open
-        if (statuswin_current && gg_statuswin) MoveCursor(); else MainWindow();
 
         if (window ~= 2) {
             clr_fgstatus = f;
@@ -5753,7 +5764,10 @@ style roman;
         }
     }
 ];
+#Endif; ! COLOUR
 #Endif;
+
+#Stub SetColour 4;
 
 [ SetClr f b w;
     SetColour (f, b, w);
@@ -5761,11 +5775,13 @@ style roman;
 
 [ RestoreColours;    ! L61007
     gg_statuswin_cursize = -1;    ! L61113
+    #Ifdef COLOUR;
     if (clr_on) { ! check colour has been used
         SetColour(clr_fg, clr_bg, 2); ! make sure both sets of variables are restored
         SetColour(clr_fgstatus, clr_bgstatus, 1, true);
         ClearScreen();
     }
+    #Endif;
     #Ifdef TARGET_ZCODE;
     #Iftrue (#version_number == 6); ! request screen update
     (0-->8) = (0-->8) | $$00000100;
