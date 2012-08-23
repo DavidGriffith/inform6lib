@@ -2905,7 +2905,7 @@ Constant UNLIT_BIT  =  32;
         if (match_classes-->marker > 0) print (the) k; else print (a) k;
 
         if (i < j-1)  print (string) COMMA__TX;
-        if (i == j-1) print (string) OR__TX;
+        if (i == j-1) print (OxfordComma) j, (string) OR__TX;
     }
     L__M(##Miscellany, 57);
 
@@ -4486,7 +4486,7 @@ Constant SCORE__DIVISOR = 20;
         }
         d++;
         if (d < c-1) print (string) COMMA__TX;
-        if (d == c-1) print (string) AND__TX;
+        if (d == c-1) print (OxfordComma) c, (string) AND__TX;
     }
     if (player ~= selfobj) {
         print "~", (address) ME1__WD, "~ "; L__M(##Pronouns, 2);
@@ -6438,6 +6438,12 @@ Array StorageForShortName -> 160 + WORDSIZE;
 ];
 
 [ EnglishNumber n; LanguageNumber(n); ];
+
+[ OxfordComma n;
+    #Ifdef SERIAL_COMMAS;
+    if (n>2) print ",";
+    #Endif;
+];
 
 [ NumberWord o i n;
     n = LanguageNumbers-->0;
