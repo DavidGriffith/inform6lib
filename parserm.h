@@ -6440,6 +6440,7 @@ Array StorageForShortName -> 160 + WORDSIZE;
 [ EnglishNumber n; LanguageNumber(n); ];
 
 [ OxfordComma n;
+    if (n);	! quell unused n variable warning
     #Ifdef SERIAL_COMMAS;
     if (n>2) print ",";
     #Endif;

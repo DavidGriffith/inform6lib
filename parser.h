@@ -27,7 +27,7 @@ Default DEBUG 0;
 #Endif; ! INFIX
 
 #Ifndef WORDSIZE;                   ! compiling with Z-code only compiler
-#Ifnde TARGET_ZCODE;
+#Ifndef TARGET_ZCODE;
 Constant TARGET_ZCODE;
 #Endif; ! TARGET_ZCODE
 Constant WORDSIZE 2;
