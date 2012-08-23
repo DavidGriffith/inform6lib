@@ -737,6 +737,7 @@ Array InfixRV_commas --> 32;
 ];
 
 [ InfixGiveSub f t;
+    if (t);  ! quell unused n variable warning
     print "; give (", (the) noun, ") ";
     if (second < 0) { second = ~second; f=true; }
     if (second < 0 || second >= 48) "<No such attribute>"; !(##num_attr_bytes-1)*8
