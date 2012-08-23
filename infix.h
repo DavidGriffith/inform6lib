@@ -99,11 +99,16 @@ Array  infix_text -> 128;
       InfixPrintArray:      t = #array_names_array;
     }
 
-    i2 = range2-range1; it2 = infix_text+2;
+    i2 = range2-range1; it2 = infix_text+WORDSIZE;
     for (i=0 : i<=i2 : i++) {
+        #ifdef TARGET_ZCODE;
         infix_text-->0 = 62; @output_stream 3 infix_text;
         if (t) print (string) t-->i; else PrintingRule(i+range1);
         @output_stream -3;
+        #ifnot;
+        if (t) PrintToBuffer(infix_text, 62, t-->i);
+        else PrintToBuffer(infix_text, 62, PrintingRule, i+range1);
+        #endif;
         k = infix_text-->0;
         if (k ~= wl) jump XL;
         if (itlc->(it2->0) ~= wa->0) jump XL;
@@ -301,12 +306,12 @@ Array  infix_text -> 128;
             altered = true; break;
         }
     }
-    for (i=2 : i<buffer->1 + 2 : i++) {
+    for (i=WORDSIZE : i<buffer->1 + WORDSIZE : i++) {
         force = false;
         if (buffer->i == '-' && buffer->(i+1) == '-' && buffer->(i+2) == '>')
             force = true;
         if (force) {
-            if (i>2 && buffer->(i-1) ~= ' ') {
+            if (i>WORDSIZE && buffer->(i-1) ~= ' ') {
                 LTI_Insert(i++, ' '); altered = true;
             }
             if (buffer->(i+3) ~= ' ') {
@@ -338,7 +343,7 @@ Array  infix_text -> 128;
         if (buffer->i == '#' && buffer->(i+1) == '#') force = true;
 
         if (force) {
-            if (i > 2 && buffer->(i-1) ~= ' ') {
+            if (i > WORDSIZE && buffer->(i-1) ~= ' ') {
                 LTI_Insert(i++, ' '); altered = true;
             }
             if (buffer->(i+2) ~= ' ') {
@@ -363,7 +368,7 @@ Array  infix_text -> 128;
         if (buffer->i == '~') force = true;
         if (buffer->i == '=') force = true;
         if (force) {
-            if (i > 2 && buffer->(i-1) ~= ' ') {
+            if (i > WORDSIZE && buffer->(i-1) ~= ' ') {
                 LTI_Insert(i++, ' '); altered = true;
             }
             if (buffer->(i+1) ~= ' ') {
@@ -371,7 +376,7 @@ Array  infix_text -> 128;
             }
         }
     }
-    for (i=2 : i<buffer->1 + 2 : i++)
+    for (i=WORDSIZE : i<buffer->1 + WORDSIZE : i++)
         if (buffer->i == '~') { buffer->i = '['; altered = true; }
     return altered;
 ]; ! end of InfixCheckLineSpaced
@@ -541,7 +546,11 @@ Array InfixRV_commas --> 32;
                     (InfixRV_lop-->lvalside)-->(InfixRV_rop-->lvalside) = acc;
               default:
                 w = InfixRV_lvals-->lvalside; if (w == -1) return -1;
+                #ifdef TARGET_ZCODE;
                 @storew #globals_array w acc;
+                #ifnot;
+                @astore #globals_array w acc;
+                #endif;
             }
             switch(InfixRV_rvals-->maxi) {
               'post++': acc--;
@@ -727,14 +736,20 @@ Array InfixRV_commas --> 32;
     <<(infix_lvalue)>>;
 ];
 
-[ InfixGiveSub f;
+[ InfixGiveSub f t;
     print "; give (", (the) noun, ") ";
     if (second < 0) { second = ~second; f=true; }
-    if (second < 0 || second >= 48) "<No such attribute>";
+    if (second < 0 || second >= 48) "<No such attribute>"; !(##num_attr_bytes-1)*8
     if (f) print "@@126";
     print (DebugAttribute) second;
+#ifdef TARGET_ZCODE;
     if (f) @clear_attr noun second;
     else @set_attr noun second;
+#ifnot;
+    t = second+8;
+    if (f) @astorebit noun t 0; ! give noun ~second; 
+    else @astorebit noun t 1;   ! give noun second;
+#endif;
 ];
 
 [ InfixMoveSub;
@@ -953,7 +968,11 @@ Array InfixRV_commas --> 32;
         for (j=0,k=1 : j<infix_parsed_lvalue%8 : j++) k=k*2;
         l = #routine_flags_array->i;
         l = l | k;
+        #ifdef TARGET_ZCODE;
         @storeb #routine_flags_array i l;
+        #ifnot;
+        @astoreb #routine_flags_array i l;
+        #endif;
        "; Watching routine ", (InfixPrintRoutine) infix_parsed_lvalue, ".";
     }
     if (metaclass(noun) == Object) {
@@ -970,11 +989,19 @@ Array InfixRV_commas --> 32;
         for (j=0,k=1 : j<infix_parsed_lvalue%8 : j++) k=k*2;
         l = #routine_flags_array->i;
         l = l & (~k);
+        #ifdef TARGET_ZCODE;
         @storeb #routine_flags_array i l;
+        #ifnot;
+        @astoreb #routine_flags_array i l;
+        #endif;
        "; Not watching ", (InfixPrintRoutine) infix_parsed_lvalue, ".";
     }
     if (metaclass(noun) == Object) {
+        #ifdef TARGET_ZCODE;
         @clear_attr noun infix__watching;
+        #ifnot;
+        @astorebit noun (infix__watching+8) 0;
+        #endif;
        "; Not watching object ~", (name) noun, "~ (", noun, ").";
     }
     InfixDescribeWatchSub();
