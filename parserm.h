@@ -452,7 +452,8 @@ Global bestguess_score;             ! What did the best-guess object score?
 
 #Ifdef TARGET_ZCODE;
 
-Constant INPUT_BUFFER_LEN = 120;    ! Length of buffer array (although we leave an extra byte
+Constant INPUT_BUFFER_LEN = 122;    ! Length of buffer array (although 
+we leave an extra byte
                                     ! to allow for interpreter bugs)
 
 Array  buffer    -> 123;            ! Buffer for parsing main line of input
@@ -584,7 +585,7 @@ Object  selfobj "(self object)"
         parse_name 0,
         orders 0,
         number 0,
-        before_implicit NULL,
+        before_implicit [;Take: return 2;],
   has   concealed animate proper transparent;
 
 ! ============================================================================
@@ -3386,7 +3387,9 @@ Constant SCORE__DIVISOR = 20;
       indef_type, ", satisfying ", threshold, " requirements:^";
     #Endif; ! DEBUG
 
-    a_s = SCORE__NEXTBESTLOC; l_s = SCORE__BESTLOC;
+    if (action_to_be ~= ##Take)
+        a_s = SCORE__NEXTBESTLOC;
+    l_s = SCORE__BESTLOC;
     if (context == HELD_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN) {
         a_s = SCORE__BESTLOC; l_s = SCORE__NEXTBESTLOC;
     }
