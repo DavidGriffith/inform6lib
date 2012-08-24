@@ -170,7 +170,7 @@ Global visibility_ceiling;          ! Highest object in tree visible from the pl
                                     ! (usually the room, sometimes darkness, sometimes a closed
                                     ! non-transparent container).
 
-Global lookmode = 1;                ! 1=standard, 2=verbose, 3=brief room descs
+Global lookmode = 2;                ! 1=brief, 2=verbose, 3=superbrief room descs
 Global print_player_flag;           ! If set, print something like "(as Fred)" in room descriptions,
                                     ! to reveal whom the human is playing through
 Global lastdesc;                    ! Value of location at time of most recent room description
@@ -504,6 +504,10 @@ Array  oops_workspace -> 64;        ! Used temporarily by "oops" routine
 Global held_back_mode;              ! Flag: is there some input from last time
 Global hb_wn;                       ! left over?  (And a save value for wn.)
                                     ! (Used for full stops and "then".)
+
+Global print_anything_result;       ! Return value from a PrintAny() routine
+Global initial_lookmode;            ! Default, or set in Initialise()
+Global before_first_turn;           ! True until after initial LOOK
 
 ! ----------------------------------------------------------------------------
 
@@ -4584,6 +4588,7 @@ Object  InformLibrary "(Inform Library)"
             LibraryExtensions.RunAll(ext_initialise);
             j = Initialise();
             last_score = score;
+            initial_lookmode = lookmode;
             move player to location;
 
             while (parent(location) ~= 0) location = parent(location);

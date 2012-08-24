@@ -622,11 +622,17 @@ Constant COMMA__TX      = ", ";
         21: print " (in ";
         22: print ", inside ";
     }
-  LMode1:   " is now in its normal ~brief~ printing mode, which gives long descriptions
+  LMode1:   print " is now in its ";
+            if (initial_lookmode == 1) print "normal ";
+            "~brief~ printing mode, which gives long descriptions
              of places never before visited and short descriptions otherwise.";
-  LMode2:   " is now in its ~verbose~ mode, which always gives long descriptions
+  LMode2:   print " is now in its ";
+            if (initial_lookmode ~= 1 or 3) print "normal ";
+            "~verbose~ mode, which always gives long descriptions
              of locations (even if you've been there before).";
-  LMode3:   " is now in its ~superbrief~ mode, which always gives short descriptions
+  LMode3:   print " is now in its ";
+            if (initial_lookmode == 3) print "normal ";
+            "~superbrief~ mode, which always gives short descriptions
              of locations (even if you haven't been there before).";
   Lock: switch (n) {
         1:  if (x1 has pluralname) print "They don't "; else print "That doesn't ";
