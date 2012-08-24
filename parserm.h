@@ -1060,7 +1060,7 @@ Object  InformParser "(Inform Parser)"
     ! disastrous if it did:
 
     #Ifdef TARGET_ZCODE;
-    a_buffer->0 = INPUT_BUFFER_LEN;
+    a_buffer->0 = INPUT_BUFFER_LEN - WORDSIZE;
     a_table->0 = 15;  ! Allow to split input into this many words
     #Endif; ! TARGET_
 
@@ -1072,11 +1072,7 @@ Object  InformParser "(Inform Parser)"
     DrawStatusLine();
     #Endif; ! V5
     KeyboardPrimitive(a_buffer, a_table);
-    #Ifdef TARGET_ZCODE;
-    nw = a_table->1;
-    #Ifnot; ! TARGET_GLULX
-    nw = a_table-->0;
-    #Endif; ! TARGET_
+    nw = NumberWords(a_table);
 
     ! If the line was blank, get a fresh line
     if (nw == 0) {
@@ -1215,11 +1211,7 @@ Object  InformParser "(Inform Parser)"
             a_buffer->i = a_buffer->(i-x2+w2);
 
         ! ...increasing buffer size accordingly.
-        #Ifdef TARGET_ZCODE;
-        a_buffer->1 = (a_buffer->1) + (x2-w2);
-        #Ifnot; ! TARGET_GLULX
-        a_buffer-->0 = (a_buffer-->0) + (x2-w2);
-        #Endif; ! TARGET_
+        SetKeyBufLength(GetKeyBufLength(a_buffer) + (x2-w2), a_buffer);
     }
 
     ! Write the correction in:
@@ -1227,11 +1219,7 @@ Object  InformParser "(Inform Parser)"
     for (i=0 : i<x2 : i++) a_buffer->(i+w) = buffer2->(i+x1);
 
     Tokenise__(a_buffer, a_table);
-    #Ifdef TARGET_ZCODE;
-    nw = a_table->1;
-    #Ifnot; ! TARGET_GLULX
-    nw = a_table-->0;
-    #Endif; ! TARGET_
+    nw=NumberWords(a_table);
 
     return nw;
 ]; ! end of Keyboard
@@ -1292,11 +1280,7 @@ Object  InformParser "(Inform Parser)"
     ! Initially assume the command is aimed at the player, and the verb
     ! is the first word
 
-    #Ifdef TARGET_ZCODE;
-    num_words = parse->1;
-    #Ifnot; ! TARGET_GLULX
-    num_words = parse-->0;
-    #Endif; ! TARGET_
+    num_words = NumberWords();
     wn = 1;
 
     #Ifdef LanguageToInformese;
@@ -1308,11 +1292,7 @@ Object  InformParser "(Inform Parser)"
     #Endif; ! LanguageToInformese
 
     BeforeParsing();
-    #Ifdef TARGET_ZCODE;
-    num_words = parse->1;
-    #Ifnot; ! TARGET_GLULX
-    num_words = parse-->0;
-    #Endif; ! TARGET_
+    num_words = NumberWords();
 
     k=0;
     #Ifdef DEBUG;
@@ -1320,11 +1300,7 @@ Object  InformParser "(Inform Parser)"
         print "[ ";
         for (i=0 : i<num_words : i++) {
 
-            #Ifdef TARGET_ZCODE;
-            j = parse-->(i*2 + 1);
-            #Ifnot; ! TARGET_GLULX
-            j = parse-->(i*3 + 1);
-            #Endif; ! TARGET_
+            j = WordValue(i+1);
             k = WordAddress(i+1);
             l = WordLength(i+1);
             print "~"; for (m=0 : m<l : m++) print (char) k->m; print "~ ";
@@ -1379,43 +1355,27 @@ Object  InformParser "(Inform Parser)"
             L__M(##Miscellany, 20);
             jump ReType;
         }
-        #Ifdef TARGET_ZCODE;
-        if (buffer3->1 == 0) {
+        if (GetKeyBufLength(buffer3) == 0) {
             L__M(##Miscellany, 21);
             jump ReType;
         }
-        #Ifnot; ! TARGET_GLULX
-        if (buffer3-->0 == 0) {
-            L__M(##Miscellany, 21);
-            jump ReType;
-        }
-        #Endif; ! TARGET_
 
         if (WordAddress(verb_wordnum) == buffer + WORDSIZE) { ! not held back
             ! splice rest of buffer onto end of buffer3
-            #Ifdef TARGET_ZCODE;
-            i = buffer3->1;
-            #Ifnot; ! TARGET_GLULX
-            i = buffer3-->0;
-            #Endif;
-            while (buffer3->(i + WORDSIZE - 1) == ' ' or '.')
+            i = GetKeyBufLength(buffer3);
+            while (buffer3 -> (i + WORDSIZE - 1) == ' ' or '.')
                 i--;
             j = i - WordLength(verb_wordnum);  ! amount to move buffer up by
             if (j > 0) {
                 for (m=INPUT_BUFFER_LEN-1 : m>=WORDSIZE+j : m--)
                     buffer->m = buffer->(m-j);
-                #Ifdef TARGET_ZCODE;
-                buffer->1 = buffer->1 + j;
-                #Ifnot; ! TARGET_GLULX
-                buffer-->0 = buffer-->0 + j;
-                #Endif;
-            }
+                SetKeyBufLength(GetKeyBufLength()+j);
+                }
             for (m=WORDSIZE : m<WORDSIZE+i : m++) buffer->m = buffer3->m;
             if (j < 0) for (:m<WORDSIZE+i-j : m++) buffer->m = ' ';
-        }
+         }
         else
-        for (i=0 : i<INPUT_BUFFER_LEN : i++) buffer->i = buffer3->i;
-
+            for (i=0 : i<INPUT_BUFFER_LEN : i++) buffer->i = buffer3->i;
         jump ReParse;
     }
 
@@ -1426,7 +1386,7 @@ Object  InformParser "(Inform Parser)"
 
     if (usual_grammar_after == 0) {
         j = verb_wordnum;
-        i = RunRoutines(actor, grammar); 
+        i = RunRoutines(actor, grammar);
         #Ifdef DEBUG;
         if (parser_trace >= 2 && actor.grammar ~= 0 or NULL)
             print " [Grammar property returned ", i, "]^";
@@ -4276,9 +4236,31 @@ Constant SCORE__DIVISOR = 20;
     return NextWord();
 ];
 
-[ WordAddress wordnum; return buffer + parse->(wordnum*4+1); ];
+[ WordAddress wordnum p b;
+    if (p==0) p=parse;
+    if (b==0) b=buffer;
+    return b + p->(wordnum*4+1); ];
 
-[ WordLength wordnum; return parse->(wordnum*4); ];
+[ WordLength wordnum p;
+    if (p==0) p=parse;
+    return p->(wordnum*4); ];
+
+[ WordValue wordnum p;
+    if (p==0) p=parse;
+    return p-->(wordnum*2-1); ];
+
+[ NumberWords p;
+    if (p==0) p=parse;
+    return p->1; ];
+
+[ GetKeyBufLength b;
+    if (b==0) b=buffer;
+    return b->1;];
+
+[ SetKeyBufLength n b;
+    if (b==0) b=buffer;
+    if (n > INPUT_BUFFER_LEN-WORDSIZE) n=INPUT_BUFFER_LEN-WORDSIZE;
+    b->1 = n;];
 
 #Ifnot; ! TARGET_GLULX
 
@@ -4299,9 +4281,31 @@ Constant SCORE__DIVISOR = 20;
     return NextWord();
 ];
 
-[ WordAddress wordnum; return buffer + parse-->(wordnum*3); ];
+[ WordAddress wordnum p b;
+    if (p==0) p=parse;
+    if (b==0) b=buffer;
+    return b + p-->(wordnum*3); ];
 
-[ WordLength wordnum; return parse-->(wordnum*3-1); ];
+[ WordLength wordnum p;
+    if (p==0) p=parse;
+    return p-->(wordnum*3-1); ];
+
+[ WordValue wordnum p;
+    if (p==0) p=parse;
+    return p-->(wordnum*3-2); ];
+
+[ NumberWords p;
+    if (p==0) p=parse;
+    return p-->0; ];
+
+[ GetKeyBufLength b;
+    if (b==0) b=buffer;
+    return b-->0;];
+
+[ SetKeyBufLength n b;
+    if (b==0) b=buffer;
+    if (n > INPUT_BUFFER_LEN-WORDSIZE) n=INPUT_BUFFER_LEN-WORDSIZE;
+    b-->0 = n;];
 
 #Endif; ! TARGET_
 
@@ -4329,11 +4333,7 @@ Constant SCORE__DIVISOR = 20;
     j = NumberWord(j);
     if (j >= 1) return j;
 
-    #Ifdef TARGET_ZCODE;
-    i = wordnum*4+1; j = parse->i; num = j+buffer; len = parse->(i-1);
-    #Ifnot; ! TARGET_GLULX
-    i = wordnum*3; j = parse-->i; num = j+buffer; len = parse-->(i-1);
-    #Endif; ! TARGET_
+    num = WordAddress(wordnum); len = WordLength(wordnum);
 
     tot=ParseNumber(num, len);
     if (tot ~= 0) return tot;
