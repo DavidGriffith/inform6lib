@@ -1777,10 +1777,11 @@ Object  InformParser "(Inform Parser)"
 
         not_holding = 0;
         inferfrom = 0;
+        inferword = 0;
         parameters = 0;
         nsns = 0; special_word = 0; special_number = 0;
         multiple_object-->0 = 0;
-        etype = STUCK_PE;
+        etype = STUCK_PE; line_etype = 100;
         wn = verb_wordnum+1;
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1871,7 +1872,7 @@ Object  InformParser "(Inform Parser)"
                 if (line_etype < 100) break;
                 if (wn <= num_words) {
                     l = NextWord();
-                    if (l == THEN1__WD or THEN2__WD or THEN3__WD or comma_word) {
+                    if (l == THEN1__WD or THEN2__WD or THEN3__WD or comma_word or AND1__WD) {
                         held_back_mode = 1; hb_wn = wn-1;
                     }
                     else {
@@ -2116,7 +2117,7 @@ Object  InformParser "(Inform Parser)"
     if (wn > num_words) rtrue;
 
     i = NextWord();
-    if (i == THEN1__WD or THEN2__WD or THEN3__WD or comma_word) {
+    if (l == THEN1__WD or THEN2__WD or THEN3__WD or comma_word or AND1__WD) {
         if (wn > num_words) {
            held_back_mode = false;
            return;
@@ -2536,8 +2537,8 @@ Constant UNLIT_BIT  =  32;
                 wn = desc_wn;
                 jump TryAgain2;
             }
-            if (etype == MULTI_PE or TOOFEW_PE && multiflag) etype = STUCK_PE;
-            etype = CantSee();
+            if (etype ~=TOOFEW_PE && (multiflag || etype ~= MULTI_PE))
+                etype = CantSee();
             jump FailToken;
         } ! Choose best error
 
@@ -2668,6 +2669,12 @@ Constant UNLIT_BIT  =  32;
         if (parser_trace >= 3) print "  [Read connective '", (address) o, "']^";
         #Endif; ! DEBUG
 
+        k = NextWord();
+        if (k ~= AND1__WD) wn--;  ! allow Oxford commas in input
+        if (k > 0 && k->#dict_par1 & $$10000001 == 1) { 
+            wn--; ! player meant 'THEN'
+            jump PassToken;
+        }
         if (~~token_allows_multiple) {
             if (multiflag) jump PassToken; ! give UPTO_PE error
             etype=MULTI_PE;
@@ -2826,6 +2833,8 @@ Constant UNLIT_BIT  =  32;
 
     number_of_classes = 0;
 
+    if (match_length == 0 && indef_mode && indef_wanted ~= 100)
+        number_matched = 0;  ! ask question for 'take three'
     if (number_matched == 1) i = match_list-->0;
     if (number_matched > 1) {
         i = Adjudicate(context);
@@ -2880,7 +2889,7 @@ Constant UNLIT_BIT  =  32;
 
   .WhichOne;
     #Ifdef TARGET_ZCODE;
-    for (i=2 : i<INPUT_BUFFER_LEN : i++) buffer2->i = ' ';
+    for (i=WORDSIZE : i<INPUT_BUFFER_LEN : i++) buffer2->i = ' ';
     #Endif; ! TARGET_ZCODE
     answer_words=Keyboard(buffer2, parse2);
 
@@ -2932,22 +2941,12 @@ Constant UNLIT_BIT  =  32;
     ! becomes "take music red button".  The parser will thus have three
     ! words to work from next time, not two.)
 
-    #Ifdef TARGET_ZCODE;
-    k = WordAddress(match_from) - buffer; l=buffer2->1+1;
-    for (j=buffer + buffer->0 - 1 : j>=buffer+k+l : j--) j->0 = 0->(j-l);
-    for (i=0 : i<l : i++) buffer->(k+i) = buffer2->(2+i);
-    buffer->(k+l-1) = ' ';
-    buffer->1 = buffer->1 + l;
-    if (buffer->1 >= (buffer->0 - 1)) buffer->1 = buffer->0;
-    #Ifnot; ! TARGET_GLULX
     k = WordAddress(match_from) - buffer;
-    l = (buffer2-->0) + 1;
-    for (j=buffer+INPUT_BUFFER_LEN-1 : j>=buffer+k+l : j--) j->0 = j->(-l);
+    l = GetKeyBufLength(buffer2) +1;
+    for (j=buffer + INPUT_BUFFER_LEN - 1 : j>=buffer+k+l : j--) j->0 = j->(-l);
     for (i=0 : i<l : i++) buffer->(k+i) = buffer2->(WORDSIZE+i);
     buffer->(k+l-1) = ' ';
-    buffer-->0 = buffer-->0 + l;
-    if (buffer-->0 > (INPUT_BUFFER_LEN-WORDSIZE)) buffer-->0 = (INPUT_BUFFER_LEN-WORDSIZE);
-    #Endif; ! TARGET_
+    SetKeyBufLength(GetKeyBufLength() + l);
 
     ! Having reconstructed the input, we warn the parser accordingly
     ! and get out.
@@ -2960,6 +2959,7 @@ Constant UNLIT_BIT  =  32;
 
   .Incomplete;
 
+    if (best_etype == NOTHING_PE && pattern-->1 == 0) rfalse; ! for DROP when empty-handed
     if (context == CREATURE_TOKEN) L__M(##Miscellany, 48);
     else                           L__M(##Miscellany, 49);
 
@@ -2993,12 +2993,9 @@ Constant UNLIT_BIT  =  32;
     if (inferfrom ~= 0) {
         for (j=inferfrom : j<pcount : j++) {
             if (pattern-->j == PATTERN_NULL) continue;
-            #Ifdef TARGET_ZCODE;
-            i = 2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
-            #Ifnot; ! TARGET_GLULX
-            i = WORDSIZE + buffer-->0;
-            (buffer-->0)++; buffer->(i++) = ' ';
-            #Endif; ! TARGET_
+            i = WORDSIZE + GetKeyBufLength();
+            SetKeyBufLength(i-WORDSIZE + 1);
+            buffer->(i++) = ' ';
 
             #Ifdef DEBUG;
             if (parser_trace >= 5) print "[Gluing in inference with pattern code ", pattern-->j, "]^";
@@ -3012,6 +3009,9 @@ Constant UNLIT_BIT  =  32;
             ! (This is imperfect, but it's very seldom needed anyway.)
 
             if (pattern-->j >= 2 && pattern-->j < REPARSE_CODE) {
+                ! was the inference made from some noun words?
+                ! In which case, we can infer again.
+                if (WordValue(NumberWords())->#dict_par1 & 128) continue;
                 PronounNotice(pattern-->j);
                 for (k=1 : k<=LanguagePronouns-->0 : k=k+3)
                     if (pattern-->j == LanguagePronouns-->(k+2)) {
@@ -3040,33 +3040,24 @@ Constant UNLIT_BIT  =  32;
                 @output_stream -3;
                 k = k-->0;
                 for (l=i : l<i+k : l++) buffer->l = buffer->(l+2);
-                i = i + k; buffer->1 = i-2;
                 #Ifnot; ! TARGET_GLULX
                 k = PrintAnyToArray(buffer+i, INPUT_BUFFER_LEN-i, parse2-->1);
-                i = i + k; buffer-->0 = i - WORDSIZE;
                 #Endif; ! TARGET_
+                i = i + k; SetKeyBufLength(i-WORDSIZE);
             }
         }
     }
 
     ! (2) we must glue the newly-typed text onto the end.
 
-    #Ifdef TARGET_ZCODE;
-    i = 2+buffer->1; (buffer->1)++; buffer->(i++) = ' ';
-    for (j=0 : j<buffer2->1 : i++,j++) {
-        buffer->i = buffer2->(j+2);
-        (buffer->1)++;
-        if (buffer->1 == INPUT_BUFFER_LEN) break;
-    }
-    #Ifnot; ! TARGET_GLULX
-    i = WORDSIZE + buffer-->0;
-    (buffer-->0)++; buffer->(i++) = ' ';
-    for (j=0 : j<buffer2-->0 : i++,j++) {
+    i = WORDSIZE + GetKeyBufLength();
+    buffer->(i++) = ' ';
+    SetKeyBufLength(GetKeyBufLength()+1);
+    for (j=0 : j<GetKeyBufLength(buffer2) : i++,j++) {
         buffer->i = buffer2->(j+WORDSIZE);
-        (buffer-->0)++;
-        if (buffer-->0 == INPUT_BUFFER_LEN) break;
+        SetKeyBufLength(GetKeyBufLength()+1);
+        if (i-WORDSIZE == INPUT_BUFFER_LEN-1) break;
     }
-    #Endif; ! TARGET_
 
     ! (3) we fill up the buffer with spaces, which is unnecessary, but may
     !     help incorrectly-written interpreters to cope.
@@ -3190,18 +3181,6 @@ Constant SCORE__DIVISOR = 20;
     ScoreMatchL(context);
     if (number_matched == 0) return -1;
 
-    if (indef_mode == 0) {
-        !  Is there now a single highest-scoring object?
-        i = SingleBestGuess();
-        if (i >= 0) {
-
-            #Ifdef DEBUG;
-            if (parser_trace >= 4) print "   Single best-scoring object returned.]^";
-            #Endif; ! DEBUG
-            return i;
-        }
-    }
-
     if (indef_mode == 1 && indef_type & PLURAL_BIT ~= 0) {
         if (context ~= MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN
                      or MULTIINSIDE_TOKEN) {
@@ -3278,6 +3257,19 @@ Constant SCORE__DIVISOR = 20;
                   match_classes-->i, "^";
     }
     #Endif; ! DEBUG
+    if (n == 1) dont_infer = true;
+
+    if (indef_mode == 0) {
+        !  Is there now a single highest-scoring object?
+        i = SingleBestGuess();
+        if (i >= 0) {
+
+            #Ifdef DEBUG;
+            if (parser_trace >= 4) print "   Single best-scoring object returned.]^";
+            #Endif; ! DEBUG
+            return i;
+        }
+    }
 
     if (indef_mode == 0) {
         if (n > 1) {
@@ -3312,7 +3304,6 @@ Constant SCORE__DIVISOR = 20;
     !  most recently acquired, or if the player has none of them, then
     !  the one most recently put where it is.
 
-    if (n == 1) dont_infer = true;
     return BestGuess();
 
 ]; ! Adjudicate
@@ -3582,7 +3573,7 @@ Constant SCORE__DIVISOR = 20;
         i = pattern-->k;
         if (i == PATTERN_NULL) continue;
         if (spacing_flag) print (char) ' ';
-        if (i ==0 ) { print (string) THOSET__TX; jump TokenPrinted; }
+        if (i == 0) { print (string) THOSET__TX; jump TokenPrinted; }
         if (i == 1) { print (string) THAT__TX;   jump TokenPrinted; }
         if (i >= REPARSE_CODE)
             print (address) No__Dword(i-REPARSE_CODE);
@@ -4165,25 +4156,12 @@ Constant SCORE__DIVISOR = 20;
     rfalse;
 ];
 
-#Ifdef TARGET_ZCODE;
-
-[ DictionaryLookup b l i;
-    for (i=0 : i<l : i++) buffer2->(2+i) = b->i;
-    buffer2->1 = l;
-    Tokenise__(buffer2,parse2);
-    return parse2-->1;
-];
-
-#Ifnot; ! TARGET_GLULX
-
 [ DictionaryLookup b l i;
     for (i=0 : i<l : i++) buffer2->(WORDSIZE+i) = b->i;
-    buffer2-->0 = l;
+    SetKeyBufLength(l, buffer2);
     Tokenise__(buffer2,parse2);
     return parse2-->1;
 ];
-
-#Endif; ! TARGET_
 
 ! ----------------------------------------------------------------------------
 !  NounWord (which takes no arguments) returns:
@@ -5610,6 +5588,7 @@ Object  InformLibrary "(Inform Library)"
     @get_wind_prop 1 3 -> width;
     @get_wind_prop 1 13 -> charw;
     charw = charw & $FF;
+    if (charw == 0) return width;
     return (width+charw-1) / charw;
 ];
 #Ifnot;
