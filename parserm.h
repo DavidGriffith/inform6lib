@@ -452,8 +452,7 @@ Global bestguess_score;             ! What did the best-guess object score?
 
 #Ifdef TARGET_ZCODE;
 
-Constant INPUT_BUFFER_LEN = 122;    ! Length of buffer array (although 
-we leave an extra byte
+Constant INPUT_BUFFER_LEN = 122;    ! Length of buffer array (although we leave an extra byte
                                     ! to allow for interpreter bugs)
 
 Array  buffer    -> 123;            ! Buffer for parsing main line of input
