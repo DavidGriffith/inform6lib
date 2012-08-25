@@ -990,20 +990,22 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 !   The handy YesOrNo routine, and some "meta" verbs
 ! ----------------------------------------------------------------------------
 
-[ YesOrNo i j;
+[ YesOrNo noStatusRedraw
+    i j;
     for (::) {
         #Ifdef TARGET_ZCODE;
-        if (location == nothing || parent(player) == nothing) read buffer parse;
+        if (location == nothing || parent(player) == nothing || noStatusRedraw) read buffer parse;
         else read buffer parse DrawStatusLine;
         j = parse->1;
         #Ifnot; ! TARGET_GLULX;
+        noStatusRedraw = 0; ! suppress warning
         KeyboardPrimitive(buffer, parse);
         j = parse-->0;
         #Endif; ! TARGET_
         if (j) { ! at least one word entered
             i = parse-->1;
             if (i == YES1__WD or YES2__WD or YES3__WD) rtrue;
-            if (i == NO1__WD or NO2__WD or NO3__WD) rfalse;
+            if (i == NO1__WD  or NO2__WD  or NO3__WD) rfalse;
         }
         L__M(##Quit, 1); print "> ";
     }
@@ -1011,11 +1013,14 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 #Ifdef TARGET_ZCODE;
 
-[ QuitSub; L__M(##Quit, 2); if (YesOrNo() ~= 0) quit; ];
+[ QuitSub;
+    L__M(##Quit, 2);
+    if (YesOrNo()) quit;
+];
 
 [ RestartSub;
-    L__M(##Restart,1);
-    if (YesOrNo() ~= 0) { @restart; L__M(##Restart, 2); }
+    L__M(##Restart, 1);
+    if (YesOrNo()) { @restart; L__M(##Restart, 2); }
 ];
 
 [ RestoreSub;
@@ -1092,7 +1097,7 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ QuitSub;
     L__M(##Quit, 2);
-    if (YesOrNo() ~= 0) quit;
+    if (YesOrNo()) quit;
 ];
 
 [ RestartSub;
