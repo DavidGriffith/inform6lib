@@ -6237,7 +6237,7 @@ Array StorageForShortName -> 160 + WORDSIZE;
 ! None of the following functions should be called for zcode if the
 ! output exceeds the size of the buffer.
 
-[ Length a b;
+[ StringSize a b;
     PrintToBuffer(StorageForShortName, 160, a, b);
     return StorageForShortName-->0;
 ];

@@ -189,12 +189,11 @@ Verb 'exit' 'out' 'outside'
 Verb 'fill'
     * noun                                      -> Fill;
 Verb 'get'
-    * 'out'/'off'/'up'                          -> Exit
+    * 'out'/'off'/'up' 'of'/'from' noun         -> Exit
     * multi                                     -> Take
     * 'in'/'into'/'on'/'onto' noun              -> Enter
     * 'off' noun                                -> GetOff
-    * 'out' 'of' noun                           -> Exit
-    * multiinside 'from' noun                   -> Remove;
+    * multiinside 'from'/'off' noun             -> Remove;
 Verb 'give' 'feed' 'offer' 'pay'
     * held 'to' creature                        -> Give
     * creature held                             -> Give reverse
@@ -331,7 +330,7 @@ Verb 'tell'
     * creature 'to' topic                       -> AskTo;
 Verb 'think'
     *                                           -> Think;
-Verb 'tie' 'attach' 'fasten' 'fix'
+Verb 'tie' 'attach' 'connect' 'fasten' 'fix'
     * noun                                      -> Tie
     * noun 'to' noun                            -> Tie;
 Verb 'touch' 'feel' 'fondle' 'grope'
