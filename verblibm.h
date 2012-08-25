@@ -1542,6 +1542,96 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 ];
 
 ! ----------------------------------------------------------------------------
+!   Support for implicit actions
+! ----------------------------------------------------------------------------
+
+[ CheckImplicitAction act o1 o2
+    sav_act sav_noun sav_sec res;
+    if (o1 provides before_implicit) {
+        sav_act  = action; action = act;
+        sav_noun = noun;   noun   = o1;
+        if (o2) { sav_sec  = second; second = o2; }
+        res = RunRoutines(o1, before_implicit);
+        action = sav_act; noun = sav_noun;
+        if (sav_sec) second = sav_sec;
+    }
+    else {
+        #Ifdef NO_IMPLICIT_ACTIONS;
+        res = 2;
+        #Ifnot;
+        res = 0;
+        #Endif;
+    }
+    return res;
+];
+
+[ ImplicitTake obj
+    res ks supcon;
+    if (obj in player) rfalse;
+    res = CheckImplicitAction(##Take, obj);
+    ! 0 = Take object, Tell the user (normal default)
+    ! 1 = Take object, don't Tell
+    ! 2 = don't Take object          (default with NO_IMPLICIT_ACTIONS)
+    if (res == 2) rtrue;
+    if (parent(obj) has container or supporter) supcon = parent(obj);
+    ks = keep_silent; keep_silent = 2; AttemptToTakeObject(obj); keep_silent = ks;
+    if (obj notin player) rtrue;
+    if (res == 0 && ~~keep_silent)
+        if (supcon) L__M(##Miscellany, 58, obj, supcon);
+        else        L__M(##Miscellany, 26, obj);
+    rfalse;
+];
+
+[ ImplicitExit obj
+    res ks;
+    if (parent(obj) == nothing) rfalse;
+    res = CheckImplicitAction(##Exit, obj);
+    ! 0 = Exit object, Tell the user (normal default)
+    ! 1 = Exit object, don't Tell
+    ! 2 = don't Exit object          (default with NO_IMPLICIT_ACTIONS)
+    if (res == 2) rtrue;
+    ks = keep_silent; keep_silent = 2; <Exit obj>; keep_silent = ks;
+    if (parent(player) == obj) rtrue;
+    if (res == 0 && ~~keep_silent) L__M(##Exit, 5, obj);
+    rfalse;
+];
+
+[ ImplicitClose obj
+    res ks;
+    if (obj hasnt open) rfalse;
+    res = CheckImplicitAction(##Close, obj);
+    ! 0 = Close object, Tell the user (normal default)
+    ! 1 = Close object, don't Tell
+    ! 2 = don't Close object          (default with NO_IMPLICIT_ACTIONS)
+    if (res == 2) rtrue;
+    ks = keep_silent; keep_silent = 2; <Close obj>; keep_silent = ks;
+    if (obj has open) rtrue;
+    if (res == 0 && ~~keep_silent) L__M(##Close, 4, obj);
+    rfalse;
+];
+
+[ ImplicitOpen obj
+    res ks;
+    if (obj has open) rfalse;
+    res = CheckImplicitAction(##Open, obj);
+    ! 0 = Open object, Tell the user (normal default)
+    ! 1 = Open object, don't Tell
+    ! 2 = don't Open object          (default with NO_IMPLICIT_ACTIONS)
+    if (res == 2) rtrue;
+    if (obj has locked) rtrue;
+    ks = keep_silent; keep_silent = 2; <Open obj>; keep_silent = ks;
+    if (obj hasnt open) rtrue;
+    if (res == 0 && ~~keep_silent) L__M(##Open, 6, obj);
+    rfalse;
+];
+
+[ ImplicitUnlock obj;
+    if (obj has locked) rtrue;
+    rfalse;
+];
+
+
+! ----------------------------------------------------------------------------
 !   Object movement verbs
 ! ----------------------------------------------------------------------------
 

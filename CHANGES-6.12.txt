@@ -15,6 +15,10 @@ There is now a Global no_infer_message which can be used in the
 ChooseObjects() routine to suppress an inference message for a 
 particular match.
 
+If you define a Constant NO_IMPLICIT_ACTIONS, the library will not 
+attempt to do things that implicitly must be done like taking an object 
+from a sack before dropping it.
+
 
 Issues addressed in Release 6/12 (12????)
 =========================================
