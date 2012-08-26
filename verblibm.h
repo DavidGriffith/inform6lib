@@ -1637,45 +1637,46 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ TakeSub;
     if (onotheld_mode == 0 || noun notin player)
-        if (AttemptToTakeObject(noun)) rtrue;
-    if (AfterRoutines() == 1) rtrue;
+        if (AttemptToTakeObject(noun)) return;
+    if (AfterRoutines()) return;
     notheld_mode = onotheld_mode;
-    if (notheld_mode == 1 || keep_silent == 1) rtrue;
+    if (notheld_mode == 1 || keep_silent) return;
     L__M(##Take, 1);
 ];
 
 [ RemoveSub i;
     i = parent(noun);
-    if (i has container && i hasnt open) return L__M(##Remove, 1, noun);
-    if (i ~= second) return L__M(##Remove, 2, noun);
+    if (i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, noun);
+    if (i ~= second)   return L__M(##Remove, 2, noun);
     if (i has animate) return L__M(##Take, 6, i);
+
     if (AttemptToTakeObject(noun)) rtrue;
-    action = ##Remove; if (AfterRoutines() == 1) rtrue;
-    action = ##Take;   if (AfterRoutines() == 1) rtrue;
-    if (keep_silent == 1) rtrue;
-    return L__M(##Remove, 3, noun);
+
+    action = ##Remove; if (AfterRoutines()) return;
+    action = ##Take;   if (AfterRoutines()) return;
+    if (keep_silent) return;
+    L__M(##Remove, 3, noun);
 ];
 
-[ DropSub;
-    if (noun == player) return L__M(##PutOn, 4);
+[ DropSub ks;
+    if (noun == player)         return L__M(##PutOn, 4);
     if (noun in parent(player)) return L__M(##Drop, 1, noun);
-    if (noun notin player) return L__M(##Drop, 2, noun);
+    if (noun notin player && ImplicitTake(noun)) return L__M(##Drop, 2, noun);
     if (noun has worn) {
         L__M(##Drop, 3, noun);
-        <Disrobe noun>;
-        if (noun has worn && noun in player) rtrue;
+        ks = keep_silent; keep_silent = 1; <Disrobe noun>; keep_silent = ks;
+        if (noun has worn && noun in player) return;
     }
     move noun to parent(player);
-    if (AfterRoutines() == 1) rtrue;
-    if (keep_silent == 1) rtrue;
-    return L__M(##Drop, 4, noun);
+    if (AfterRoutines() || keep_silent) return;
+    L__M(##Drop, 4, noun);
 ];
 
-[ PutOnSub ancestor;
+[ PutOnSub ancestor ks;
     receive_action = ##PutOn;
     if (second == d_obj || player in second) <<Drop noun>>;
     if (parent(noun) == second) return L__M(##Drop,1,noun);
-    if (parent(noun) ~= player) return L__M(##PutOn, 1, noun);
+    if (noun notin player && ImplicitTake(noun)) return L__M(##PutOn, 1, noun);
 
     ancestor = CommonAncestor(noun, second);
     if (ancestor == noun) return L__M(##PutOn, 2, noun);
@@ -1683,37 +1684,40 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
     if (second ~= ancestor) {
         action = ##Receive;
-        if (RunRoutines(second, before) ~= 0) { action = ##PutOn; return; }
+        if (RunRoutines(second, before)) { action = ##PutOn; return; }
         action = ##PutOn;
     }
     if (second hasnt supporter) return L__M(##PutOn, 3, second);
-    if (ancestor == player) return L__M(##PutOn, 4);
+    if (ancestor == player)     return L__M(##PutOn, 4);
     if (noun has worn) {
-        L__M(##PutOn, 5, noun); <Disrobe noun>; if (noun has worn) return;
+        L__M(##Drop, 3, noun);
+        ks = keep_silent; keep_silent = 1; <Disrobe noun>; keep_silent = ks;
+        if (noun has worn && noun in player) return;
     }
 
     if (children(second) >= ValueOrRun(second, capacity))
         return L__M(##PutOn, 6, second);
+    if (ObjectDoesNotFit(noun, second)) return;
 
     move noun to second;
 
-    if (AfterRoutines() == 1) return;
+    if (AfterRoutines()) return;
 
     if (second ~= ancestor) {
         action = ##Receive;
-        if (RunRoutines(second, after) ~= 0) { action = ##PutOn; return; }
+        if (RunRoutines(second, after)) { action = ##PutOn; return; }
         action = ##PutOn;
     }
-    if (keep_silent == 1) return;
-    if (multiflag == 1) return L__M(##PutOn, 7);
-    L__M(##PutOn, 8, noun);
+    if (keep_silent) return;
+    if (multiflag) return L__M(##PutOn, 7);
+    L__M(##PutOn, 8, noun, second);
 ];
 
-[ InsertSub ancestor;
+[ InsertSub ancestor ks;
     receive_action = ##Insert;
     if (second == d_obj || player in second) <<Drop noun>>;
     if (parent(noun) == second) return L__M(##Drop,1,noun);
-    if (parent(noun) ~= player) return L__M(##Insert, 1, noun);
+    if (noun notin player && ImplicitTake(noun)) return L__M(##Insert, 1, noun);
 
     ancestor = CommonAncestor(noun, second);
     if (ancestor == noun) return L__M(##Insert, 5, noun);
@@ -1721,32 +1725,32 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
     if (second ~= ancestor) {
         action = ##Receive;
-        if (RunRoutines(second,before) ~= 0) { action = ##Insert; rtrue; }
+        if (RunRoutines(second,before)) { action = ##Insert; rtrue; }
         action = ##Insert;
-        if (second has container && second hasnt open)
+        if (second has container && second hasnt open && ImplicitOpen(second))
             return L__M(##Insert, 3, second);
     }
     if (second hasnt container) return L__M(##Insert, 2, second);
-
     if (noun has worn) {
-        L__M(##Insert, 6, noun); <Disrobe noun>; if (noun has worn) return;
+        L__M(##Drop, 3, noun);
+        ks = keep_silent; keep_silent = 1; <Disrobe noun>; keep_silent = ks;
+        if (noun has worn && noun in player) return;
     }
-
     if (children(second) >= ValueOrRun(second, capacity))
         return L__M(##Insert, 7, second);
-
-    move noun to second;
+    if (ObjectDoesNotFit(noun, second)) return;
 
     if (AfterRoutines() == 1) rtrue;
+    move noun to second;
 
     if (second ~= ancestor) {
         action = ##Receive;
-        if (RunRoutines(second, after) ~= 0) { action = ##Insert; rtrue; }
+        if (RunRoutines(second, after)) { action = ##Insert; rtrue; }
         action = ##Insert;
     }
-    if (keep_silent == 1) rtrue;
-    if (multiflag == 1) return L__M(##Insert, 8, noun);
-    L__M(##Insert, 9, noun);
+    if (keep_silent) rtrue;
+    if (multiflag) return L__M(##Insert, 8, noun);
+    L__M(##Insert, 9, noun, second);
 ];
 
 ! ----------------------------------------------------------------------------
@@ -2674,23 +2678,24 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 !   Finally: the mechanism for library text (the text is in the language defn)
 ! ----------------------------------------------------------------------------
 
-[ L__M act n x1 s;
+[ L__M act n x1 x2 s;
+    if (keep_silent == 2) return;
     s = sw__var;
     sw__var = act;
     if (n == 0) n = 1;
-    L___M(n,x1);
+    L___M(n, x1, x2);
     sw__var = s;
 ];
 
-[ L___M n x1 s;
+[ L___M n x1 x2 s;
     s = action;
     lm_n = n;
     lm_o = x1;
     action = sw__var;
-    if (RunRoutines(LibraryMessages, before) ~= 0)        { action = s; rfalse; }
-    if (LibraryExtensions.RunWhile(ext_messages, 0) ~= 0) { action = s; rfalse; }
+    if (RunRoutines(LibraryMessages, before))        { action = s; rfalse; }
+    if (LibraryExtensions.RunWhile(ext_messages, 0)) { action = s; rfalse; }
     action = s;
-    LanguageLM(n, x1);
+    LanguageLM(n, x1, x2);
 ];
 
 ! ==============================================================================

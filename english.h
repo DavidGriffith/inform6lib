@@ -441,7 +441,7 @@ Constant COMMA__TX      = ", ";
 
 
 
-[ LanguageLM n x1;
+[ LanguageLM n x1 x2;
   Answer,Ask:
             "There is no reply.";
 ! Ask:      see Answer
@@ -705,7 +705,7 @@ Constant COMMA__TX      = ", ";
         23: "You seem to want to talk to someone, but I can't see whom.";
         24: "You can't talk to ", (the) x1, ".";
         25: "To talk to someone, try ~someone, hello~ or some such.";
-        26: "(first taking ", (the) not_holding, ")";
+        26: "(first taking ", (the) x1, ")";
         27: "I didn't understand that sentence.";
         28: print "I only understood you as far as wanting to ";
         29: "I didn't understand that number.";
@@ -818,7 +818,7 @@ Constant COMMA__TX      = ", ";
         5:  "(first taking ", (itorthem) x1, " off)^";
         6:  "There is no more room on ", (the) x1, ".";
         7:  "Done.";
-        8:  "You put ", (the) x1, " on ", (the) second, ".";
+        8:  "You put ", (the) x1, " on ", (the) x2, ".";
     }
   Quit: switch (n) {
         1:  print "Please answer yes or no.";

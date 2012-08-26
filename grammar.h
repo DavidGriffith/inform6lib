@@ -387,6 +387,9 @@ Verb 'wake' 'awake' 'awaken'
 !  Final task: provide trivial routines if the user hasn't already:
 ! ------------------------------------------------------------------------------
 
+Default Story           0;
+Default Headline        0;
+
 #Stub AfterLife         0;
 #Stub AfterPrompt       0;
 #Stub Amusing           0;
@@ -400,6 +403,7 @@ Verb 'wake' 'awake' 'awaken'
 #Stub InScope           1;
 #Stub LookRoutine       0;
 #Stub NewRoom           0;
+#Stub ObjectDoesNotFit  2;
 #Stub ParseNumber       2;
 #Stub ParserError       1;
 #Stub PrintTaskName     1;
