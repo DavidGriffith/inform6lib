@@ -4360,6 +4360,7 @@ Constant SCORE__DIVISOR = 20;
 ];
 
 [ GetGNAOfObject obj case gender;
+    if (obj hasnt animate) case = 6;
     if (obj has male) gender = male;
     if (obj has female) gender = female;
     if (obj has neuter) gender = neuter;
