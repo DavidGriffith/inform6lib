@@ -15,19 +15,16 @@ System_file;
 
 ! ------------------------------------------------------------------------------
 
-Default AMUSING_PROVIDED 1;
-Default MAX_CARRIED      100;
-Default MAX_SCORE        0;
-Default NUMBER_TASKS     1;
-Default OBJECT_SCORE     4;
-Default ROOM_SCORE       5;
-Default SACK_OBJECT      0;
-Default TASKS_PROVIDED   1;
+Default AMUSING_PROVIDED    1;
+Default MAX_CARRIED         100;
+Default MAX_SCORE           0;
+Default NUMBER_TASKS        1;
+Default OBJECT_SCORE        4;
+Default ROOM_SCORE          5;
+Default SACK_OBJECT         0;
+Default TASKS_PROVIDED      1;
 
 #Ifndef task_scores;
-! Constant MAKE__TS;
-! #Endif;
-! #Ifdef MAKE__TS;
 Array  task_scores -> 0 0 0 0;
 #Endif;
 

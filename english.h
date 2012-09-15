@@ -457,6 +457,7 @@ Constant COMMA__TX      = ", ";
         1:  print_ret (ctheyreorthats) x1, " not something you can close.";
         2:  print_ret (ctheyreorthats) x1, " already closed.";
         3:  "You close ", (the) x1, ".";
+        4:  "(first closing ", (the) x1, ")";
     }
   CommandsOff: switch (n) {
         1: "[Command recording off.]";
@@ -548,6 +549,9 @@ Constant COMMA__TX      = ", ";
         4:  print "But you aren't ";
             if (x1 has supporter) print "on "; else print "in ";
             print_ret (the) x1, ".";
+        5:  print "(first getting ";
+            if (x1 has supporter) print "off "; else print "out of ";
+            print_ret (the) x1, ")";
     }
   Fill:     "But there's no water here to carry.";
   FullScore: switch (n) {
@@ -586,7 +590,10 @@ Constant COMMA__TX      = ", ";
         6:  "(first taking ", (itorthem) x1, " off)^";
         7:  "There is no more room in ", (the) x1, ".";
         8:  "Done.";
-        9:  "You put ", (the) x1, " into ", (the) second, ".";
+        9:  "You put ", (the) x1, " into ", (the) x2, ".";
+        10: print (The) x1, " is too big to fit ";
+            if (x2 has supporter) print "on "; else print "in ";
+            print_ret (the) x2, ".";
     }
   Inv: switch (n) {
         1:  "You are carrying nothing.";
@@ -717,7 +724,7 @@ Constant COMMA__TX      = ", ";
         32: "You aren't holding that!";
         33: "You can't use multiple objects with that verb.";
         34: "You can only use multiple objects once on a line.";
-        35: "I'm not sure what ~", (address) pronoun_word, "~ refers to.";
+        35: "I'm not sure what ~", (address) x1, "~ refers to.";
         36: "You excepted something not included anyway!";
         37: "You can only do that to something animate.";
             #Ifdef DIALECT_US;
@@ -726,8 +733,7 @@ Constant COMMA__TX      = ", ";
         38: "That's not a verb I recognise.";
             #Endif;
         39: "That's not something you need to refer to in the course of this game.";
-        40: "You can't see ~", (address) pronoun_word, "~ (", (the) pronoun_obj,
-            ") at the moment.";
+        40: "You can't see ~", (address) x1, "~ (", (the) x2, ") at the moment.";
         41: "I didn't understand the way that finished.";
         42: if (x1 == 0) print "None"; else print "Only ", (number) x1;
             print " of those ";
@@ -739,10 +745,10 @@ Constant COMMA__TX      = ", ";
         46: print "Which do you mean, ";
         47: "Sorry, you can only have one item here. Which exactly?";
         48: print "Whom do you want";
-            if (actor ~= player) print " ", (the) actor;
+            if (x1 ~= player) print " ", (the) x1;
             print " to "; PrintCommand(); print "?^";
         49: print "What do you want";
-            if (actor ~= player) print " ", (the) actor;
+            if (x1 ~= player) print " ", (the) x1;
             print " to "; PrintCommand(); print "?^";
         50: print "Your score has just gone ";
             if (x1 > 0) print "up"; else { x1 = -x1; print "down"; }
@@ -755,6 +761,9 @@ Constant COMMA__TX      = ", ";
         55: "[Comment NOT recorded.]";
         56: print ".^";
         57: print "?^";
+        58: print "(first taking ", (the) x1;
+            if (x2 has supporter) print " off "; else print " out of ";
+            print_ret (the) x2, ")";
     }
   No,Yes:   "That was a rhetorical question.";
   NotifyOff:
@@ -925,7 +934,7 @@ Constant COMMA__TX      = ", ";
         11: if (x1 has pluralname) print "They're "; else print "That's ";
             "fixed in place.";
         12: "You're carrying too many things already.";
-        13: "(putting ", (the) x1, " into ", (the) SACK_OBJECT, " to make room)";
+        13: "(putting ", (the) x1, " into ", (the) x2, " to make room)";
     }
   Taste:    "You taste nothing unexpected.";
   Tell: switch (n) {
@@ -951,6 +960,7 @@ Constant COMMA__TX      = ", ";
         3:  if (x1 has pluralname) print "Those don't "; else print "That doesn't ";
             "seem to fit the lock.";
         4:  "You unlock ", (the) x1, ".";
+        5:  "(first unlocking ", (the) x1, ")";
     }
   VagueGo:  "You'll have to say which compass direction to go in.";
   Verify: switch (n) {

@@ -69,8 +69,6 @@ Global sline1;                      ! Must be second
 Global sline2;                      ! Must be third
                                     ! (for status line display)
 
-Global caps_mode;                   ! Keep track of (The) with 'proper' caps
-
 ! ------------------------------------------------------------------------------
 !   Z-Machine and interpreter issues
 ! ------------------------------------------------------------------------------
@@ -131,9 +129,7 @@ Global gg_statuswin_size = 1;
 #Ifndef sys_statusline_flag;
 Global sys_statusline_flag = 0;     ! non-zero if status line displays time
 #Endif;
-#Ifndef START_MOVE;
-Constant START_MOVE 0;              ! Traditionally 0 for Infocom, 1 for Inform
-#Endif;
+Default START_MOVE 0;               ! Traditionally 0 for Infocom, 1 for Inform
 Global turns = START_MOVE;          ! Number of turns of play so far
 Global the_time = NULL;             ! Current time (in minutes since midnight)
 Global time_rate = 1;               ! How often time is updated
@@ -156,8 +152,9 @@ Global things_score;                ! Contribution made by acquisition
 ! ------------------------------------------------------------------------------
 
 Global player;                      ! Which object the human is playing through
-Global deadflag;                    ! Normally 0, or false; 1 for dead; 2 for victorious, and
-                                    ! higher numbers represent exotic forms of death
+Global deadflag;                    ! Normally 0, or false; 1 for dead
+                                    ! 2 for victorious, and higher numbers
+                                    ! represent exotic forms of death
 
 ! ------------------------------------------------------------------------------
 !   Light and room descriptions
@@ -166,15 +163,18 @@ Global deadflag;                    ! Normally 0, or false; 1 for dead; 2 for vi
 Global lightflag = true;            ! Is there currently light to see by?
 Global real_location;               ! When in darkness, location = thedark
                                     ! and this holds the real location
-Global visibility_ceiling;          ! Highest object in tree visible from the player's point of view
-                                    ! (usually the room, sometimes darkness, sometimes a closed
+Global visibility_ceiling;          ! Highest object in tree visible from the
+                                    ! player's point of view (usually the room,
+                                    ! sometimes darkness, sometimes a closed
                                     ! non-transparent container).
 
-Global lookmode = 2;                ! 1=brief, 2=verbose, 3=superbrief room descs
-Global print_player_flag;           ! If set, print something like "(as Fred)" in room descriptions,
-                                    ! to reveal whom the human is playing through
-Global lastdesc;                    ! Value of location at time of most recent room description
-                                    ! printed out
+Global lookmode = 2;                ! 1=brief, 2=verbose, 3=superbrief
+                                    ! room descriptions
+Global print_player_flag;           ! If set, print something like "(as Fred)"
+                                    ! in room descriptions, to reveal whom the
+                                    ! player is playing through
+Global lastdesc;                    ! Value of location at time of most recent
+                                    ! room description printed out
 
 ! ------------------------------------------------------------------------------
 !   List writing  (style bits are defined as Constants in "verblibm.h")
@@ -182,13 +182,16 @@ Global lastdesc;                    ! Value of location at time of most recent r
 
 Global c_style;                     ! Current list-writer style
 Global lt_value;                    ! Common value of list_together
-Global listing_together;            ! Object number of one member of a group being listed together
+Global listing_together;            ! Object number of one member of a group
+                                    ! being listed together
 Global listing_size;                ! Size of such a group
-Global wlf_indent;                  ! Current level of indentation printed by WriteListFrom()
+Global wlf_indent;                  ! Current level of indentation printed by
+                                    ! WriteListFrom()
 
-Global inventory_stage = 1;         ! 1 or 2 according to the context in which "invent" routines
-                                    ! of objects are called
-Global inventory_style;             ! List-writer style currently used while printing inventories
+Global inventory_stage = 1;         ! 1 or 2 according to the context in which
+                                    ! "invent" routines of objects are called
+Global inventory_style;             ! List-writer style currently used while
+                                    ! printing inventories
 ! ------------------------------------------------------------------------------
 !   Menus and printing
 ! ------------------------------------------------------------------------------
@@ -217,7 +220,7 @@ Global clr_fg = 1;                  ! foreground colour
 Global clr_bg = 1;                  ! background colour
 Global clr_fgstatus = 1;            ! foreground colour of statusline
 Global clr_bgstatus = 1;            ! background colour of statusline
-#Endif;
+#Endif; ! COLOUR
 Global statuswin_current;           ! if writing to top window
 
 Constant CLR_DEFAULT 1;
@@ -246,25 +249,29 @@ Global inp2;                        ! 0 (nothing), 1 (number) or second noun
 Global noun;                        ! First noun or numerical value
 Global second;                      ! Second noun or numerical value
 
-Global keep_silent;                 ! If true, attempt to perform the action silently (e.g. for
-                                    ! implicit takes, implicit opening of unlocked doors)
+Global keep_silent;                 ! If true, attempt to perform the action
+                                    ! silently (e.g. for implicit takes,
+                                    ! implicit opening of unlocked doors)
 
 Global reason_code;                 ! Reason for calling a "life" rule
                                     ! (an action or fake such as ##Kiss)
 
-Global receive_action;              ! Either ##PutOn or ##Insert, whichever is action being tried
-                                    ! when an object's "before" rule is checking "Receive"
+Global receive_action;              ! Either ##PutOn or ##Insert, whichever is
+                                    ! action being tried when an object's
+                                    ! "before" rule is checking "Receive"
 
 ! ==============================================================================
 !   Parser variables: first, for communication to the parser
 ! ------------------------------------------------------------------------------
 
-Global parser_trace = 0;            ! Set this to 1 to make the parser trace tokens and lines
+Global parser_trace = 0;            ! Set this to 1 to make the parser trace
+                                    ! tokens and lines
 Global parser_action;               ! For the use of the parser when calling
 Global parser_one;                  ! user-supplied routines
 Global parser_two;                  !
 Array  inputobjs       --> 16;      ! For parser to write its results in
-Global parser_inflection;           ! A property (usually "name") to find object names in
+Global parser_inflection;           ! A property (usually "name") to find
+                                    ! object names in
 
 ! ------------------------------------------------------------------------------
 !   Parser output
@@ -346,9 +353,11 @@ Global special_number2;             ! Second number, if two were typed
 !   Inferences and looking ahead
 ! ------------------------------------------------------------------------------
 
-Global params_wanted;               ! Number of parameters needed (which may change in parsing)
+Global params_wanted;               ! Number of parameters needed
+                                    ! (which may change in parsing)
 
-Global inferfrom;                   ! The point from which the rest of the command must be inferred
+Global inferfrom;                   ! The point from which the rest of the
+                                    ! command must be inferred
 Global inferword;                   ! And the preposition inferred
 Global dont_infer;                  ! Another dull flag
 Global no_infer_message;            ! Use in ChooseObjects to suppress
@@ -369,12 +378,15 @@ Global token_filter;                ! For noun filtering by user routines
 Global length_of_noun;              ! Set by NounDomain to no of words in noun
 
 #Ifdef TARGET_ZCODE;
-Constant REPARSE_CODE = 10000;      ! Signals "reparse the text" as a reply from NounDomain
+Constant REPARSE_CODE = 10000;      ! Signals "reparse the text" as a reply
+                                    ! from NounDomain
 #Ifnot; ! TARGET_GLULX
-Constant REPARSE_CODE = $40000000;  ! The parser rather gunkily adds addresses to REPARSE_CODE for
-                                    ! some purposes. And expects the result to be greater than
-                                    ! REPARSE_CODE (signed comparison). So Glulx Inform is limited
-                                    ! to a single gigabyte of storage, for the moment.
+Constant REPARSE_CODE = $40000000;  ! The parser rather gunkily adds addresses
+                                    ! to REPARSE_CODE for some purposes and
+                                    ! expects the result to be greater than
+                                    ! REPARSE_CODE (signed comparison).
+                                    ! So Glulx Inform is limited to a single
+                                    ! gigabyte of storage, for the moment.
 #Endif; ! TARGET_
 
 Global lookahead;                   ! The token after the one now being matched
@@ -393,18 +405,20 @@ Global indef_owner;                 ! Object which must hold these items
 Global indef_cases;                 ! Possible gender and numbers of them
 Global indef_possambig;             ! Has a possibly dangerous assumption
                                     ! been made about meaning of a descriptor?
-Global indef_nspec_at;              ! Word at which a number like "two" was parsed
-                                    ! (for backtracking)
+Global indef_nspec_at;              ! Word at which a number like "two" was
+                                    ! parsed (for backtracking)
 Global allow_plurals;               ! Whether plurals presently allowed or not
 
-Global take_all_rule;               ! Slightly different rules apply to "take all" than other uses
-                                    ! of multiple objects, to make adjudication produce more
-                                    ! pragmatically useful results
+Global take_all_rule;               ! Slightly different rules apply to
+                                    ! "take all" than other uses of multiple
+                                    ! objects, to make adjudication produce
+                                    ! more pragmatically useful results
                                     ! (Not a flag: possible values 0, 1, 2)
 
 Global dict_flags_of_noun;          ! Of the noun currently being parsed
                                     ! (a bitmap in #dict_par1 format)
-Global pronoun_word;                ! Records which pronoun ("it", "them", ...) caused an error
+Global pronoun_word;                ! Records which pronoun ("it", "them", ...)
+                                    ! caused an error
 Global pronoun_obj;                 ! And what obj it was thought to refer to
 Global pronoun__word;               ! Saved value
 Global pronoun__obj;                ! Saved value
@@ -505,14 +519,15 @@ Global held_back_mode;              ! Flag: is there some input from last time
 Global hb_wn;                       ! left over?  (And a save value for wn.)
                                     ! (Used for full stops and "then".)
 
+Global caps_mode;                   ! Keep track of (The) with 'proper' caps
 Global print_anything_result;       ! Return value from a PrintAny() routine
 Global initial_lookmode;            ! Default, or set in Initialise()
 Global before_first_turn;           ! True until after initial LOOK
 
 ! ----------------------------------------------------------------------------
 
-Array PowersOfTwo_TB                ! Used in converting case numbers to case bitmaps
-  --> $$100000000000
+Array PowersOfTwo_TB                ! Used in converting case numbers to case
+  --> $$100000000000                ! bitmaps
       $$010000000000
       $$001000000000
       $$000100000000
@@ -1092,7 +1107,7 @@ Object  InformParser "(Inform Parser)"
 
     if (a_buffer->WORDSIZE == COMMENT_CHARACTER) {
         #Ifdef TARGET_ZCODE;
-        if ((HDR_GAMEFLAGS-->0) & 1 || xcommsdir)
+        if ((HDR_GAMEFLAGS-->0) & $0001 || xcommsdir)
                                            L__M(##Miscellany, 54);
         else                               L__M(##Miscellany, 55);
         #Ifnot; ! TARGET_GLULX
@@ -2059,15 +2074,15 @@ Object  InformParser "(Inform Parser)"
     if (etype == NOTHELD_PE) {  L__M(##Miscellany, 32); oops_from=saved_oops; }
     if (etype == MULTI_PE)      L__M(##Miscellany, 33);
     if (etype == MMULTI_PE)     L__M(##Miscellany, 34);
-    if (etype == VAGUE_PE)      L__M(##Miscellany, 35);
+    if (etype == VAGUE_PE)      L__M(##Miscellany, 35, pronoun_word);
     if (etype == EXCEPT_PE)     L__M(##Miscellany, 36);
     if (etype == ANIMA_PE)      L__M(##Miscellany, 37);
     if (etype == VERB_PE)       L__M(##Miscellany, 38);
     if (etype == SCENERY_PE)    L__M(##Miscellany, 39);
     if (etype == ITGONE_PE) {
         if (pronoun_obj == NULL)
-                                L__M(##Miscellany, 35);
-        else                    L__M(##Miscellany, 40);
+                                L__M(##Miscellany, 35, pronoun_word);
+        else                    L__M(##Miscellany, 40, pronoun_word, pronoun_obj);
     }
     if (etype == JUNKAFTER_PE)  L__M(##Miscellany, 41);
     if (etype == TOOFEW_PE)     L__M(##Miscellany, 42, multi_had);
@@ -2874,8 +2889,8 @@ Constant UNLIT_BIT  =  32;
     ! Now we print up the question, using the equivalence classes as worked
     ! out by Adjudicate() so as not to repeat ourselves on plural objects...
 
-    if (context==CREATURE_TOKEN) L__M(##Miscellany, 45);
-    else                         L__M(##Miscellany, 46);
+    if (context==CREATURE_TOKEN) L__M(##Miscellany, 45, actor);
+    else                         L__M(##Miscellany, 46, actor);
 
     j = number_of_classes; marker = 0;
     for (i=1 : i<=number_of_classes : i++) {
@@ -3102,16 +3117,16 @@ Constant UNLIT_BIT  =  32;
 !  Returns -1 if an error occurred
 ! ----------------------------------------------------------------------------
 
-Constant SCORE__CHOOSEOBJ = 1000;
-Constant SCORE__IFGOOD = 500;
+Constant SCORE__CHOOSEOBJ   = 1000;
+Constant SCORE__IFGOOD      = 500;
 Constant SCORE__UNCONCEALED = 100;
-Constant SCORE__BESTLOC = 60;
+Constant SCORE__BESTLOC     = 60;
 Constant SCORE__NEXTBESTLOC = 40;
-Constant SCORE__NOTCOMPASS = 20;
-Constant SCORE__NOTSCENERY = 10;
-Constant SCORE__NOTACTOR = 5;
-Constant SCORE__GNA = 1;
-Constant SCORE__DIVISOR = 20;
+Constant SCORE__NOTCOMPASS  = 20;
+Constant SCORE__NOTSCENERY  = 10;
+Constant SCORE__NOTACTOR    = 5;
+Constant SCORE__GNA         = 1;
+Constant SCORE__DIVISOR     = 20;
 
 [ Adjudicate context i j k good_flag good_ones last n flag offset sovert;
     #Ifdef DEBUG;
@@ -3193,8 +3208,8 @@ Constant SCORE__DIVISOR = 20;
         }
         i = 0; offset = multiple_object-->0; sovert = -1;
         for (j=BestGuess() : j~=-1 && i<indef_wanted && i+offset<63 : j=BestGuess()) {
-            flag = 0;
-            if (j hasnt concealed && j hasnt worn) flag = 1;
+            flag = 1;
+            if (j has concealed && j has worn) flag = 0;
             if (sovert == -1) sovert = bestguess_score/SCORE__DIVISOR;
             else {
                 if (indef_wanted == 100 && bestguess_score/SCORE__DIVISOR < sovert)
@@ -3204,11 +3219,10 @@ Constant SCORE__DIVISOR = 20;
                 flag = 0;
             if (action_to_be == ##Take or ##Remove && parent(j) == actor)
                 flag = 0;
-            k = ChooseObjects(j, flag);
-            if (k == 1)
-                flag = 1;
-            else {
-                if (k == 2) flag = 0;
+            switch (ChooseObjects(j, flag)) {
+              2: flag = 0;  ! forcing rejection
+              1: flag = 1;  ! forcing acceptance
+             !0:            ! going with parser's decision
             }
             if (flag == 1) {
                 i++; multiple_object-->(i+offset) = j;
@@ -3798,8 +3812,7 @@ Constant SCORE__DIVISOR = 20;
 ! ----------------------------------------------------------------------------
 
 [ IsSeeThrough o;
-    if (o has supporter ||
-       (o has transparent) ||
+    if (o has supporter or transparent ||
        (o has container && o has open))
         rtrue;
     rfalse;
@@ -4032,8 +4045,8 @@ Constant SCORE__DIVISOR = 20;
 
     dict_flags_of_noun = 0;
 
-!  If input has run out then always match, with only quality 0 (this saves
-!  time).
+    !  If input has run out then always match, with only quality 0 (this saves
+    !  time).
 
     if (wn > num_words) {
         if (indef_mode ~= 0)
@@ -4045,8 +4058,8 @@ Constant SCORE__DIVISOR = 20;
         return 1;
     }
 
-!  Ask the object to parse itself if necessary, sitting up and taking notice
-!  if it says the plural was used:
+    !  Ask the object to parse itself if necessary, sitting up and taking notice
+    !  if it says the plural was used:
 
     if (obj.parse_name~=0) {
         parser_action = NULL; j=wn;
@@ -4163,7 +4176,7 @@ Constant SCORE__DIVISOR = 20;
 [ DictionaryLookup b l i;
     for (i=0 : i<l : i++) buffer2->(WORDSIZE+i) = b->i;
     SetKeyBufLength(l, buffer2);
-    Tokenise__(buffer2,parse2);
+    Tokenise__(buffer2, parse2);
     return parse2-->1;
 ];
 
@@ -4220,31 +4233,37 @@ Constant SCORE__DIVISOR = 20;
     return NextWord();
 ];
 
-[ WordAddress wordnum p b;
+[ WordAddress wordnum p b;  ! Absolute addr of 'wordnum' string in buffer
     if (p==0) p=parse;
     if (b==0) b=buffer;
-    return b + p->(wordnum*4+1); ];
+    return b + p->(wordnum*4+1);
+];
 
-[ WordLength wordnum p;
+[ WordLength wordnum p;     ! Length of 'wordnum' string in buffer
     if (p==0) p=parse;
-    return p->(wordnum*4); ];
+    return p->(wordnum*4);
+];
 
-[ WordValue wordnum p;
+[ WordValue wordnum p;      ! Dictionary value of 'wordnum' string in buffer
     if (p==0) p=parse;
-    return p-->(wordnum*2-1); ];
+    return p-->(wordnum*2-1);
+];
 
-[ NumberWords p;
+[ NumberWords p;            ! Number of parsed strings in buffer
     if (p==0) p=parse;
-    return p->1; ];
+    return p->1;
+];
 
-[ GetKeyBufLength b;
+[ GetKeyBufLength b;        ! Number of typed chars in buffer
     if (b==0) b=buffer;
-    return b->1;];
+    return b->1;
+];
 
-[ SetKeyBufLength n b;
+[ SetKeyBufLength n b;      ! Update number of typed chars in buffer
     if (b==0) b=buffer;
     if (n > INPUT_BUFFER_LEN-WORDSIZE) n=INPUT_BUFFER_LEN-WORDSIZE;
-    b->1 = n;];
+    b->1 = n;
+];
 
 #Ifnot; ! TARGET_GLULX
 
@@ -4265,31 +4284,37 @@ Constant SCORE__DIVISOR = 20;
     return NextWord();
 ];
 
-[ WordAddress wordnum p b;
+[ WordAddress wordnum p b;  ! Absolute addr of 'wordnum' string in buffer
     if (p==0) p=parse;
     if (b==0) b=buffer;
-    return b + p-->(wordnum*3); ];
+    return b + p-->(wordnum*3);
+];
 
-[ WordLength wordnum p;
+[ WordLength wordnum p;     ! Length of 'wordnum' string in buffer
     if (p==0) p=parse;
-    return p-->(wordnum*3-1); ];
+    return p-->(wordnum*3-1);
+];
 
-[ WordValue wordnum p;
+[ WordValue wordnum p;      ! Dictionary value of 'wordnum' string in buffer
     if (p==0) p=parse;
-    return p-->(wordnum*3-2); ];
+    return p-->(wordnum*3-2);
+];
 
-[ NumberWords p;
+[ NumberWords p;            ! Number of parsed strings in buffer
     if (p==0) p=parse;
-    return p-->0; ];
+    return p-->0;
+];
 
-[ GetKeyBufLength b;
+[ GetKeyBufLength b;        ! Number of typed chars in buffer
     if (b==0) b=buffer;
-    return b-->0;];
+    return b-->0;
+];
 
-[ SetKeyBufLength n b;
+[ SetKeyBufLength n b;      ! Update number of typed chars in buffer
     if (b==0) b=buffer;
     if (n > INPUT_BUFFER_LEN-WORDSIZE) n=INPUT_BUFFER_LEN-WORDSIZE;
-    b-->0 = n;];
+    b-->0 = n;
+];
 
 #Endif; ! TARGET_
 
@@ -4547,8 +4572,8 @@ Object  InformLibrary "(Inform Library)"
 
             #Ifdef TARGET_ZCODE;
             standard_interpreter = HDR_TERPSTANDARD-->0;
-            transcript_mode = ((HDR_GAMEFLAGS-->0) & 1);
-            sys_statusline_flag = ( (HDR_TERPFLAGS->0) & 2 ) / 2;
+            transcript_mode = ((HDR_GAMEFLAGS-->0) & $0001);
+            sys_statusline_flag = ( (HDR_TERPFLAGS->0) & $0002 ) / 2;
             #Ifnot; ! TARGET_GLULX
             GGInitialise();
             #Endif; ! TARGET_
@@ -4573,50 +4598,7 @@ Object  InformLibrary "(Inform Library)"
             parse2->0  = 15;
             #Endif; ! TARGET_ZCODE
 
-            real_location = thedark;
-            player = selfobj; actor = player;
-
-            #Ifdef TARGET_ZCODE;
-            top_object = #largest_object-255;
-            #Endif; ! TARGET_ZCODE
-            selfobj.capacity = MAX_CARRIED; ! ### change?
-
-            #Ifdef LanguageInitialise;
-            LanguageInitialise();
-            #Endif; ! LanguageInitialise
-
-            new_line;
-            LibraryExtensions.RunAll(ext_initialise);
-            j = Initialise();
-            last_score = score;
-            initial_lookmode = lookmode;
-            move player to location;
-
-            while (parent(location) ~= 0) location = parent(location);
-            real_location = location;
-
-            actor = player; ! resync, because player may have been changed in initialise()
-            actors_location = location;
-
-            objectloop (i in player) give i moved ~concealed;
-
-            if (j ~= 2) Banner();
-
-            MoveFloatingObjects();
-            lightflag = OffersLight(parent(player));
-            if (lightflag == 0) {
-                real_location = location;
-                location = thedark;
-            }
-#Ifndef NOINITIAL_LOOK;
-            <Look>;
-#Endif;
-            for (i=1 : i<=100 : i++) j = random(i);
-
-            #Ifdef EnglishNaturalLanguage;
-            old_itobj = itobj; old_himobj = himobj; old_herobj = herobj;
-            #Endif;! EnglishNaturalLanguage
-
+            GamePrologue();
             while (~~deadflag) {    ! everything happens in this loop
 
                 #Ifdef EnglishNaturalLanguage;
@@ -4677,6 +4659,7 @@ Object  InformLibrary "(Inform Library)"
                 !  --------------------------------------------------------------
 
                 multiflag = false; onotheld_mode = notheld_mode; notheld_mode = false;
+                keep_silent = 0;
                 ! For implicit taking and multiple object detection
 
               .begin__action;
@@ -4694,18 +4677,19 @@ Object  InformLibrary "(Inform Library)"
                 }
                 else second = inp2;
 
-                !  --------------------------------------------------------------
+                !  -------------------------------------------------------------
 
                 if (actor ~= player) {
 
-                ! The player's "orders" property can refuse to allow conversation
-                ! here, by returning true.  If not, the order is sent to the
-                ! other person's "orders" property.  If that also returns false,
-                ! then: if it was a misunderstood command anyway, it is converted
-                ! to an Answer action (thus "floyd, grrr" ends up as
-                ! "say grrr to floyd").  If it was a good command, it is finally
-                ! offered to the Order: part of the other person's "life"
-                ! property, the old-fashioned way of dealing with conversation.
+                ! The player's "orders" property can refuse to allow
+                ! conversations here, by returning true.  If not, the order is
+                ! sent to the other person's "orders" property.  If that also
+                ! returns false, then: if it was a misunderstood command
+                ! anyway, it is converted to an Answer action (thus
+                ! "floyd, grrr" ends up as "say grrr to floyd").  If it was a
+                ! good command, it is finally offered to the Order: part of
+                ! the other person's "life" property, the old-fashioned
+                ! way of dealing with conversation.
 
                     j = RunRoutines(player, orders);
                     if (j == 0) {
@@ -4782,37 +4766,7 @@ Object  InformLibrary "(Inform Library)"
 
             if (deadflag ~= 2) AfterLife();
             if (deadflag == 0) jump very__late__error;
-
-            print "^^    ";
-            #Ifdef TARGET_ZCODE;
-            #IfV5; style bold; #Endif; ! V5
-            #Ifnot; ! TARGET_GLULX
-            glk($0086, 5); ! set alert style
-            #Endif; ! TARGET_
-            print "***";
-            if (deadflag == 1) L__M(##Miscellany, 3);
-            if (deadflag == 2) L__M(##Miscellany, 4);
-            if (deadflag > 2)  {
-                print " ";
-                DeathMessage();
-                print " ";
-            }
-            print "***";
-            #Ifdef TARGET_ZCODE;
-            #IfV5; style roman; #Endif; ! V5
-            #Ifnot; ! TARGET_GLULX
-            glk($0086, 0); ! set normal style
-            #Endif; ! TARGET_
-            #Ifdef NO_SCORE;
-            print "^^";
-            #Ifnot;
-            print "^^^";
-            #Endif; ! NO_SCORE
-            Epilogue();
-            ScoreSub();
-            DisplayStatus();
-            AfterGameOver();
-
+            GameEpilogue();
         ], ! end of 'play' property
 
         end_turn_sequence [;
@@ -4847,6 +4801,86 @@ Object  InformLibrary "(Inform Library)"
             action = sa; noun = sn; second = ss;
         ],
   has   proper;
+
+! ----------------------------------------------------------------------------
+! Routines called before and after main 'play' loop
+
+[ GamePrologue i j;
+    before_first_turn = true;
+    for (i=1 : i<=100 : i++) j = random(i);
+
+    real_location = thedark;
+    player = selfobj; actor = player;
+    selfobj.capacity = MAX_CARRIED; ! ### change?
+
+    #Ifdef TARGET_ZCODE;
+    top_object = #largest_object-255;
+    #Endif; ! TARGET_ZCODE
+
+    #Ifdef LanguageInitialise;
+    LanguageInitialise();
+    #Endif; ! LanguageInitialise
+
+    #Ifdef EnglishNaturalLanguage;
+    old_itobj = itobj; old_himobj = himobj; old_herobj = herobj;
+    #Endif;! EnglishNaturalLanguage
+
+    new_line;
+    LibraryExtensions.RunAll(ext_initialise);
+    j = Initialise();
+    last_score = score;
+    initial_lookmode = lookmode;
+
+    objectloop (i in player) give i moved ~concealed;
+    move player to location;
+    while (parent(location)) location = parent(location);
+    real_location = location;
+    MoveFloatingObjects();
+
+    actor = player; ! resync, because player may have been changed in Initialise()
+    actors_location = location;
+
+    lightflag = OffersLight(parent(player));
+    if (lightflag == 0) location = thedark;
+
+    if (j ~= 2) Banner();
+#ifndef NOINITIAL_LOOK;
+    <Look>;
+#endif;
+    before_first_turn = false;
+];
+
+[ GameEpilogue;
+    print "^^    ";
+    #Ifdef TARGET_ZCODE;
+    #IfV5; style bold; #Endif; ! V5
+    #Ifnot; ! TARGET_GLULX
+    glk($0086, 5); ! set alert style
+    #Endif; ! TARGET_
+    print "***";
+    switch (deadflag) {
+      1:        L__M(##Miscellany, 3);
+      2:        L__M(##Miscellany, 4);
+      default:  print " "; DeathMessage(); print " ";
+    }
+    print "***";
+    #Ifdef TARGET_ZCODE;
+    #IfV5; style roman; #Endif; ! V5
+    #Ifnot; ! TARGET_GLULX
+    glk($0086, 0); ! set normal style
+    #Endif; ! TARGET_
+    print "^^";
+    #Ifndef NO_SCORE;
+    print "^";
+    #Endif; ! NO_SCORE
+    Epilogue();
+    ScoreSub();
+    DisplayStatus();
+    AfterGameOver();
+];
+
+! ----------------------------------------------------------------------------
+! Routines called at end of each turn
 
 [ AdvanceWorldClock;
     turns++;
@@ -4902,6 +4936,8 @@ Object  InformLibrary "(Inform Library)"
     SearchScope(ScopeCeiling(player), player, 0);
     scope_reason = PARSING_REASON;
 ];
+
+! ----------------------------------------------------------------------------
 
 #Ifdef TARGET_ZCODE;
 
@@ -5058,7 +5094,7 @@ Object  InformLibrary "(Inform Library)"
 ];
 
 [ PrintOrRun obj prop flag;
-    if (obj.#prop > WORDSIZE) return RunRoutines(obj,prop);
+    if (obj.#prop > WORDSIZE) return RunRoutines(obj, prop);
     if (obj.prop == NULL) rfalse;
     switch (metaclass(obj.prop)) {
       Class, Object, nothing:
@@ -5068,7 +5104,7 @@ Object  InformLibrary "(Inform Library)"
         if (flag == 0) new_line;
         rtrue;
       Routine:
-        return RunRoutines(obj,prop);
+        return RunRoutines(obj, prop);
     }
 ];
 
@@ -5129,7 +5165,7 @@ Object  InformLibrary "(Inform Library)"
     i = active_timers++;
     if (i >= MAX_TIMERS) { RunTimeError(4); return; }
   .FoundTSlot;
-    if (obj.&time_left == 0) { RunTimeError(5,obj); return; }
+    if (obj.&time_left == 0) { RunTimeError(5, obj, time_left); return; }
     the_timers-->i = obj; obj.time_left = timer;
 ];
 
@@ -5138,7 +5174,7 @@ Object  InformLibrary "(Inform Library)"
         if (the_timers-->i == obj) jump FoundTSlot2;
     rfalse;
   .FoundTSlot2;
-    if (obj.&time_left == 0) { RunTimeError(5,obj); return; }
+    if (obj.&time_left == 0) { RunTimeError(5, obj, time_left); return; }
     the_timers-->i = 0; obj.time_left = 0;
 ];
 
@@ -5201,7 +5237,7 @@ Object  InformLibrary "(Inform Library)"
             return L__M(##Miscellany, 9);
         }
     }
-    if (i == 0 && lightflag == 0) location=thedark;
+    if (i == 0 && lightflag == 0) location = thedark;
 ];
 
 [ OffersLight i j;
@@ -5250,7 +5286,7 @@ Object  InformLibrary "(Inform Library)"
 ];
 
 [ ChangePlayer obj flag i;
-!   if (obj.&number == 0) return RunTimeError(7,obj);
+!   if (obj.&number == 0) return RunTimeError(7, obj);
     if (actor == player) actor=obj;
     give player ~transparent ~concealed;
     i = obj; while (parent(i) ~= 0) {
@@ -5561,13 +5597,10 @@ Object  InformLibrary "(Inform Library)"
         if (clr_on && clr_bgstatus > 1)
             @set_colour clr_fgstatus clr_bgstatus;
         else
-        #Endif;
+        #Endif; ! COLOUR
             style reverse;
     }
-    if (line == 0) {
-        line = 1;
-        column = 1;
-    }
+    if (line == 0) { line = 1; column = 1; }
     #Iftrue (#version_number == 6);
     MoveCursorV6(line, column);
     #Ifnot;
@@ -5582,7 +5615,7 @@ Object  InformLibrary "(Inform Library)"
 #Ifdef COLOUR;
         if (clr_on && clr_bgstatus > 1) @set_colour clr_fg clr_bg;
         else
-#Endif;
+#Endif; ! COLOUR
             style roman;
         @set_window 0;
         }
@@ -5656,7 +5689,7 @@ Object  InformLibrary "(Inform Library)"
         }
     }
 ];
-#Endif;
+#Endif; ! COLOUR
 
 
 #Ifnot; ! TARGET_GLULX
@@ -5676,10 +5709,7 @@ Object  InformLibrary "(Inform Library)"
     if (gg_statuswin) {
         glk($002F, gg_statuswin); ! set_window
     }
-    if (line == 0) {
-        line = 1;
-        column = 1;
-    }
+    if (line == 0) { line = 1; column = 1; }
     glk($002B, gg_statuswin, column-1, line-1); ! window_move_cursor
     statuswin_current=1;
 ];
@@ -5752,7 +5782,7 @@ Object  InformLibrary "(Inform Library)"
     }
 ];
 #Endif; ! COLOUR
-#Endif;
+#Endif; ! TARGET_
 
 #Stub SetColour 4;
 
@@ -5773,7 +5803,7 @@ Object  InformLibrary "(Inform Library)"
     #Iftrue (#version_number == 6); ! request screen update
     (0-->8) = (0-->8) | $$00000100;
     #Endif;
-    #Endif;
+    #Endif; ! TARGET_
 ];
 
 ! ----------------------------------------------------------------------------
@@ -5789,56 +5819,56 @@ Object  InformLibrary "(Inform Library)"
 
 #Iftrue (#version_number == 6);
 [ DrawStatusLine width x charw scw mvw;
-   (0-->8) = (0-->8) &~ $$00000100;
+    HDR_GAMEFLAGS-->0 = (HDR_GAMEFLAGS-->0) & ~$0004;
 
-   StatusLineHeight(gg_statuswin_size);
-   ! Now clear the window. This isn't totally trivial. Our approach is to select the
-   ! fixed space font, measure its width, and print an appropriate
-   ! number of spaces. We round up if the screen isn't a whole number
-   ! of characters wide, and rely on window 1 being set to clip by default.
-   MoveCursor(1, 1);
-   @set_font 4 -> x;
-   width = ScreenWidth();
-   spaces width;
-   ! Back to standard font for the display. We use output_stream 3 to
-   ! measure the space required, the aim being to get 50 characters
-   ! worth of space for the location name.
-   MoveCursor(1, 2);
-   @set_font 1 -> x;
-   if (location == thedark)
-       print (name) location;
-   else {
-       FindVisibilityLevels();
-       if (visibility_ceiling == location) print (name) location;
-       else                                print (The) visibility_ceiling;
-   }
-   @get_wind_prop 1 3 -> width;
-   @get_wind_prop 1 13 -> charw;
-   charw = charw & $FF;
-   @output_stream 3 StorageForShortName;
-   print (string) SCORE__TX, "00000";
-   @output_stream -3; scw = HDR_PIXELSTO3-->0 + charw;
-   @output_stream 3 StorageForShortName;
-   print (string) MOVES__TX, "00000";
-   @output_stream -3; mvw = HDR_PIXELSTO3-->0 + charw;
-   if (width - scw - mvw >= 50*charw) {
-       x = 1+width-scw-mvw;
-       @set_cursor 1 x; print (string) SCORE__TX, sline1;
-       x = x+scw;
-       @set_cursor 1 x; print (string) MOVES__TX, sline2;
-   }
-   else {
-       @output_stream 3 StorageForShortName;
-       print "00000/00000";
-       @output_stream -3; scw = HDR_PIXELSTO3-->0 + charw;
-       if (width - scw >= 50*charw) {
-           x = 1+width-scw;
-           @set_cursor 1 x; print sline1, "/", sline2;
-       }
-   }
-   ! Reselect roman, as Infocom's interpreters interpreters go funny
-   ! if reverse is selected twice.
-   MainWindow();
+    StatusLineHeight(gg_statuswin_size);
+    ! Now clear the window. This isn't totally trivial. Our approach is to
+    ! select the fixed space font, measure its width, and print an appropriate
+    ! number of spaces. We round up if the screen isn't a whole number of
+    ! characters wide, and rely on window 1 being set to clip by default.
+    MoveCursor(1, 1);
+    @set_font 4 -> x;
+    width = ScreenWidth();
+    spaces width;
+    ! Back to standard font for the display. We use output_stream 3 to
+    ! measure the space required, the aim being to get 50 characters
+    ! worth of space for the location name.
+    MoveCursor(1, 2);
+    @set_font 1 -> x;
+    if (location == thedark)
+        print (name) location;
+    else {
+        FindVisibilityLevels();
+        if (visibility_ceiling == location) print (name) location;
+        else                                print (The) visibility_ceiling;
+    }
+    @get_wind_prop 1 3 -> width;
+    @get_wind_prop 1 13 -> charw;
+    charw = charw & $FF;
+    @output_stream 3 StorageForShortName;
+    print (string) SCORE__TX, "00000";
+    @output_stream -3; scw = HDR_PIXELSTO3-->0 + charw;
+    @output_stream 3 StorageForShortName;
+    print (string) MOVES__TX, "00000";
+    @output_stream -3; mvw = HDR_PIXELSTO3-->0 + charw;
+    if (width - scw - mvw >= 50*charw) {
+        x = 1+width-scw-mvw;
+        @set_cursor 1 x; print (string) SCORE__TX, sline1;
+        x = x+scw;
+        @set_cursor 1 x; print (string) MOVES__TX, sline2;
+    }
+    else {
+        @output_stream 3 StorageForShortName;
+        print "00000/00000";
+        @output_stream -3; scw = HDR_PIXELSTO3-->0 + charw;
+        if (width - scw >= 50*charw) {
+            x = 1+width-scw;
+            @set_cursor 1 x; print sline1, "/", sline2;
+        }
+    }
+    ! Reselect roman, as Infocom's interpreters interpreters go funny
+    ! if reverse is selected twice.
+    MainWindow();
 ];
 
 #Endif; ! #version_number == 6
@@ -6085,6 +6115,7 @@ Object  InformLibrary "(Inform Library)"
 ! PrintAnything(func, args...)       func(args...);
 
 [ PrintAnything _vararg_count obj mclass;
+    print_anything_result = 0;
     if (_vararg_count == 0) return;
     @copy sp obj;
     _vararg_count--;
@@ -6107,7 +6138,7 @@ Object  InformLibrary "(Inform Library)"
       Routine:
         ! Call the function with all the arguments which are already
         ! on the stack.
-        @call obj _vararg_count 0;
+        @call obj _vararg_count 0 print_anything_result;
         return;
       Object:
         if (_vararg_count == 0) {
@@ -6118,7 +6149,7 @@ Object  InformLibrary "(Inform Library)"
             ! veneer routine that handles obj.prop() calls.
             @copy obj sp;
             _vararg_count++;
-            @call CA__Pr _vararg_count 0;
+            @call CA__Pr _vararg_count 0 print_anything_result;
         }
         return;
     }
@@ -6187,9 +6218,10 @@ Array AnyToStrArr -> GG_ANYTOSTRING_LEN+1;
 #IfV5;
 
 #Ifdef VN_1630;
-Array StorageForShortName buffer 160;
+Constant SHORTNAMEBUF_LEN 160;
+Array StorageForShortName buffer SHORTNAMEBUF_LEN;
 #Ifnot;
-Array StorageForShortName -> 160 + WORDSIZE;
+Array StorageForShortName -> SHORTNAMEBUF_LEN + WORDSIZE;
 #Endif; ! VN_1630
 
 #Endif; ! V5
@@ -6200,15 +6232,16 @@ Array StorageForShortName -> 160 + WORDSIZE;
 ! buffer (defined as length word followed by byte characters).
 
 [ PrintToBuffer buf len a b c;
+    print_anything_result = 0;
     @output_stream 3 buf;
     switch (metaclass(a)) {
       String:
         print (string) a;
       Routine:
-        a(b, c);
+        print_anything_result = a(b, c);
       Object,Class:
         if (b)
-            PrintOrRun(a, b, true);
+            print_anything_result = PrintOrRun(a, b, true);
         else
             print (name) a;
     }
@@ -6247,12 +6280,12 @@ Array StorageForShortName -> 160 + WORDSIZE;
     ! a variation of PrintOrRun, capitalising the first letter and returning nothing
 
     if (obj ofclass String || prop == 0) {
-        PrintToBuffer (StorageForShortName, 160, obj);
+        PrintToBuffer (StorageForShortName, SHORTNAMEBUF_LEN, obj);
         flag = 1;
     }
     else
         if (obj.#prop > WORDSIZE || metaclass(obj.prop) == Routine or String) {
-            PrintToBuffer(StorageForShortName, 160, obj, prop);
+            PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, obj, prop);
         }
         else
             if (obj.prop == NULL) rfalse;
@@ -6269,7 +6302,7 @@ Array StorageForShortName -> 160 + WORDSIZE;
 
     if (flag == 0 && obj.#prop == WORDSIZE && metaclass(obj.prop) == String)
         new_line;
-    return;
+    return print_anything_result;
 ];
 
 [ Centre a b;
@@ -6319,7 +6352,7 @@ Array StorageForShortName -> 160 + WORDSIZE;
 
     #Ifdef TARGET_ZCODE;
     if (standard_interpreter ~= 0 && findout) {
-        StorageForShortName-->0 = 160;
+        StorageForShortName-->0 = SHORTNAMEBUF_LEN;
         @output_stream 3 StorageForShortName;
         if (pluralise) print (number) pluralise; else print (PSN__) o;
         @output_stream -3;
@@ -6328,9 +6361,9 @@ Array StorageForShortName -> 160 + WORDSIZE;
     #Ifnot; ! TARGET_GLULX
     if (findout) {
         if (pluralise)
-            PrintAnyToArray(StorageForShortName, 160, EnglishNumber, pluralise);
+            PrintAnyToArray(StorageForShortName, SHORTNAMEBUF_LEN, EnglishNumber, pluralise);
         else
-            PrintAnyToArray(StorageForShortName, 160, PSN__, o);
+            PrintAnyToArray(StorageForShortName, SHORTNAMEBUF_LEN, PSN__, o);
         acode = acode + 3*LanguageContraction(StorageForShortName);
     }
     #Endif; ! TARGET_
@@ -6356,17 +6389,23 @@ Array StorageForShortName -> 160 + WORDSIZE;
     print (object) o;
 ];
 
-[ Indefart o i;
-    i = indef_mode; indef_mode = true; caps_mode = false;
+[ Indefart o saveIndef;
+    saveIndef = indef_mode; indef_mode = true; caps_mode = false;
     if (o has proper) {
-        indef_mode = NULL; print (PSN__) o; indef_mode = i; return;
+        indef_mode = NULL;
+        print (PSN__) o;
+        indef_mode = saveIndef;
+        return;
     }
 
     if (o provides article) {
-        PrintOrRun(o, article, 1); print " ", (PSN__) o; indef_mode = i;
+        PrintOrRun(o, article, 1);
+        print " ", (PSN__) o;
+        indef_mode = saveIndef;
         return;
     }
-    PrefaceByArticle(o, 2); indef_mode = i;
+    PrefaceByArticle(o, 2);
+    indef_mode = saveIndef;
 ];
 
 [ CInDefArt o saveIndef saveCaps;
@@ -6375,7 +6414,7 @@ Array StorageForShortName -> 160 + WORDSIZE;
 
     if (o has proper) {
         indef_mode = NULL;
-        PrintToBuffer(StorageForShortName, 160, PSN__, o);
+        PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, PSN__, o);
         if (caps_mode) {
                 StorageForShortName->WORDSIZE =
                     UpperCase(StorageForShortName->WORDSIZE);
@@ -6398,13 +6437,18 @@ Array StorageForShortName -> 160 + WORDSIZE;
     indef_mode = saveIndef;
 ];
 
-[ Defart o i;
-    i = indef_mode; indef_mode = false; caps_mode = false;
+[ Defart o saveIndef;
+    saveIndef = indef_mode;
+    indef_mode = false;
+    caps_mode = false;
     if ((~~o ofclass Object) || o has proper) {
-        indef_mode = NULL; print (PSN__) o; indef_mode = i;
+        indef_mode = NULL;
+        print (PSN__) o;
+        indef_mode = saveIndef;
         return;
     }
-    PrefaceByArticle(o, 1); indef_mode = i;
+    PrefaceByArticle(o, 1);
+    indef_mode = saveIndef;
 ];
 
 [ CDefart o saveIndef saveCaps;
@@ -6422,7 +6466,7 @@ Array StorageForShortName -> 160 + WORDSIZE;
     else
         if (o has proper) {
             indef_mode = NULL;
-            PrintToBuffer(StorageForShortName, 160, PSN__, o);
+            PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, PSN__, o);
             if (caps_mode) {
                 StorageForShortName->WORDSIZE =
                     UpperCase(StorageForShortName->WORDSIZE);
@@ -6435,9 +6479,9 @@ Array StorageForShortName -> 160 + WORDSIZE;
     indef_mode = saveIndef; caps_mode = saveCaps;
 ];
 
-[ PrintShortName o i;
-    i = indef_mode; indef_mode = NULL;
-    PSN__(o); indef_mode = i;
+[ PrintShortName o saveIndef;
+    saveIndef = indef_mode; indef_mode = NULL;
+    PSN__(o); indef_mode = saveIndef;
 ];
 
 [ EnglishNumber n; LanguageNumber(n); ];

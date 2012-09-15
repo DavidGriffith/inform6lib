@@ -15,7 +15,7 @@ System_file;
 
 ! ------------------------------------------------------------------------------
 
-Constant LibSerial       "1208??";
+Constant LibSerial       "1209??";
 Constant LibRelease      "6/12pre";
 Constant LIBRARY_VERSION  612;
 Constant Grammar__Version 2;
@@ -27,9 +27,7 @@ Default DEBUG 0;
 #Endif; ! INFIX
 
 #Ifndef WORDSIZE;                   ! compiling with Z-code only compiler
-#Ifndef TARGET_ZCODE;
-Constant TARGET_ZCODE;
-#Endif; ! TARGET_ZCODE
+Default TARGET_ZCODE 0;
 Constant WORDSIZE 2;
 #Endif; ! WORDSIZE
 
@@ -90,7 +88,7 @@ Constant ROM_GAMESERIAL    $36;     ! six ASCII characters
 #Endif; ! TARGET_
 
 #Ifndef VN_1610;
-Message fatalerror "*** Library 6/11 needs Inform v6.10 or later to work ***";
+Message fatalerror "*** Library 6/12 needs Inform v6.10 or later to work ***";
 #Endif; ! VN_
 
 Include "linklpa";
@@ -105,6 +103,7 @@ Fake_Action ListMiscellany;
 Fake_Action Miscellany;
 Fake_Action Prompt;
 Fake_Action NotUnderstood;
+Fake_Action GoneFrom;
 
 #Ifdef NO_PLACES;
 Fake_Action Places;
