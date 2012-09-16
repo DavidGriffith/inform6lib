@@ -774,20 +774,25 @@ Array InfixRV_commas --> 32;
 ];
 
 [ InfixGiveSub f t;
-    if (t);  ! quell unused n variable warning
     print "; give (", (the) noun, ") ";
     if (second < 0) { second = ~second; f=true; }
-    if (second < 0 || second >= 48) "<No such attribute>"; !(##num_attr_bytes-1)*8
+    #Ifdef VN_1630;
+    t = NUM_ATTR_BYTES * 8;
+    #Ifnot;
+    t = 48;
+    #Endif;
+    if (second < 0 || second >= t) "<No such attribute>";
     if (f) print "@@126";
     print (DebugAttribute) second;
-#ifdef TARGET_ZCODE;
+    #Ifdef TARGET_ZCODE;
     if (f) @clear_attr noun second;
     else @set_attr noun second;
-#ifnot;
+    #Ifnot;
     t = second+8;
     if (f) @astorebit noun t 0; ! give noun ~second; 
     else @astorebit noun t 1;   ! give noun second;
-#endif;
+    #Endif;
+    if (t);  ! quell unused n variable warning
 ];
 
 [ InfixMoveSub;
