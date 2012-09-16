@@ -532,7 +532,7 @@ Constant COMMA__TX      = ", ";
             print (the) x1; ")";
         7:  if (x1 has supporter) "(getting onto ", (the) x1, ")^";
             if (x1 has container) "(getting into ", (the) x1, ")^";
-            "(entering ", (the) x1, ")^";
+            "(entering ", (the) x1, ")";
     }
   Examine: switch (n) {
         1:  "Darkness, noun.  An absence of light to see by.";
@@ -587,7 +587,7 @@ Constant COMMA__TX      = ", ";
         3:  print_ret (The) x1, " ", (isorare) x1, " closed.";
         4:  "You'll need to take ", (itorthem) x1, " off first.";
         5:  "You can't put something inside itself.";
-        6:  "(first taking ", (itorthem) x1, " off)^";
+        6:  "(first taking ", (itorthem) x1, " off)";
         7:  "There is no more room in ", (the) x1, ".";
         8:  "Done.";
         9:  "You put ", (the) x1, " into ", (the) x2, ".";
@@ -828,7 +828,7 @@ Constant COMMA__TX      = ", ";
         2:  "You can't put something on top of itself.";
         3:  "Putting things on ", (the) x1, " would achieve nothing.";
         4:  "You lack the dexterity.";
-        5:  "(first taking ", (itorthem) x1, " off)^";
+        5:  "(first taking ", (itorthem) x1, " off)";
         6:  "There is no more room on ", (the) x1, ".";
         7:  "Done.";
         8:  "You put ", (the) x1, " on ", (the) x2, ".";
