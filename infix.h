@@ -46,6 +46,10 @@ Array  infix_text -> 128;
 
 [ InfixPrintProperty x;  print (property) x; ];
 
+#Ifdef TARGET_GLULX;
+[ InfixPrintGIProperty x;  print (property) x; ];
+#Endif;
+
 [ InfixPrintGlobal x;    print (string) #global_names_array-->x; ];
 
 [ InfixPrintAction x;    print (string) #action_names_array-->(x-#lowest_action_number); ];
@@ -91,6 +95,9 @@ Array  infix_text -> 128;
         if (wa->0 == '~') { wl--; wa++; plus = 100; } ! A tilde
         t = #attribute_names_array;
       InfixPrintProperty:   t = #property_names_array;
+      #Ifdef TARGET_GLULX;
+      InfixPrintGIProperty: t = #identifiers_table-->2;
+      #Endif;
       InfixPrintAction:     t = #action_names_array;
       InfixPrintFakeAction: t = #fake_action_names_array;
       InfixPrintGlobal:     t = #global_names_array;
@@ -161,6 +168,7 @@ Array  infix_text -> 128;
             if (wa->0 >= 'a') digit = wa->0 - 'a' + 10;
             else digit = wa->0 - '0';
             dcount++;
+            #Ifdef TARGET_ZCODE;
             switch (base) {
               2:
                 if (dcount == 17) return -1;
@@ -176,6 +184,19 @@ Array  infix_text -> 128;
               16:
                 if (dcount == 5) return -1;
             }
+            #Ifnot;
+            switch (base) {
+              2:
+                if (dcount == 33) return -1;
+              10:
+                if (dcount == 11) return -1;
+                if (dcount == 10) {
+                    if (n > 214748363) return -1;
+                }
+              16:
+                if (dcount == 9) return -1;
+            }
+            #Endif;
             if (digit >= 0 && digit < base) n = base*n + digit;
             else return -1;
             wl--; wa++;
@@ -219,9 +240,22 @@ Array  infix_text -> 128;
             wn++; return 1; }
 
         infix_term_type = INFIXTT_PROPERTY;
+        #Ifdef TARGET_ZCODE;
         if (InfixMatchPrule(InfixPrintProperty, #lowest_property_number,
             #highest_property_number, wa, wl)) {
-            wn++; return 1; }
+            wn++; return 1;
+        }
+        #Ifnot; ! TARGET_
+        if (InfixMatchPrule(InfixPrintProperty, #lowest_property_number,
+            #identifiers_table-->1 - 1, wa, wl)) {
+            wn++; return 1;
+        }
+        if (InfixMatchPrule(InfixPrintGIProperty, INDIV_PROP_START,
+            #highest_property_number, wa, wl)) {
+            wn++; return 1;
+        }
+        #Endif; ! TARGET_
+
 
         infix_term_type = INFIXTT_GLOBAL;
         if (InfixMatchPrule(InfixPrintGlobal, #lowest_global_number,
@@ -292,7 +326,7 @@ Array  infix_text -> 128;
 ];
 
 [ InfixCheckLineSpaced wa wl i force altered;
-    for (i=1 : i<=parse->1 : i++) {
+    for (i=1 : i<=NumberWords() : i++) {
         wa = WordAddress(i);
         wl = WordLength(i);
         if (wl > 3 && wa->0 == ''' && wa->(wl-1) == ''') {
@@ -306,7 +340,10 @@ Array  infix_text -> 128;
             altered = true; break;
         }
     }
-    for (i=WORDSIZE : i<buffer->1 + WORDSIZE : i++) {
+    for (i=WORDSIZE : i<GetKeyBufLength() + WORDSIZE : i++) {
+        #Ifdef TARGET_GLULX;
+        buffer->i = LowerCase(buffer->i);
+        #Endif;
         force = false;
         if (buffer->i == '-' && buffer->(i+1) == '-' && buffer->(i+2) == '>')
             force = true;
@@ -376,7 +413,7 @@ Array  infix_text -> 128;
             }
         }
     }
-    for (i=WORDSIZE : i<buffer->1 + WORDSIZE : i++)
+    for (i=WORDSIZE : i<GetKeyBufLength() + WORDSIZE : i++)
         if (buffer->i == '~') { buffer->i = '['; altered = true; }
     return altered;
 ]; ! end of InfixCheckLineSpaced
@@ -692,15 +729,15 @@ Array InfixRV_commas --> 32;
 ! ------------------------------------------------------------------------
 
 [ InfixWelcomeSub;
-    print "; Welcome to the ~Infix~ debugger (1/990428), which makes the
+    print "; Welcome to the ~Infix~ debugger (1/040828), which makes the
         following verbs available:^^
         ~; <expression>~: evaluates this Inform expression: e.g.
         ~; location~ will print the value of the variable ~location~,
         ~; 3*5+1~ will print 16, ~; children(old cloth bag)~ will tell you
         how many items are in it. (You can name objects either by their
-        names inside the source code, such as ~n_obj~, or by typing the
+        names inside the source code, such as ~d_obj~, or by typing the
         names by which the game's parser would normally know them, such
-        as ~north wall~: the effect is the same.)^
+        as ~floor~: the effect is the same.)^
         Any expression is allowed except that you can't use double-quoted
         strings of text: but you can send messages, call routines or
         assign values to variables, properties and array entries.
@@ -764,8 +801,17 @@ Array InfixRV_commas --> 32;
 ];
 
 [ InfixHex x y;
+    #Ifdef TARGET_ZCODE;
     y = (x & $7f00) / $100;
     if (x < 0) y = y + $80;
+    #Ifnot;
+    y = (x & $7f000000) / $1000000;
+    if (x < 0) y = y + $80;
+    print (Infixhexdigit) y/$10, (Infixhexdigit) y;
+    y = x & $ff0000 / $10000;
+    print (Infixhexdigit) y/$10, (Infixhexdigit) y;
+    y = (x & $ff00) / $100;
+    #Endif; ! TARGET_
     x = x & $ff;
     print (Infixhexdigit) y/$10, (Infixhexdigit) y, (Infixhexdigit) x/$10, (Infixhexdigit) x;
 ];
@@ -774,6 +820,10 @@ Array InfixRV_commas --> 32;
 
 [ InfixExamineOSub;
     infix_data1 = metaclass(noun);
+    #Ifdef TARGET_GLULX; ! different coding for Glulx
+    if (infix_data1 == Object) infix_data1 = 2;
+    if (infix_data1 == Class) infix_data1 = 1;
+    #Endif;
     infix_term_type = INFIXTT_CONSTANT;
     InfixExamineP(false);
 ];
@@ -801,8 +851,8 @@ Array InfixRV_commas --> 32;
             nothing:
                 print "; Constant ", (InfixPrintConstant) infix_parsed_lvalue,
                 " == ", noun, "^";
-            Object: <<Showobj noun>>;
-            Class:
+            2: <<Showobj noun>>;
+            1:
                 print "Class ", (name) noun, "^";
                 objectloop (a ofclass noun) {
                     if (flag) print ", "; else print "Contains: ";
@@ -886,6 +936,7 @@ Array InfixRV_commas --> 32;
             " (numbered ", noun, ")^Is not generated by any grammar";
         print "; Action ", (InfixPrintAction) noun,
             " (numbered ", noun, ")^";
+        #Ifdef TARGET_ZCODE;
         w = HDR_DICTIONARY-->0;
         for (b=0 : b<(HDR_DICTIONARY-->0 + 5)-->0 : b++) {
             w = HDR_DICTIONARY-->0 + 7 + b*9;
@@ -902,6 +953,24 @@ Array InfixRV_commas --> 32;
                 }
             }
         }
+        #Ifnot;
+        for (b=0 : b < #dictionary_table-->0 : b++) {
+            w = #dictionary_table + WORDSIZE + b*(DICT_WORD_SIZE + 7);
+            if ((w->#dict_par1) & 1) {
+                a = (#grammar_table)-->($100-(w->#dict_par2));
+                lines = a->0; a++;
+                for (: lines>0 : lines--) {
+                    a = UnpackGrammarLine(a);
+                    if (action_to_be == noun) {
+                        print "'", (address) w, "' "; DebugGrammarLine();
+                        new_line;
+                        flag = true;
+                    }
+                }
+            }
+        }
+        #Endif; ! TARGET_
+
         if (flag == 0) "Is not generated by any grammar";
       INFIXTT_SYSFUN:
         if (brief) "; == ", noun;
@@ -1027,7 +1096,7 @@ Array InfixRV_commas --> 32;
             }
             if (flag) print (string) tab-->(i-from), " ";
         }
-    new_line;
+        new_line;
 ];
 
 [ InfixInvSub i;
@@ -1054,10 +1123,18 @@ Array InfixRV_commas --> 32;
     InfixList(#lowest_constant_number, #highest_constant_number, #constant_names_array, 0);
 
     print "  (common) properties:";
-    InfixList(#lowest_property_number, 63, #property_names_array);
+    #Ifdef TARGET_ZCODE;
+    InfixList(#lowest_property_number, INDIV_PROP_START-1, #property_names_array);
+    #Ifnot;
+    InfixList(#lowest_property_number, #identifiers_table-->1 - 1, #property_names_array);
+    #Endif;
 
     print "  (individual) properties:";
-    InfixList(64, #highest_property_number, #property_names_array + 126);
+    #Ifdef TARGET_ZCODE;
+    InfixList(INDIV_PROP_START, #highest_property_number, #property_names_array + 126);
+    #Ifnot;
+    InfixList(INDIV_PROP_START, #highest_property_number, #identifiers_table-->2);
+    #Endif;
 
     print "  attributes:";
     InfixList(#lowest_attribute_number, #highest_attribute_number, #attribute_names_array);
