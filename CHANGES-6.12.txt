@@ -19,6 +19,11 @@ If you define a Constant NO_IMPLICIT_ACTIONS, the library will not
 attempt to do things that implicitly must be done like taking an object 
 from a sack before dropping it.
 
+TAKE ALL has been modified such that scenery or animate objects will not 
+be taken.  To revert back to traditional behavior, define Constant 
+TRADITIONAL_TAKE_ALL at the beginning of your program.
+
+
 
 Issues addressed in Release 6/12 (12????)
 =========================================

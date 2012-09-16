@@ -764,6 +764,7 @@ Constant COMMA__TX      = ", ";
         58: print "(first taking ", (the) x1;
             if (x2 has supporter) print " off "; else print " out of ";
             print_ret (the) x2, ")";
+        59: "You'll have to be more specific.";
     }
   No,Yes:   "That was a rhetorical question.";
   NotifyOff:

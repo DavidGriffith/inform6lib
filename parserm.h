@@ -2096,8 +2096,15 @@ Object  InformParser "(Inform Parser)"
             else results-->0 = 0;
             }
         if (results-->0 ~= ##Remove) {
-            if (multi_wanted==100)  L__M(##Miscellany, 43);
-            else                    L__M(##Miscellany, 44);
+            if (multi_wanted == 100)    L__M(##Miscellany, 43);
+            else {
+                #Ifdef NO_TAKE_ALL;
+                if (take_all_rule == 2) L__M(##Miscellany, 59);
+                else                    L__M(##Miscellany, 44);
+                #Ifnot;
+                L__M(##Miscellany, 44);
+                #Endif; ! NO_TAKE_ALL
+            }
         }
     }
     if (etype == ASKSCOPE_PE) {
@@ -3217,8 +3224,17 @@ Constant SCORE__DIVISOR     = 20;
             }
             if (context == MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN && parent(j) ~= actor)
                 flag = 0;
+            #Ifdef TRADITIONAL_TAKE_ALL;
             if (action_to_be == ##Take or ##Remove && parent(j) == actor)
                 flag = 0;
+            #Ifnot;
+            if (action_to_be == ##Take or ##Remove &&
+               (j has animate or scenery or static || parent(j) == actor))
+                flag = 0;
+            #Endif; ! TRADITIONAL_TAKE_ALL
+            #Ifdef NO_TAKE_ALL;
+            if (take_all_rule == 2 && match_length == 0) flag = 0;
+            #Endif; ! NO_TAKE_ALL
             switch (ChooseObjects(j, flag)) {
               2: flag = 0;  ! forcing rejection
               1: flag = 1;  ! forcing acceptance
@@ -3427,8 +3443,20 @@ Constant SCORE__DIVISOR     = 20;
             if (its_owner == actor) its_score = its_score + a_s;
             else
                 if (its_owner == actors_location) its_score = its_score + l_s;
-                else
+                else {
+                    #Ifdef TRADITIONAL_TAKE_ALL;
                     if (its_owner ~= compass) its_score = its_score + SCORE__NOTCOMPASS;
+                    #Ifnot;
+                    if (its_owner ~= compass)
+                        if (take_all_rule && its_owner &&
+                            its_owner has static or scenery &&
+						   (its_owner has supporter ||
+						   (its_owner has container && its_owner has open)))
+                            its_score = its_score + l_s;
+                        else
+                            its_score = its_score + SCORE__NOTCOMPASS;
+                    #Endif; ! TRADITIONAL_TAKE_ALL
+                }
 
             its_score = its_score + SCORE__CHOOSEOBJ * ChooseObjects(obj, 2);
 
@@ -5784,7 +5812,11 @@ Object  InformLibrary "(Inform Library)"
 #Endif; ! COLOUR
 #Endif; ! TARGET_
 
-#Stub SetColour 4;
+#Ifndef COLOUR;
+[ SetColour f b window doclear;
+    f = b = window = doclear = 0;
+];
+#Endif;
 
 [ SetClr f b w;
     SetColour (f, b, w);
@@ -6487,10 +6519,10 @@ Array StorageForShortName -> SHORTNAMEBUF_LEN + WORDSIZE;
 [ EnglishNumber n; LanguageNumber(n); ];
 
 [ OxfordComma n;
-    if (n);	! quell unused n variable warning
     #Ifdef SERIAL_COMMAS;
     if (n>2) print ",";
     #Endif;
+    n=0;        ! quell unused n variable warning
 ];
 
 [ NumberWord o i n;
