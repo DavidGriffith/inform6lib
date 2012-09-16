@@ -1620,7 +1620,7 @@ Object  InformParser "(Inform Parser)"
     #Endif; ! DEBUG
 
     best_etype = STUCK_PE; nextbest_etype = STUCK_PE;
-    multiflag = false;
+    multiflag = false; saved_oops = 0;
 
     ! "best_etype" is the current failure-to-match error - it is by default
     ! the least informative one, "don't understand that sentence".
@@ -3648,7 +3648,7 @@ Constant SCORE__DIVISOR     = 20;
 ! ----------------------------------------------------------------------------
 
 [ CantSee  i w e;
-    saved_oops=oops_from;
+    if (saved_oops < oops_from) saved_oops=oops_from;
 
     if (scope_token ~= 0) {
         scope_error = scope_token;
