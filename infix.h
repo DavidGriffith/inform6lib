@@ -118,9 +118,9 @@ Array  infix_text -> 128;
         #endif;
         k = infix_text-->0;
         if (k ~= wl) jump XL;
-        if (itlc->(it2->0) ~= wa->0) jump XL;
+        if (itlc->(it2->0) ~= itlc->(wa->0)) jump XL;
         for (j=1 : j<k : j++)
-            if (itlc->(it2->j) ~= wa->j) jump XL;
+            if (itlc->(it2->j) ~= itlc->(wa->j)) jump XL;
         parsed_number = i + range1 + plus;
         rtrue;
       .XL;
