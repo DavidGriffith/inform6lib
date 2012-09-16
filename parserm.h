@@ -6138,7 +6138,7 @@ Object  InformLibrary "(Inform Library)"
       Routine:
         ! Call the function with all the arguments which are already
         ! on the stack.
-        @call obj _vararg_count 0 print_anything_result;
+        @call obj _vararg_count print_anything_result;
         return;
       Object:
         if (_vararg_count == 0) {
@@ -6149,7 +6149,7 @@ Object  InformLibrary "(Inform Library)"
             ! veneer routine that handles obj.prop() calls.
             @copy obj sp;
             _vararg_count++;
-            @call CA__Pr _vararg_count 0 print_anything_result;
+            @call CA__Pr _vararg_count print_anything_result;
         }
         return;
     }
