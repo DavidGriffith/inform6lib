@@ -2514,7 +2514,8 @@ Constant UNLIT_BIT  =  32;
 
 !    L61114 fix by Nathan Schwartzman
 !    Not sure if this will cause any regressions
-!    allow_plurals = true;
+! It did.
+    allow_plurals = true;
     desc_wn = wn;
 
   .TryAgain;
