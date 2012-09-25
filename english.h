@@ -745,10 +745,10 @@ Constant COMMA__TX      = ", ";
         46: print "Which do you mean, ";
         47: "Sorry, you can only have one item here. Which exactly?";
         48: print "Whom do you want";
-            if (x1 ~= player) print " ", (the) x1;
+            if (x1 ~= player && x1 ~= nothing) print " ", (the) x1;
             print " to "; PrintCommand(); print "?^";
         49: print "What do you want";
-            if (x1 ~= player) print " ", (the) x1;
+            if (x1 ~= player && x1 ~= nothing) print " ", (the) x1;
             print " to "; PrintCommand(); print "?^";
         50: print "Your score has just gone ";
             if (x1 > 0) print "up"; else { x1 = -x1; print "down"; }
