@@ -553,7 +553,7 @@ Constant COMMA__TX      = ", ";
             if (x1 has supporter) print "off "; else print "out of ";
             print_ret (the) x1, ")";
     }
-  Fill:     "But there's no water here to carry.";
+  Fill:     "Filling ", (the) x1, " from ", (the) x2, " doesn't make sense.";
   FullScore: switch (n) {
         1:  if (deadflag) print "The score was "; else print "The score is ";
             "made up as follows:^";
@@ -581,8 +581,8 @@ Constant COMMA__TX      = ", ";
             if (x1 has pluralname) " lead nowhere."; else " leads nowhere.";
     }
   Insert: switch (n) {
-        1:  "You need to be holding ", (the) x1, " before you can put ", (itorthem) x1,
-            " into something else.";
+        1:  "You need to be holding ", (the) x1, " before you can put ",
+            (itorthem) x1, " into something else.";
         2:  print_ret (Cthatorthose) x1, " can't contain things.";
         3:  print_ret (The) x1, " ", (isorare) x1, " closed.";
         4:  "You'll need to take ", (itorthem) x1, " off first.";

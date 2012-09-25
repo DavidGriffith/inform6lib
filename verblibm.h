@@ -2413,7 +2413,7 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
 
 [ DrinkSub; L__M(##Drink, 1, noun); ];
 
-[ FillSub; L__M(##Fill, 1, noun); ];
+[ FillSub; L__M(##Fill, 1, noun, second); ];
 
 [ JumpSub; L__M(##Jump, 1, noun); ];
 
