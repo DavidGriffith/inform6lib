@@ -12,7 +12,7 @@ System_file;
 
 #Ifdef MODULE_MODE;
 Constant DEBUG;
-Constant Grammar__Version2;
+Constant Grammar__Version 2;
 Include "linklpa";
 Include "linklv";
 #Endif; ! MODULE_MODE
