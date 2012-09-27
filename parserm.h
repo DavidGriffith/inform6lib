@@ -3649,7 +3649,7 @@ Constant SCORE__DIVISOR     = 20;
 ! ----------------------------------------------------------------------------
 
 [ CantSee  i w e;
-    if (saved_oops < oops_from) saved_oops=oops_from;
+    saved_oops=oops_from;
 
     if (scope_token ~= 0) {
         scope_error = scope_token;
