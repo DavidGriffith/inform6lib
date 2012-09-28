@@ -1,0 +1,4 @@
+*[A-Z]*.h
+*.z*
+*.inf
+scratch/
