@@ -1858,7 +1858,7 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
     if (noun has door || noun in compass) <<Go noun>>;
 
     if (player in noun) return L__M(##Enter, 1, noun);
-    if (noun hasnt enterable) return L__M(##Enter, 2, noun);
+    if (noun hasnt enterable) return L__M(##Enter, 2, noun, verb_word);
     if (noun has container && noun hasnt open && ImplicitOpen(noun))
         return L__M(##Enter, 3, noun);
 
@@ -1918,9 +1918,11 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
     }
 
     move player to parent(p);
+    if (player provides posture) player.posture = 0;
 
     if (AfterRoutines() || keep_silent) return;
-    L__M(##Exit, 3, p); LookSub(1);
+    L__M(##Exit, 3, p);
+    if (p has container) LookSub(1);
 ];
 
 [ VagueGoSub; L__M(##VagueGo); ];
@@ -2313,7 +2315,7 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
     if (noun has container && noun hasnt transparent && location ~= thedark
         && VisibleContents(noun) ~= 0 && IndirectlyContains(noun, player) == 0)
         return L__M(##Open, 4, noun);
-    L__M(##Open,5,noun);
+    L__M(##Open, 5, noun);
 ];
 
 [ CloseSub;
@@ -2742,6 +2744,7 @@ Constant NOARTICLE_BIT  4096;       ! Print no articles, definite or not
     s = action;
     lm_n = n;
     lm_o = x1;
+    lm_s = x2;
     action = sw__var;
     if (RunRoutines(LibraryMessages, before))        { action = s; rfalse; }
     if (LibraryExtensions.RunWhile(ext_messages, 0)) { action = s; rfalse; }

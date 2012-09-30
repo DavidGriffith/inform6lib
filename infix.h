@@ -48,7 +48,7 @@ Array  infix_text -> 128;
 
 #Ifdef TARGET_GLULX;
 [ InfixPrintGIProperty x;  print (property) x; ];
-#Endif;
+#Endif; ! TARGET_
 
 [ InfixPrintGlobal x;    print (string) #global_names_array-->x; ];
 
@@ -61,7 +61,7 @@ Array  infix_text -> 128;
 [ InfixPrintArray x;     print (string) #array_names_array-->(x-#lowest_array_number); ];
 
 [ InfixPrintFakeAction x;
-                        print (string) #fake_action_names_array-->(x-#lowest_fake_action_number); ];
+                         print (string) #fake_action_names_array-->(x-#lowest_fake_action_number); ];
 
 [ InfixPrintPA x n;
     for (n=#lowest_routine_number : n<=#highest_routine_number : n++) {
@@ -90,14 +90,14 @@ Array  infix_text -> 128;
         itlc->'W' = 'w';    itlc->'X' = 'x';
         itlc->'Y' = 'y';    itlc->'Z' = 'z';
     }
-    switch(PrintingRule) {
+    switch (PrintingRule) {
       InfixPrintAttribute:
         if (wa->0 == '~') { wl--; wa++; plus = 100; } ! A tilde
         t = #attribute_names_array;
       InfixPrintProperty:   t = #property_names_array;
       #Ifdef TARGET_GLULX;
       InfixPrintGIProperty: t = #identifiers_table-->2;
-      #Endif;
+      #Endif; ! TARGET_
       InfixPrintAction:     t = #action_names_array;
       InfixPrintFakeAction: t = #fake_action_names_array;
       InfixPrintGlobal:     t = #global_names_array;
@@ -112,10 +112,10 @@ Array  infix_text -> 128;
         infix_text-->0 = 62; @output_stream 3 infix_text;
         if (t) print (string) t-->i; else PrintingRule(i+range1);
         @output_stream -3;
-        #ifnot;
+        #ifnot; ! TARGET_GLULX
         if (t) PrintToBuffer(infix_text, 62, t-->i);
         else PrintToBuffer(infix_text, 62, PrintingRule, i+range1);
-        #endif;
+        #endif; ! TARGET_
         k = infix_text-->0;
         if (k ~= wl) jump XL;
         if (itlc->(it2->0) ~= itlc->(wa->0)) jump XL;
@@ -184,7 +184,7 @@ Array  infix_text -> 128;
               16:
                 if (dcount == 5) return -1;
             }
-            #Ifnot;
+            #Ifnot; ! TARGET_GLULX
             switch (base) {
               2:
                 if (dcount == 33) return -1;
@@ -196,7 +196,7 @@ Array  infix_text -> 128;
               16:
                 if (dcount == 9) return -1;
             }
-            #Endif;
+            #Endif; ! TARGET_
             if (digit >= 0 && digit < base) n = base*n + digit;
             else return -1;
             wl--; wa++;
@@ -343,7 +343,7 @@ Array  infix_text -> 128;
     for (i=WORDSIZE : i<GetKeyBufLength() + WORDSIZE : i++) {
         #Ifdef TARGET_GLULX;
         buffer->i = LowerCase(buffer->i);
-        #Endif;
+        #Endif; ! TARGET_
         force = false;
         if (buffer->i == '-' && buffer->(i+1) == '-' && buffer->(i+2) == '>')
             force = true;
@@ -780,18 +780,18 @@ Array InfixRV_commas --> 32;
     t = NUM_ATTR_BYTES * 8;
     #Ifnot;
     t = 48;
-    #Endif;
+    #Endif; ! VN_
     if (second < 0 || second >= t) "<No such attribute>";
     if (f) print "@@126";
     print (DebugAttribute) second;
     #Ifdef TARGET_ZCODE;
     if (f) @clear_attr noun second;
-    else @set_attr noun second;
-    #Ifnot;
-    t = second+8;
-    if (f) @astorebit noun t 0; ! give noun ~second; 
-    else @astorebit noun t 1;   ! give noun second;
-    #Endif;
+    else   @set_attr noun second;
+    #Ifnot; ! TARGET_GLULX
+    t = second + 8;
+    if (f) @astorebit noun t 0; ! give noun ~second;
+    else   @astorebit noun t 1; ! give noun second;
+    #Endif; ! TARGET_
     if (t);  ! quell unused n variable warning
 ];
 
@@ -809,7 +809,7 @@ Array InfixRV_commas --> 32;
     #Ifdef TARGET_ZCODE;
     y = (x & $7f00) / $100;
     if (x < 0) y = y + $80;
-    #Ifnot;
+    #Ifnot; ! TARGET_GLULX
     y = (x & $7f000000) / $1000000;
     if (x < 0) y = y + $80;
     print (Infixhexdigit) y/$10, (Infixhexdigit) y;
@@ -828,7 +828,7 @@ Array InfixRV_commas --> 32;
     #Ifdef TARGET_GLULX; ! different coding for Glulx
     if (infix_data1 == Object) infix_data1 = 2;
     if (infix_data1 == Class) infix_data1 = 1;
-    #Endif;
+    #Endif; ! TARGET_
     infix_term_type = INFIXTT_CONSTANT;
     InfixExamineP(false);
 ];
@@ -958,7 +958,7 @@ Array InfixRV_commas --> 32;
                 }
             }
         }
-        #Ifnot;
+        #Ifnot; ! TARGET_GLULX
         for (b=0 : b < #dictionary_table-->0 : b++) {
             w = #dictionary_table + WORDSIZE + b*(DICT_WORD_SIZE + 7);
             if ((w->#dict_par1) & 1) {
@@ -1045,9 +1045,9 @@ Array InfixRV_commas --> 32;
         l = l | k;
         #ifdef TARGET_ZCODE;
         @storeb #routine_flags_array i l;
-        #ifnot;
+        #ifnot; ! TARGET_GLULX
         @astoreb #routine_flags_array i l;
-        #endif;
+        #endif; ! TARGET_
        "; Watching routine ", (InfixPrintRoutine) infix_parsed_lvalue, ".";
     }
     if (metaclass(noun) == Object) {
@@ -1066,17 +1066,17 @@ Array InfixRV_commas --> 32;
         l = l & (~k);
         #ifdef TARGET_ZCODE;
         @storeb #routine_flags_array i l;
-        #ifnot;
+        #ifnot; ! TARGET_GLULX
         @astoreb #routine_flags_array i l;
-        #endif;
+        #endif; ! TARGET
        "; Not watching ", (InfixPrintRoutine) infix_parsed_lvalue, ".";
     }
     if (metaclass(noun) == Object) {
         #ifdef TARGET_ZCODE;
         @clear_attr noun infix__watching;
-        #ifnot;
+        #ifnot; ! TARGET_GLULX
         @astorebit noun (infix__watching+8) 0;
-        #endif;
+        #endif; ! TARGET_
        "; Not watching object ~", (name) noun, "~ (", noun, ").";
     }
     InfixDescribeWatchSub();
@@ -1130,16 +1130,16 @@ Array InfixRV_commas --> 32;
     print "  (common) properties:";
     #Ifdef TARGET_ZCODE;
     InfixList(#lowest_property_number, INDIV_PROP_START-1, #property_names_array);
-    #Ifnot;
+    #Ifnot; ! TARGET_GLULX
     InfixList(#lowest_property_number, #identifiers_table-->1 - 1, #property_names_array);
-    #Endif;
+    #Endif; ! TARGET_
 
     print "  (individual) properties:";
     #Ifdef TARGET_ZCODE;
     InfixList(INDIV_PROP_START, #highest_property_number, #property_names_array + 126);
-    #Ifnot;
+    #Ifnot; ! TARGET_GLULX
     InfixList(INDIV_PROP_START, #highest_property_number, #identifiers_table-->2);
-    #Endif;
+    #Endif; ! TARGET_
 
     print "  attributes:";
     InfixList(#lowest_attribute_number, #highest_attribute_number, #attribute_names_array);

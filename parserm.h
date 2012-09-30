@@ -207,6 +207,7 @@ Global lm_o;                        ! mechanism
 
 #Ifdef DEBUG;
 Global debug_flag;                  ! Bitmap of flags for tracing actions,
+Global lm_s;
                                     ! calls to object routines, etc.
 Global x_scope_count;               ! Used in printing a list of everything
 #Endif; ! DEBUG                     ! in scope
@@ -450,10 +451,10 @@ Global placed_in_flag;              ! To do with PlaceInScope
 !   The match list of candidate objects for a given token
 ! ------------------------------------------------------------------------------
 
-Constant MATCH_LIST_SIZE = 128;
-Array  match_list    --> 64;        ! An array of matched objects so far
-Array  match_classes --> 64;        ! An array of equivalence classes for them
-Array  match_scores --> 64;         ! An array of match scores for them
+Constant MATCH_LIST_SIZE = 64;
+Array  match_list    --> MATCH_LIST_SIZE; ! An array of matched objects so far
+Array  match_classes --> MATCH_LIST_SIZE; ! An array of equivalence classes for them
+Array  match_scores --> MATCH_LIST_SIZE;  ! An array of match scores for them
 Global number_matched;              ! How many items in it?  (0 means none)
 Global number_of_classes;           ! How many equivalence classes?
 Global match_length;                ! How many words long are these matches?
@@ -466,37 +467,76 @@ Global bestguess_score;             ! What did the best-guess object score?
 
 #Ifdef TARGET_ZCODE;
 
-Constant INPUT_BUFFER_LEN = 122;    ! Length of buffer array (although we leave an extra byte
-                                    ! to allow for interpreter bugs)
+! 'buffer' holds the input line as typed by the player
+!
+!       buffer->0                     INPUT_BUFFER_LEN - WORDSIZE
+!       buffer->1                     Number of characters input by player
+!       buffer->2 ... buffer->121     The actual characters
+!       buffer->122                   Spare byte to allow for 'terp bugs
+!
+! 'parse' holds the result of parsing that line into dictionary words
+!
+!       parse->0                      MAX_BUFFER_WORDS
+!       parse->1                      Number of words input by player
+!
+!       parse-->1                     Dictionary addr of first input word
+!       parse->4                      Number of characters in the word
+!       parse->5                      Start position in 'buffer' of the word
+!
+!       parse-->3  parse->8,9         Same data for second input word
+!       ...
+!       parse-->29 parse->60,61       Same data for MAX_BUFFER_WORDS input word
+!       parse->62,63,64               Spare bytes (not sure why)
 
-Array  buffer    -> 123;            ! Buffer for parsing main line of input
+
+Constant INPUT_BUFFER_LEN = WORDSIZE + 120;  ! 120 is limit on input chars
+Constant MAX_BUFFER_WORDS = 15;              ! Limit on input words
+
+Array  buffer  -> INPUT_BUFFER_LEN + 1;      ! For main line of input
+Array  buffer2 -> INPUT_BUFFER_LEN + 1;      ! For supplementary questions
+Array  buffer3 -> INPUT_BUFFER_LEN + 1;      ! Retaining input for "AGAIN"
+
 #Ifdef VN_1630;
-Array  parse     buffer 63;         ! Parse table mirroring it
-Array  parse2    buffer 63;         !
+Array  parse   buffer (MAX_BUFFER_WORDS * 4) + 3;   ! Parsed data from 'buffer'
+Array  parse2  buffer (MAX_BUFFER_WORDS * 4) + 3;   ! Parsed data from 'buffer2'
 #Ifnot;
-Array  parse     -> 65;             ! Parse table mirroring it
-Array  parse2    -> 65;             !
++Array  parse   -> 2 + (MAX_BUFFER_WORDS * 4) + 3;
++Array  parse2  -> 2 + (MAX_BUFFER_WORDS * 4) + 3;
 #Endif; ! VN_
-Array  buffer2   -> 123;            ! Buffers for supplementary questions
-Array  buffer3   -> 123;            ! Buffer retaining input for "again"
 
 #Ifnot; ! TARGET_GLULX
 
-Constant INPUT_BUFFER_LEN = 260;    ! No extra byte necessary
-Constant MAX_BUFFER_WORDS = 20;
-Constant PARSE_BUFFER_LEN = 244;    ! 4 + MAX_BUFFER_WORDS*4;
+! 'buffer' holds the input line as typed by the player
+!
+!       buffer-->0                    Number of characters input by player
+!       buffer->4 ... buffer->259     The actual characters
+!
+! 'parse' holds the result of parsing that line into dictionary words
+!
+!       parse-->0                     Number of words input by player
+!
+!       parse-->1                     Dictionary addr of first input word
+!       parse-->2                     Number of characters in the word
+!       parse-->3                     Start position in 'buffer' of the word
+!
+!       parse-->4,5,6                 Same data for second input word
+!       ...
+!       parse-->58,59,60              Same data for MAX_BUFFER_WORDS input word
+
+Constant INPUT_BUFFER_LEN = WORDSIZE + 256;    ! 256 is limit on input chars
+Constant MAX_BUFFER_WORDS = 20;                ! Limit on input words
 
 #Ifdef VN_1630;
-Array  buffer    buffer INPUT_BUFFER_LEN;
-Array  buffer2   buffer INPUT_BUFFER_LEN;
-Array  buffer3   buffer INPUT_BUFFER_LEN;
+Array  buffer  buffer (INPUT_BUFFER_LEN-WORDSIZE);  ! For main line of input
+Array  buffer2 buffer (INPUT_BUFFER_LEN-WORDSIZE);  ! For supplementary questions
+Array  buffer3 buffer (INPUT_BUFFER_LEN-WORDSIZE);  ! Retaining input for "AGAIN"
 #Ifnot;
-Array  buffer    -> INPUT_BUFFER_LEN;
-Array  buffer2   -> INPUT_BUFFER_LEN;
-Array  buffer3   -> INPUT_BUFFER_LEN;
-#Endif;
-Array  parse     --> PARSE_BUFFER_LEN/WORDSIZE;
-Array  parse2    --> PARSE_BUFFER_LEN/WORDSIZE;
+Array  buffer  -> INPUT_BUFFER_LEN;
+Array  buffer2 -> INPUT_BUFFER_LEN;
+Array  buffer3 -> INPUT_BUFFER_LEN;
+#Endif; ! VN_
+Array  parse   --> 1 + (MAX_BUFFER_WORDS * 3);      ! Parsed data from 'buffer'
+Array  parse2  --> 1 + (MAX_BUFFER_WORDS * 3);      ! Parsed data from 'buffer2'
 
 #Endif; ! TARGET_
 
@@ -513,7 +553,9 @@ Global usual_grammar_after;         ! Point from which usual grammar is parsed (
 
 Global oops_from;                   ! The "first mistake" word number
 Global saved_oops;                  ! Used in working this out
-Array  oops_workspace -> 64;        ! Used temporarily by "oops" routine
+
+Constant OOPS_WORKSPACE_LEN 64;     ! Used temporarily by "oops" routine
+Array  oops_workspace -> OOPS_WORKSPACE_LEN;
 
 Global held_back_mode;              ! Flag: is there some input from last time
 Global hb_wn;                       ! left over?  (And a save value for wn.)
@@ -603,6 +645,7 @@ Object  selfobj "(self object)"
         parse_name 0,
         orders 0,
         number 0,
+        posture 0,
         before_implicit [;Take: return 2;],
   has   concealed animate proper transparent;
 
@@ -1073,14 +1116,14 @@ Object  InformParser "(Inform Parser)"
     ! Save the start of the buffer, in case "oops" needs to restore it
     ! to the previous time's buffer
 
-    for (i=0 : i<64 : i++) oops_workspace->i = a_buffer->i;
+    for (i=0 : i<OOPS_WORKSPACE_LEN : i++) oops_workspace->i = a_buffer->i;
 
     ! In case of an array entry corruption that shouldn't happen, but would be
     ! disastrous if it did:
 
     #Ifdef TARGET_ZCODE;
     a_buffer->0 = INPUT_BUFFER_LEN - WORDSIZE;
-    a_table->0 = 15;  ! Allow to split input into this many words
+    a_table->0  = MAX_BUFFER_WORDS; ! Allow to split input into this many words
     #Endif; ! TARGET_
 
     ! Print the prompt, and read in the words and dictionary addresses
@@ -1207,8 +1250,8 @@ Object  InformParser "(Inform Parser)"
     ! Repair the buffer to the text that was in it before the "oops"
     ! was typed:
 
-    for (i=0 : i<64 : i++) a_buffer->i = oops_workspace->i;
-    Tokenise__(a_buffer,a_table);
+    for (i=0 : i < OOPS_WORKSPACE_LEN : i++) a_buffer->i = oops_workspace->i;
+    Tokenise__(a_buffer, a_table);
 
     ! Work out the position in the buffer of the word to be corrected:
 
@@ -1290,7 +1333,7 @@ Object  InformParser "(Inform Parser)"
 
   .ReType;
 
-    Keyboard(buffer,parse);
+    Keyboard(buffer, parse);
 
   .ReParse;
 
@@ -2918,7 +2961,7 @@ Constant UNLIT_BIT  =  32;
     #Ifdef TARGET_ZCODE;
     for (i=WORDSIZE : i<INPUT_BUFFER_LEN : i++) buffer2->i = ' ';
     #Endif; ! TARGET_ZCODE
-    answer_words=Keyboard(buffer2, parse2);
+    answer_words = Keyboard(buffer2, parse2);
 
     ! Conveniently, parse2-->1 is the first word in both ZCODE and GLULX.
     first_word = (parse2-->1);
@@ -3063,7 +3106,7 @@ Constant UNLIT_BIT  =  32;
                 k = buffer + i;
                 #Ifdef TARGET_ZCODE;
                 @output_stream 3 k;
-                 print (address) parse2-->1;
+                print (address) parse2-->1;
                 @output_stream -3;
                 k = k-->0;
                 for (l=i : l<i+k : l++) buffer->l = buffer->(l+2);
@@ -4050,7 +4093,7 @@ Constant SCORE__DIVISOR     = 20;
     if (quality < match_length) rtrue;
     if (quality > match_length) { match_length = quality; number_matched = 0; }
     else {
-        if (2*number_matched >= MATCH_LIST_SIZE) rtrue;
+        if (number_matched >= MATCH_LIST_SIZE) rtrue;
         for (i=0 : i<number_matched : i++)
             if (match_list-->i == obj) rtrue;
     }
@@ -4600,32 +4643,10 @@ Object  InformLibrary "(Inform Library)"
             no_infer_message = false;
 
             #Ifdef TARGET_ZCODE;
-            standard_interpreter = HDR_TERPSTANDARD-->0;
-            transcript_mode = ((HDR_GAMEFLAGS-->0) & $0001);
-            sys_statusline_flag = ( (HDR_TERPFLAGS->0) & $0002 ) / 2;
+            ZZInitialise();
             #Ifnot; ! TARGET_GLULX
             GGInitialise();
             #Endif; ! TARGET_
-
-            ChangeDefault(cant_go, CANTGO__TX);
-
-            #Ifdef TARGET_ZCODE;
-            dict_start = HDR_DICTIONARY-->0;
-            dict_entry_size = dict_start->(dict_start->0 + 1);
-            dict_start = dict_start + dict_start->0 + 4;
-            dict_end = dict_start + (dict_start - 2)-->0 * dict_entry_size;
-            #Ifdef DEBUG;
-            if (dict_start > 0 && dict_end < 0 &&
-              ((-dict_start) - dict_end) % dict_entry_size == 0)
-                print "** Warning: grammar properties might not work correctly **^";
-            #Endif; ! DEBUG
-
-            buffer->0  = INPUT_BUFFER_LEN;
-            buffer2->0 = INPUT_BUFFER_LEN;
-            buffer3->0 = INPUT_BUFFER_LEN;
-            parse->0   = 15;
-            parse2->0  = 15;
-            #Endif; ! TARGET_ZCODE
 
             GamePrologue();
             while (~~deadflag) {    ! everything happens in this loop
@@ -4688,7 +4709,6 @@ Object  InformLibrary "(Inform Library)"
                 !  --------------------------------------------------------------
 
                 multiflag = false; onotheld_mode = notheld_mode; notheld_mode = false;
-                keep_silent = 0;
                 ! For implicit taking and multiple object detection
 
               .begin__action;
@@ -4782,6 +4802,8 @@ Object  InformLibrary "(Inform Library)"
 
               .turn__end;
 
+                keep_silent = 0;    ! should be zero anyway, but just in case...
+
                 ! No time passes if either (i) the verb was meta, or
                 ! (ii) we've only had the implicit take before the "real"
                 ! action to follow.
@@ -4838,13 +4860,11 @@ Object  InformLibrary "(Inform Library)"
     before_first_turn = true;
     for (i=1 : i<=100 : i++) j = random(i);
 
+    ChangeDefault(cant_go, CANTGO__TX);
+
     real_location = thedark;
     player = selfobj; actor = player;
     selfobj.capacity = MAX_CARRIED; ! ### change?
-
-    #Ifdef TARGET_ZCODE;
-    top_object = #largest_object-255;
-    #Endif; ! TARGET_ZCODE
 
     #Ifdef LanguageInitialise;
     LanguageInitialise();
@@ -6016,7 +6036,33 @@ Object  InformLibrary "(Inform Library)"
 
 #Endif; ! TARGET_GLULX
 
-#Ifdef TARGET_GLULX;
+
+#Ifdef TARGET_ZCODE;
+
+[ ZZInitialise;
+    standard_interpreter = HDR_TERPSTANDARD-->0;
+   transcript_mode = ((HDR_GAMEFLAGS-->0) & $0001);
+    sys_statusline_flag = ( (HDR_TERPFLAGS->0) & $0002 ) / 2;
+    top_object = #largest_object-255;
+
+    dict_start = HDR_DICTIONARY-->0;
+    dict_entry_size = dict_start->(dict_start->0 + 1);
+    dict_start = dict_start + dict_start->0 + 4;
+    dict_end = dict_start + (dict_start - 2)-->0 * dict_entry_size;
+    #Ifdef DEBUG;
+    if (dict_start > 0 && dict_end < 0 &&
+      ((-dict_start) - dict_end) % dict_entry_size == 0)
+        print "** Warning: grammar properties might not work correctly **^";
+    #Endif; ! DEBUG
+
+    buffer->0  = INPUT_BUFFER_LEN - WORDSIZE;
+    buffer2->0 = INPUT_BUFFER_LEN - WORDSIZE;
+    buffer3->0 = INPUT_BUFFER_LEN - WORDSIZE;
+    parse->0   = MAX_BUFFER_WORDS;
+    parse2->0  = MAX_BUFFER_WORDS;
+];
+
+#Ifnot; ! TARGET_GLULX;
 
 [ GGInitialise res;
     @gestalt 4 2 res; ! Test if this interpreter has Glk.
@@ -6241,7 +6287,7 @@ Array AnyToStrArr -> GG_ANYTOSTRING_LEN+1;
     return AnyToStrArr;
 ];
 
-#Endif; ! TARGET_GLULX
+#Endif; ! TARGET_
 
 ! This is a trivial function which just prints a number, in decimal
 ! digits. It may be useful as a stub to pass to PrintAnything.
@@ -6254,7 +6300,7 @@ Array AnyToStrArr -> GG_ANYTOSTRING_LEN+1;
 Constant SHORTNAMEBUF_LEN 160;
 Array StorageForShortName buffer SHORTNAMEBUF_LEN;
 #Ifnot;
-Array StorageForShortName -> SHORTNAMEBUF_LEN + WORDSIZE;
+Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 #Endif; ! VN_1630
 
 #Endif; ! V5

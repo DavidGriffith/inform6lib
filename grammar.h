@@ -494,6 +494,8 @@ Verb 'wake' 'awake' 'awaken'
 
 Default Story           0;
 Default Headline        0;
+Default d_obj           NULL;
+Default u_obj           NULL;
 
 Stub AfterLife         0;
 Stub AfterPrompt       0;
@@ -529,9 +531,6 @@ Stub InitGlkWindow     1;
 #Ifndef ParseNoun;
 [ ParseNoun obj; obj = obj; return -1; ];
 #Endif;
-
-#Default d_obj NULL;
-#Default u_obj NULL;
 
 #Ifdef INFIX;
 Include "infix";

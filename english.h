@@ -516,7 +516,7 @@ Constant COMMA__TX      = ", ";
             print_ret (the) x1, ".";
         2:  if (x1 has pluralname) print "They're"; else print "That's";
             print " not something you can ";
-            switch (verb_word) {
+            switch (x2) {
               'stand':  "stand on.";
               'sit':    "sit down on.";
               'lie':    "lie down on.";
@@ -530,8 +530,8 @@ Constant COMMA__TX      = ", ";
         6:  print "(getting ";
             if (x1 has supporter) print "off "; else print "out of ";
             print (the) x1; ")";
-        7:  if (x1 has supporter) "(getting onto ", (the) x1, ")^";
-            if (x1 has container) "(getting into ", (the) x1, ")^";
+        7:  if (x1 has supporter) "(getting onto ", (the) x1, ")";
+            if (x1 has container) "(getting into ", (the) x1, ")";
             "(entering ", (the) x1, ")";
     }
   Examine: switch (n) {
