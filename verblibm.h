@@ -2006,7 +2006,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     }
     rtrue;
 ];
-! FIXME this differs radically from what I think it should be
+! modified with the fix for L61122
 [ Locale descin text_without_ALSO text_with_ALSO
     o p num_objs must_print_ALSO;
     objectloop (o in descin) give o ~workflag;
