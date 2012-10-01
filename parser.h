@@ -87,8 +87,8 @@ Constant ROM_GAMESERIAL    $36;     ! six ASCII characters
 
 #Endif; ! TARGET_
 
-#Ifndef VN_1610;
-Message fatalerror "*** Library 6/12 needs Inform v6.10 or later to work ***";
+#Ifndef VN_1633;
+Message fatalerror "*** Library 6/12 needs Inform v6.33 or later to work ***";
 #Endif; ! VN_
 
 Include "linklpa";

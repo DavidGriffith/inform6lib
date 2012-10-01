@@ -362,7 +362,7 @@ Constant WHICH__TX      = "which ";
 Constant COMMA__TX      = ", ";
 
 
-[ ThatorThose obj;      ! Used in the accusative
+[ ThatOrThose obj;      ! Used in the accusative
     if (obj == player)            { print "you"; return; }
     if (obj has pluralname)       { print "those"; return; }
     if (obj has animate) {
@@ -373,7 +373,7 @@ Constant COMMA__TX      = ", ";
     print "that";
 ];
 
-[ ItorThem obj;
+[ ItOrThem obj;
     if (obj == player)            { print "yourself"; return; }
     if (obj has pluralname)       { print "them"; return; }
     if (obj has animate) {
@@ -384,11 +384,15 @@ Constant COMMA__TX      = ", ";
     print "it";
 ];
 
-[ IsorAre obj;
+[ IsOrAre obj;
     if (obj has pluralname || obj == player) print "are"; else print "is";
 ];
 
-[ CThatorThose obj;     ! Used in the nominative
+! These functions need to take an optional boolean argument that will 
+! optionally capitalize the leading word.  I'll leave that for the next 
+! commit.
+
+[ CThatOrThose obj;     ! Used in the nominative
     if (obj == player)            { print "You"; return; }
     if (obj has pluralname)       { print "Those"; return; }
     if (obj has animate) {
@@ -407,6 +411,158 @@ Constant COMMA__TX      = ", ";
         else if (obj hasnt neuter) { print "He's"; return; }
     }
     print "That's";
+];
+
+[ nop x; x = x; ];      ! print rule to absorb unwanted return value
+
+[ SubjectNotPlayer obj reportage v2 v3;
+    if (reportage && actor ~= player) {
+        L__M(##Miscellany, 60, actor);
+        if (obj == actor) {
+            print (theActor) obj, " ", (string) v3;
+            return;
+        }
+        else
+            if (obj has pluralname) {
+                print (the) obj, " ", (string) v2;
+                return;
+            }
+            else {print (the) obj, " ", (string) v3; return;}
+    }
+   else
+        if (obj has pluralname) { print (The) obj, " ", (string) v2; return;}
+        else                    { print (The) obj, " ", (string) v3; return;}
+];
+
+[ CSubjectVerb obj reportage v1 v2 v3;
+    if (v2 == 0) v2 = v1; if (v3 == 0) v3 = v1;
+    if (obj == player) {
+        if (player provides narrative_voice) switch (player.narrative_voice) {
+          1:  print "I ", (string) v1; return;
+!          3:  print (object) player, " ", (string) v3; return;
+!          3:  print (string) player.real_name, " ", (string) v3; return;
+          3:  print (string) player.short_name, " ", (string) v3; return;
+        }
+        print "You ", (string) v2; return;
+    }
+    SubjectNotPlayer(obj, reportage, v2, v3);
+];
+
+[ CSubjectIs__ obj reportage;
+    if (obj == player) {
+        if (player provides narrative_voice) switch (player.narrative_voice) {
+          1:  print "I'm"; return;
+          3:  print (object) player, " is"; return;
+        }
+        print "You're"; return;
+    }
+    SubjectNotPlayer(obj, reportage, "are", "is");
+];
+
+[ CSubjectIsnt obj reportage;
+    if (obj == player) {
+        if (player provides narrative_voice) switch (player.narrative_voice) {
+          1:  print "I'm not"; return;
+          3:  print (object) player, " isn't"; return;
+        }
+        print "You aren't"; return;
+    }
+    SubjectNotPlayer(obj, reportage, "aren't", "isn't");
+];
+
+[ CSubjectHas_ obj reportage;
+    if (obj == player) {
+        if (player provides narrative_voice) switch (player.narrative_voice) {
+          1:  print "I've "; return;
+          3:  print (object) player, " has "; return;
+        }
+        print "You've "; return;
+    }
+    SubjectNotPlayer(obj, reportage, "have", "has");
+];
+
+[ CSubjectWill obj reportage;
+    if (obj == player) {
+        if (player provides narrative_voice) switch (player.narrative_voice) {
+          1:  print "I'll"; return;
+          3:  print (object) player, " will"; return;
+        }
+        print "You'll"; return;
+    }
+    SubjectNotPlayer(obj, reportage, "will", "will");
+];
+
+[ CSubjectCan_ obj reportage;
+    CSubjectVerb(obj,reportage,"can",0,"can");
+];
+
+[ CSubjectCant obj reportage;
+    CSubjectVerb(obj,reportage,"can't",0,"can't");
+];
+
+[ CSubjectDont obj reportage;
+    CSubjectVerb(obj,reportage,"don't",0,"doesn't");
+];
+
+
+[ OnesSelf obj;
+    if (obj == player) {
+        if (player provides narrative_voice) switch(player.narrative_voice) {
+            1: print "myself"; return;
+            2: print (object) player; return;
+        }
+        print "yourself"; return;
+    }
+    if (obj has male) { print "himself"; return; }
+    if (obj has female) {print "herself"; return; }
+    print "itself"; return;
+];
+
+
+[ Possessive obj caps;
+    if (obj == player) {
+        if (player provides narrative_voice) switch(player.narrative_voice) {
+          1: if (caps) print "M"; else print "m"; print "y"; return;
+          3: print (object) player, "'s"; return;
+        }
+        if (caps) print "Y"; else print "y";
+        print "our"; return;
+    }
+    if (caps) print "H"; else print "h";
+    if (obj has male) { print "is"; return; }
+    if (obj has female) { print "er"; return; }
+    if (caps) print "I"; else { print "i"; print "ts"; return; }
+];
+
+[ PossessiveCaps obj;
+    Possessive(obj, true);
+];
+
+[ theActor obj;
+    if (obj == player) {
+        if (obj provides narrative_voice) switch (obj.narrative_voice) {
+          1:                        print "I"; return;
+          3:                        print (object) obj; return;
+        }
+                                    print "you"; return;
+    }
+    if (obj has pluralname)       { print "they"; return; }
+    if (obj has animate) {
+        if (obj has female)       { print "she"; return; }
+        else
+            if (obj hasnt neuter) { print "he"; return; }
+    }
+                                    print "that";
+];
+
+[ SupportObj obj s1 s2;
+    if (obj has supporter)          print (string) s1;
+    else                            print (string) s2;
+];
+
+[ PluralObj obj s1 s2;
+    if (obj has pluralname)         print (string) s1;
+    else                            print (string) s2;
 ];
 
 #Ifdef TARGET_ZCODE;
@@ -449,14 +605,15 @@ Constant COMMA__TX      = ", ";
             "There is no reply.";
 ! Ask:      see Answer
   Attack:   "Violence isn't the answer to this one.";
-  Blow:     "You can't usefully blow ", (thatorthose) x1, ".";
+  Blow:     CSubjectCant(actor,true);
+            " usefully blow ", (thatorthose) x1, ".";
   Burn:     "This dangerous act would achieve little.";
   Buy:      "Nothing is on sale.";
-  Climb:    "I don't think much is to be achieved by that.";
+  Climb:    "Climbing ", (ThatOrThose) x1, " would achieve little.";
   Close: switch (n) {
-        1:  print_ret (ctheyreorthats) x1, " not something you can close.";
-        2:  print_ret (ctheyreorthats) x1, " already closed.";
-        3:  "You close ", (the) x1, ".";
+        1:  CSubjectIs__(x1,true); " not something ", (theActor) actor, " can close.";
+        2:  CSubjectIs__(x1,true); " already closed.";
+        3:  CSubjectVerb(actor,false,"close",0,"closes"); " ", (the) x1, ".";
         4:  "(first closing ", (the) x1, ")";
     }
   CommandsOff: switch (n) {
@@ -482,18 +639,19 @@ Constant COMMA__TX      = ", ";
         5: "[Command replay complete.]";
         #Endif; ! TARGET_
     }
-  Consult:  "You discover nothing of interest in ", (the) x1, ".";
-  Cut:      "Cutting ", (thatorthose) x1, " up would achieve little.";
+  Consult:  CSubjectVerb(actor,true,"discover",0,"discovers");
+            " nothing of interest in ", (the) x1, ".";
+  Cut:      "Cutting ", (ThatOrThose) x1, " up would achieve little.";
   Dig:      "Digging would achieve nothing here.";
   Disrobe: switch (n) {
-        1:  "You're not wearing ", (thatorthose) x1, ".";
-        2:  "You take off ", (the) x1, ".";
+        1:  CSubjectIs__(actor,true); " not wearing ", (ThatOrThose) x1, ".";
+        2:  CSubjectVerb(actor,false," take off",0,"takes off");
+            "", (the) x1, ".";
     }
   Drink:    "There's nothing suitable to drink here.";
   Drop: switch (n) {
-        1:  if (x1 has pluralname) print (The) x1, " are "; else print (The) x1, " is ";
-            "already here.";
-        2:  print "Perhaps you should take ", (the) x1;
+        1:  CSubjectIs__(x1,true); " already here.";
+        2:  print "Perhaps ", (theActor) actor, " should take ", (the) x1;
             if (parent(x1) has supporter) print " off ";
 	    else print " out of ";
 	    print_ret (the) parent(x1), " first.";
@@ -501,129 +659,129 @@ Constant COMMA__TX      = ", ";
         4:  "Dropped.";
     }
   Eat: switch (n) {
-        1:  print_ret (ctheyreorthats) x1, " plainly inedible.";
-        2:  "You eat ", (the) x1, ". Not bad.";
+        1:  CSubjectIs__(x1,true); " plainly inedible.";
+        2:  CSubjectVerb(actor,false,"eat",0,"eats"); print (the) x1, " " ;
+                if (actor == player) ". Not bad."; else ".";
     }
   EmptyT: switch (n) {
-        1:  print_ret (The) x1, " can't contain things.";
-        2:  print_ret (The) x1, " ", (isorare) x1, " closed.";
-        3:  print_ret (The) x1, " ", (isorare) x1, " empty already.";
+        1:  CSubjectCant(x1,true); " contain things.";
+        2:  CSubjectIs__(x1,true); " closed.";
+        3:  CSubjectIs__(x1,true); " empty already.";
         4:  "That would scarcely empty anything.";
     }
   Enter: switch (n) {
-        1:  print "But you're already ";
-            if (x1 has supporter) print "on "; else print "in ";
-            print_ret (the) x1, ".";
-        2:  if (x1 has pluralname) print "They're"; else print "That's";
-            print " not something you can ";
-            switch (x2) {
-              'stand':  "stand on.";
-              'sit':    "sit down on.";
-              'lie':    "lie down on.";
-              default:  "enter.";
-            }
-        3:  "You can't get into the closed ", (name) x1, ".";
-        4:  "You can only get into something free-standing.";
-        5:  print "You get ";
-            if (x1 has supporter) print "onto "; else print "into ";
-            print_ret (the) x1, ".";
-        6:  print "(getting ";
-            if (x1 has supporter) print "off "; else print "out of ";
-            print (the) x1; ")";
+
+        1:  CSubjectIs__(actor,true);
+            " already ", (nop) SupportObj(x1,"on","in"), (the) x1, ".";
+        2:  CSubjectIs__(x1,true);
+            print " not something ", (theActor) actor, " can ";
+                switch (x2) {
+                  'stand':  "stand on.";
+                  'sit':    "sit down on.";
+                  'lie':    "lie down on.";
+                  default:  "enter.";
+                }
+        3:  CSubjectCant(actor,true);
+            " get into the closed ", (name) x1, ".";
+        4:  CSubjectCan_(actor,true);
+            " only get into something free-standing.";
+        5:  CSubjectVerb(actor,false,"get",0,"gets");
+            SupportObj(x1," onto"," into"); " ", (the) x1, ".";
+        6:  "(getting ", (nop) SupportObj(x1,"off","out of"), (the) x1, ")";
         7:  if (x1 has supporter) "(getting onto ", (the) x1, ")";
             if (x1 has container) "(getting into ", (the) x1, ")";
-            "(entering ", (the) x1, ")";
+                                  "(entering ", (the) x1, ")";
     }
   Examine: switch (n) {
         1:  "Darkness, noun.  An absence of light to see by.";
-        2:  "You see nothing special about ", (the) x1, ".";
-        3:  print (The) x1, " ", (isorare) x1, " currently switched ";
-            if (x1 has on) "on."; else "off.";
+        2:  CSubjectVerb(actor,true,"see",0,"sees");
+            " nothing special about ", (the) x1, ".";
+        3:  CSubjectIs__(x1,true); print " currently switched ";
+                if (x1 has on) "on."; else "off.";
     }
+! FIXME Need to add caps control in the CSubject* functions in the next commit
   Exit: switch (n) {
-        1:  "But you aren't in anything at the moment.";
-        2:  "You can't get out of the closed ", (name) x1, ".";
-        3:  print "You get ";
-            if (x1 has supporter) print "off "; else print "out of ";
-            print_ret (the) x1, ".";
-        4:  print "But you aren't ";
-            if (x1 has supporter) print "on "; else print "in ";
-            print_ret (the) x1, ".";
-        5:  print "(first getting ";
-            if (x1 has supporter) print "off "; else print "out of ";
-            print_ret (the) x1, ")";
+! But you aren't in anything at the moment
+        1:  CSubjectIsnt(actor,true);
+            " in anything at the moment.";
+        2:  CSubjectCant(actor,false);
+            " get out of the closed ", (name) x1, ".";
+        3:  CSubjectVerb(actor,false,"get",0,"gets");
+            print " ";
+            SupportObj(x1,"off","out of"); " ", (the) x1, ".";
+        4:  CSubjectIsnt(actor,true);
+            SupportObj(x1,"on","in"); " ", (the) x1, ".";
+        5:  "(first getting ", (nop) SupportObj(x1,"off","out of"),
+              " ", (the) x1, ")";
+        6:  CSubjectVerb(actor,false,"stand",0,"stands"); " up.";
     }
   Fill:     "Filling ", (the) x1, " from ", (the) x2, " doesn't make sense.";
   FullScore: switch (n) {
         1:  if (deadflag) print "The score was "; else print "The score is ";
-            "made up as follows:^";
+                "made up as follows:^";
         2:  "finding sundry items";
         3:  "visiting various places";
         4:  print "total (out of ", MAX_SCORE; ")";
     }
-  GetOff:   "But you aren't on ", (the) x1, " at the moment.";
+!  GetOff:   "But you aren't on ", (the) x1, " at the moment.";
+  GetOff:   CSubjectIsnt(actor,true); " on ", (the) x1, " at the moment.";
   Give: switch (n) {
-        1:  "You aren't holding ", (the) x1, ".";
-        2:  "You juggle ", (the) x1, " for a while, but don't achieve much.";
-        3:  print (The) x1;
-            if (x1 has pluralname) print " don't"; else print " doesn't";
-            " seem interested.";
+        1:  CSubjectIsnt(actor,true); " holding ", (the) x1, ".";
+        2:  CSubjectVerb(actor,false,"juggle",0,"juggles"); " ", (the) x1, " for a while, but don't achieve much.";
+        3:  CSubjectDont(x1,true); " seem interested.";
+        4:  CSubjectVerb(actor,false,"hand over",0,"hands over"); " ", (the) x1, ".";
     }
   Go: switch (n) {
-        1:  print "You'll have to get ";
-            if (x1 has supporter) print "off "; else print "out of ";
-            print_ret (the) x1, " first.";
-        2:  print_ret (string) CANTGO__TX;   ! "You can't go that way."
-        3:  "You are unable to climb ", (the) x1, ".";
-        4:  "You are unable to descend by ", (the) x1, ".";
-        5:  "You can't, since ", (the) x1, " ", (isorare) x1, " in the way.";
-        6:  print "You can't, since ", (the) x1;
-            if (x1 has pluralname) " lead nowhere."; else " leads nowhere.";
+        1:  CSubjectWill(actor,true); " have to get ", (nop) SupportObj(x1,"off","out of"), " ", (the) x1, " first.";
+        2:  CSubjectCant(actor,true); " go that way.";
+        3:  CSubjectIs__(actor,true); " unable to climb ", (the) x1, ".";
+        4:  CSubjectIs__(actor,true); " unable to descend by ", (the) x1, ".";
+        5:  CSubjectCant(actor,true); " since ", (the) x1, " ", (IsOrAre) x1, " in the way.";
+        6:  CSubjectCant(actor,true); " since ", (the) x1, " ", (nop) PluralObj(x1,"lead","leads"), "nowhere.";
+        7:  CSubjectVerb(actor,false,"depart.",0,"departs.");
     }
   Insert: switch (n) {
-        1:  "You need to be holding ", (the) x1, " before you can put ",
-            (itorthem) x1, " into something else.";
-        2:  print_ret (Cthatorthose) x1, " can't contain things.";
-        3:  print_ret (The) x1, " ", (isorare) x1, " closed.";
-        4:  "You'll need to take ", (itorthem) x1, " off first.";
-        5:  "You can't put something inside itself.";
-        6:  "(first taking ", (itorthem) x1, " off)";
+        1:  CSubjectVerb(actor,true,"need",0,"needs"); " to be holding ", (the) x1, " before ",
+                (theActor) actor, " can put ", (ItOrThem) x1, " into something else.";
+        2:  CSubjectCant(x1,true); " contain things.";
+        3:  CSubjectIs__(x1,true); " closed.";
+        4:  CSubjectWill(actor,true); "need to take ", (ItOrThem) x1, " off first.";
+        5:  CSubjectCant(actor,true); " put something inside itself.";
+        6:  "(first taking ", (ItOrThem) x1, " off)";
         7:  "There is no more room in ", (the) x1, ".";
         8:  "Done.";
-        9:  "You put ", (the) x1, " into ", (the) x2, ".";
-        10: print (The) x1, " is too big to fit ";
-            if (x2 has supporter) print "on "; else print "in ";
-            print_ret (the) x2, ".";
+        9:  CSubjectVerb(actor,false,"put",0,"puts"); " ", (the) x1, " into ", (the) x2, ".";
+        10: CSubjectIs__(x1,true); " too big to fit ", (nop) SupportObj(x2,"on","in"), (the) x2, ".";
     }
   Inv: switch (n) {
-        1:  "You are carrying nothing.";
-        2:  print "You are carrying";
+        1:  CSubjectIs__(actor,false); " carrying nothing.";
+        2:  CSubjectIs__(actor,false); print " carrying";
         3:  print ":^";
         4:  print ".^";
     }
-  Jump:     "You jump on the spot, fruitlessly.";
+  Jump:     CSubjectVerb(actor,false,"jump",0,"jumps"); " on the spot, fruitlessly.";
   JumpOver,Tie:
-            "You would achieve nothing by this.";
+            CSubjectVerb(actor,true,"would",0,0); " achieve nothing by this.";
   Kiss:     "Keep your mind on the game.";
-  Listen:   "You hear nothing unexpected.";
+  Listen:   CSubjectVerb(actor,true,"hear",0,"hears"); " nothing unexpected.";
   ListMiscellany: switch (n) {
         1:  print " (providing light)";
-        2:  print " (which ", (isorare) x1, " closed)";
+        2:  print " (which ", (IsOrAre) x1, " closed)";
         3:  print " (closed and providing light)";
-        4:  print " (which ", (isorare) x1, " empty)";
+        4:  print " (which ", (IsOrAre) x1, " empty)";
         5:  print " (empty and providing light)";
-        6:  print " (which ", (isorare) x1, " closed and empty)";
+        6:  print " (which ", (IsOrAre) x1, " closed and empty)";
         7:  print " (closed, empty and providing light)";
         8:  print " (providing light and being worn";
         9:  print " (providing light";
         10: print " (being worn";
-        11: print " (which ", (isorare) x1, " ";
+        11: print " (which ", (IsOrAre) x1, " ";
         12: print "open";
         13: print "open but empty";
         14: print "closed";
         15: print "closed and locked";
         16: print " and empty";
-        17: print " (which ", (isorare) x1, " empty)";
+        17: print " (which ", (IsOrAre) x1, " empty)";
         18: print " containing ";
         19: print " (on ";
         20: print ", on top of ";
@@ -643,13 +801,11 @@ Constant COMMA__TX      = ", ";
             "~superbrief~ mode, which always gives short descriptions
              of locations (even if you haven't been there before).";
   Lock: switch (n) {
-        1:  if (x1 has pluralname) print "They don't "; else print "That doesn't ";
-            "seem to be something you can lock.";
-        2:  print_ret (ctheyreorthats) x1, " locked at the moment.";
-        3:  "First you'll have to close ", (the) x1, ".";
-        4:  if (x1 has pluralname) print "Those don't "; else print "That doesn't ";
-            "seem to fit the lock.";
-        5:  "You lock ", (the) x1, ".";
+        1:  CSubjectDont(x1,true); " seem to be something ", (theActor) actor, " can lock.";
+        2:  CSubjectIs__(x1,true); " locked at the moment.";
+        3:  CSubjectWill(actor,true); " first have to close ", (the) x1, ".";
+        4:  CSubjectDont(x1,true); " seem to fit the lock.";
+        5:  CSubjectVerb(actor,false,"lock",0,"locks"); " ", (the) x1, ".";
     }
   Look: switch (n) {
         1:  print " (on ", (the) x1, ")";
@@ -662,20 +818,19 @@ Constant COMMA__TX      = ", ";
         5,6:
             if (x1 ~= location) {
                 if (x1 has supporter) print "^On "; else print "^In ";
-                print (the) x1, " you";
+                print (the) x1, " ", (theActor) actor, " can";
             }
-            else print "^You";
-            print " can ";
-            if (n == 5) print "also ";
-            print "see ";
+            else { new_line; CSubjectCan_(actor,false); }
+            if (n == 5) print " also";
+            print " see ";
             WriteListFrom(child(x1),
               ENGLISH_BIT+RECURSE_BIT+PARTINV_BIT+TERSE_BIT+CONCEAL_BIT+WORKFLAG_BIT);
             if (x1 ~= location) "."; else " here.";
-        7:  "You see nothing unexpected in that direction.";
+        7:  CSubjectVerb(actor,true,"see",0,"sees"); " nothing unexpected in that direction.";
     }
   LookUnder: switch (n) {
         1:  "But it's dark.";
-        2:  "You find nothing of interest.";
+        2:  CSubjectVerb(actor,true,"find",0,"finds"); " nothing of interest.";
     }
   Mild:     "Quite.";
   Miscellany: switch (n) {
@@ -690,7 +845,7 @@ Constant COMMA__TX      = ", ";
             if (TASKS_PROVIDED == 0) print ", give the FULL score for that game";
             if (deadflag == 2 && AMUSING_PROVIDED == 0)
                 print ", see some suggestions for AMUSING things to do";
-            OxfordComma(3); " or QUIT?";
+            SerialComma(3); " or QUIT?";
         6:  "[Your interpreter does not provide ~undo~.  Sorry!]";
             #Ifdef TARGET_ZCODE;
         7:  "~Undo~ failed.  [Not all interpreters provide it.]";
@@ -706,7 +861,7 @@ Constant COMMA__TX      = ", ";
         14: "Sorry, that can't be corrected.";
         15: "Think nothing of it.";
         16: "~Oops~ can only correct a single word.";
-        17: "It is pitch dark, and you can't see a thing.";
+        17: "It is pitch dark, and ", (theActor) actor, " can't see a thing.";
         18: print "yourself";
         19: "As good-looking as ever.";
         20: "To repeat a command like ~frog, jump~, just say ~again~, not ~frog, again~.";
@@ -719,21 +874,21 @@ Constant COMMA__TX      = ", ";
         27: "I didn't understand that sentence.";
         28: print "I only understood you as far as wanting to ";
         29: "I didn't understand that number.";
-        30: "You can't see any such thing.";
+        30: CSubjectCant(actor,true); " see any such thing.";
         31: "You seem to have said too little!";
-        32: "You aren't holding that!";
+        32: CSubjectIsnt(actor,false); " holding that!";
         33: "You can't use multiple objects with that verb.";
         34: "You can only use multiple objects once on a line.";
         35: "I'm not sure what ~", (address) x1, "~ refers to.";
         36: "You excepted something not included anyway!";
-        37: "You can only do that to something animate.";
+        37: CSubjectCan_(actor,true); " only do that to something animate.";
             #Ifdef DIALECT_US;
         38: "That's not a verb I recognize.";
             #Ifnot;
         38: "That's not a verb I recognise.";
             #Endif;
         39: "That's not something you need to refer to in the course of this game.";
-        40: "You can't see ~", (address) x1, "~ (", (the) x2, ") at the moment.";
+        40: CSubjectCant(actor,true); " see ~", (address) x1, "~ (", (the) x2, ") at the moment.";
         41: "I didn't understand the way that finished.";
         42: if (x1 == 0) print "None"; else print "Only ", (number) x1;
             print " of those ";
@@ -761,10 +916,9 @@ Constant COMMA__TX      = ", ";
         55: "[Comment NOT recorded.]";
         56: print ".^";
         57: print "?^";
-        58: print "(first taking ", (the) x1;
-            if (x2 has supporter) print " off "; else print " out of ";
-            print_ret (the) x2, ")";
+        58: "(first taking ", (the) x1, " ", (nop) SupportObj(x2,"off","out of"), " ", (the) x2, ")";
         59: "You'll have to be more specific.";
+        60: print (The) x1, " observes that ";
     }
   No,Yes:   "That was a rhetorical question.";
   NotifyOff:
@@ -783,23 +937,20 @@ Constant COMMA__TX      = ", ";
         10: print "   (lost)";
     }
   Open: switch (n) {
-        1:  print_ret (ctheyreorthats) x1, " not something you can open.";
-        2:  if (x1 has pluralname) print "They seem "; else print "It seems ";
-            "to be locked.";
-        3:  print_ret (ctheyreorthats) x1, " already open.";
-        4:  print "You open ", (the) x1, ", revealing ";
-            if (WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT) == 0) "nothing.";
-            ".";
-        5:  "You open ", (the) x1, ".";
+        1:  CSubjectIs__(x1,true); " not something ", (theActor) actor, " can open.";
+        2:  CSubjectVerb(x1,true,"seem",0,"seems"); " to be locked.";
+        3:  CSubjectIs__(x1,true); " already open.";
+        4:  CSubjectVerb(actor,false,"open",0,"opens"); print " ", (the) x1, ", revealing ";
+                if (WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT) == 0) "nothing.";
+                ".";
+        5:  CSubjectVerb(actor,false,"open",0,"opens"); " ", (the) x1, ".";
     }
-  Order:    print (The) x1;
-            if (x1 has pluralname) print " have"; else print " has";
-            " better things to do.";
+  Order:    CSubjectHas_(actor); " better things to do.";
   Places: switch (n) {
         1:  print "You have visited: ";
         2:  print ".^";
     }
-  Pray:     "Nothing practical results from your prayer.";
+  Pray:     "Nothing practical results from ", (Possessive) actor, " prayer.";
   Prompt:   print "^>";
   Pronouns: switch (n) {
         1:  print "At the moment, ";
@@ -810,38 +961,36 @@ Constant COMMA__TX      = ", ";
     }
   Pull,Push,Turn: switch (n) {
         1:  "Punishing yourself that way isn't likely to help matters.";
-        2:  if (x1 has pluralname) print "Those are "; else print "It is ";
-            "fixed in place.";
-        3:  "You are unable to.";
+        2:  CSubjectIs__(x1,true); " fixed in place.";
+        3:  CSubjectIs__(actor,true); " unable to.";
         4:  "Nothing obvious happens.";
         5:  "That would be less than courteous.";
     }
 ! Push: see Pull
   PushDir: switch (n) {
-        1:  "Is that the best you can think of?";
+        1:  "That really wouldn't serve any purpose.";
         2:  "That's not a direction.";
-        3:  "Not that way you can't.";
+        3:  "Not that way ", (theActor) actor, " can't.";
     }
   PutOn: switch (n) {
-        1:  "You need to be holding ", (the) x1, " before you can put ",
-                (itorthem) x1, " on top of something else.";
-        2:  "You can't put something on top of itself.";
+        1:  CSubjectVerb(actor,true,"need",0,"needs"); " to be holding ", (the) x1, " before ",
+                (theActor) actor, " can put ", (ItOrThem) x1, " on top of something else.";
+        2:  CSubjectCant(actor,true); " put something on top of itself.";
         3:  "Putting things on ", (the) x1, " would achieve nothing.";
-        4:  "You lack the dexterity.";
-        5:  "(first taking ", (itorthem) x1, " off)";
+        4:  CSubjectVerb(actor,true,"lack",0,"lacks"); " the dexterity.";
+        5:  "(first taking ", (ItOrThem) x1, " off)";
         6:  "There is no more room on ", (the) x1, ".";
         7:  "Done.";
-        8:  "You put ", (the) x1, " on ", (the) x2, ".";
+        8:  CSubjectVerb(actor,false,"put",0,"puts"); " ", (the) x1, " on ", (the) x2, ".";
     }
   Quit: switch (n) {
         1:  print "Please answer yes or no.";
         2:  print "Are you sure you want to quit? ";
     }
   Remove: switch (n) {
-        1:  if (x1 has pluralname) print "They are"; else print "It is";
-            " unfortunately closed.";
-        2:  if (x1 has pluralname) print "But they aren't"; else print "But it isn't";
-            " there now.";
+        1:  CSubjectIs__(x1,true); " unfortunately closed.";
+! another leading "But" unable to be used.
+        2:  CSubjectIsnt(x1,true); " there now.";
         3:  "Removed.";
     }
   Restart: switch (n) {
@@ -852,16 +1001,16 @@ Constant COMMA__TX      = ", ";
         1:  "Restore failed.";
         2:  "Ok.";
     }
-  Rub,Squeeze: "You achieve nothing by this.";
+  Rub,Squeeze: CSubjectVerb(actor,true,"achieve",0,"achieves"); " nothing by this.";
   Save: switch (n) {
         1:  "Save failed.";
         2:  "Ok.";
     }
   Score: switch (n) {
         1:  if (deadflag) print "In that game you scored "; else print "You have so far scored ";
-            print score, " out of a possible ", MAX_SCORE, ", in ", turns, " turn";
-            if (turns ~= 1) print "s";
-            return;
+                print score, " out of a possible ", MAX_SCORE, ", in ", turns, " turn";
+                if (turns ~= 1) print "s";
+                return;
         2:  "There is no score in this story.";
     }
   ScriptOff: switch (n) {
@@ -878,24 +1027,26 @@ Constant COMMA__TX      = ", ";
         1:  "But it's dark.";
         2:  "There is nothing on ", (the) x1, ".";
         3:  print "On ", (the) x1;
-            WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT+ISARE_BIT);
-            ".";
-        4:  "You find nothing of interest.";
-        5:  "You can't see inside, since ", (the) x1, " ", (isorare) x1, " closed.";
-        6:  print_ret (The) x1, " ", (isorare) x1, " empty.";
+                WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT+ISARE_BIT);
+                ".";
+        4:  CSubjectVerb(actor,true,"find",0,"finds"); " nothing of interest.";
+        5:  CSubjectCant(actor,true); " see inside, since ", (the) x1, " ", (IsOrAre) x1, " closed.";
+        6:  "", (The) x1, " ", (IsOrAre) x1, " empty.";
+
         7:  print "In ", (the) x1;
-            WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT+ISARE_BIT);
-            ".";
+                WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT+ISARE_BIT);
+                ".";
     }
-  Set:      "No, you can't set ", (thatorthose) x1, ".";
-  SetTo:    "No, you can't set ", (thatorthose) x1, " to anything.";
+   ! Preceding "No," unable to be used for Set and SetTo
+  Set:      CSubjectCant(actor,true); " set ", (ThatOrThose) x1, ".";
+  SetTo:    CSubjectCant(actor,true); " set ", (ThatOrThose) x1, " to anything.";
   Show: switch (n) {
-        1:  "You aren't holding ", (the) x1, ".";
-        2:  print_ret (The) x1, " ", (isorare) x1, " unimpressed.";
+        1:  CSubjectIsnt(actor,true); " holding ", (the) x1, ".";
+        2:  CSubjectIs__(x1,true); " unimpressed.";
     }
-  Sing:     "Your singing is abominable.";
-  Sleep:    "You aren't feeling especially drowsy.";
-  Smell:    "You smell nothing unexpected.";
+  Sing:     print_ret (PossessiveCaps) actor, " singing is abominable.";
+  Sleep:    CSubjectIsnt(actor,true); " feeling especially drowsy.";
+  Smell:    CSubjectVerb(actor,true,"smell",0,"smells"); " nothing unexpected.";
             #Ifdef DIALECT_US;
   Sorry:    "Oh, don't apologize.";
             #Ifnot;
@@ -906,64 +1057,55 @@ Constant COMMA__TX      = ", ";
   Swim:     "There's not enough water to swim in.";
   Swing:    "There's nothing sensible to swing here.";
   SwitchOff: switch (n) {
-        1:  print_ret (ctheyreorthats) x1, " not something you can switch.";
-        2:  print_ret (ctheyreorthats) x1, " already off.";
-        3:  "You switch ", (the) x1, " off.";
+        1:  CSubjectIs__(x1,true); " not something ", (theActor) actor, " can switch.";
+        2:  CSubjectIs__(x1,true); " already off.";
+        3:  CSubjectVerb(actor,false,"switch",0,"switches"); " ", (the) x1, " off.";
     }
   SwitchOn: switch (n) {
-        1:  print_ret (ctheyreorthats) x1, " not something you can switch.";
-        2:  print_ret (ctheyreorthats) x1, " already on.";
-        3:  "You switch ", (the) x1, " on.";
+        1:  CSubjectIs__(x1,true); " not something ", (theActor) actor, " can switch.";
+        2:  CSubjectIs__(x1,true); " already on.";
+        3:  CSubjectVerb(actor,false,"switch",0,"switches"); " ", (the) x1, " on.";
     }
   Take: switch (n) {
         1:  "Taken.";
-        2:  "You are always self-possessed.";
+        2:  CSubjectIs__(actor); " always self-possessed.";
         3:  "I don't suppose ", (the) x1, " would care for that.";
-        4:  print "You'd have to get ";
-            if (x1 has supporter) print "off "; else print "out of ";
-            print_ret (the) x1, " first.";
-        5:  "You already have ", (thatorthose) x1, ".";
-        6:  if (noun has pluralname) print "Those seem "; else print "That seems ";
-            "to belong to ", (the) x1, ".";
-        7:  if (noun has pluralname) print "Those seem "; else print "That seems ";
-            "to be a part of ", (the) x1, ".";
-        8:  print_ret (Cthatorthose) x1, " ", (isorare) x1,
-            "n't available.";
-        9:  print_ret (The) x1, " ", (isorare) x1, "n't open.";
-        10: if (x1 has pluralname) print "They're "; else print "That's ";
-            "hardly portable.";
-        11: if (x1 has pluralname) print "They're "; else print "That's ";
-            "fixed in place.";
-        12: "You're carrying too many things already.";
-        13: "(putting ", (the) x1, " into ", (the) x2, " to make room)";
+        4:  CSubjectWill(actor,true); " have to get ", (nop) SupportObj(x1,"off","out of"), " ", (the) x1, " first.";
+        5:  CSubjectVerb(actor,true,"already have",0,"already has"); " ", (ThatOrThose) x1, ".";
+        6:  CSubjectVerb(x2,true,"seem",0,"seems"); " to belong to ", (the) x1, ".";
+        7:  CSubjectVerb(x2,true,"seem",0,"seems"); " to be a part of ", (the) x1, ".";
+        8:  CSubjectIs__(x1,true); " not available.";
+        9:  CSubjectIs__(x1,true); " not open.";
+        10: CSubjectIs__(x1,true); " hardly portable.";
+        11: CSubjectIs__(x1,true); " fixed in place.";
+        12: CSubjectIs__(actor,true); " carrying too many things already.";
     }
-  Taste:    "You taste nothing unexpected.";
+  Taste:    CSubjectVerb(actor,true,"taste",0,"tastes"); " nothing unexpected.";
   Tell: switch (n) {
-        1:  "You talk to yourself a while.";
+        1:  CSubjectVerb(actor,false,"talk",0,"talks");
+            " to ", (OnesSelf) actor, " for a while.";
         2:  "This provokes no reaction.";
     }
   Think:    "What a good idea.";
   ThrowAt: switch (n) {
         1:  "Futile.";
-        2:  "You lack the nerve when it comes to the crucial moment.";
+        2:  CSubjectVerb(actor,true,"lack",0,"lacks"); " the nerve when it comes to the crucial moment.";
     }
 ! Tie:  see JumpOver.
   Touch: switch (n) {
-        1:  "Keep your hands to yourself!";
-        2:  "You feel nothing unexpected.";
-        3:  "If you think that'll help.";
+        1:  CSubjectVerb(actor,false,"decide",0,"decides"); " that's not such a good idea.";
+        2:  CSubjectVerb(actor,true,"feel",0,"feels"); " nothing unexpected.";
+        3:  "That really wouldn't serve any purpose.";
     }
 ! Turn: see Pull.
   Unlock:  switch (n) {
-        1:  if (x1 has pluralname) print "They don't "; else print "That doesn't ";
-            "seem to be something you can unlock.";
-        2:  print_ret (ctheyreorthats) x1, " unlocked at the moment.";
-        3:  if (x1 has pluralname) print "Those don't "; else print "That doesn't ";
-            "seem to fit the lock.";
-        4:  "You unlock ", (the) x1, ".";
+        1:  CSubjectDont(x1,true); " seem to be something ", (theActor) actor, " can unlock.";
+        2:  CSubjectIs__(x1,true); " unlocked at the moment.";
+        3:  CSubjectDont(x1,true); " seem to fit the lock.";
+        4:  CSubjectVerb(actor,false,"unlock",0,"unlocks"); " ", (the) x1, ".";
         5:  "(first unlocking ", (the) x1, ")";
     }
-  VagueGo:  "You'll have to say which compass direction to go in.";
+  VagueGo:  CSubjectWill(actor); " have to say which compass direction to go in.";
   Verify: switch (n) {
         1:  "The game file has verified as intact.";
         2:  "The game file did not verify as intact, and may be corrupt.";
@@ -972,21 +1114,25 @@ Constant COMMA__TX      = ", ";
   Wake:     "The dreadful truth is, this is not a dream.";
   WakeOther:"That seems unnecessary.";
   Wave: switch (n) {
-        1:  "But you aren't holding ", (thatorthose) x1, ".";
-        2:  "You look ridiculous waving ", (the) x1, ".";
+! Another leading "But" omitted
+        1:  CSubjectIsnt(actor,true); " holding ", (ThatOrThose) x1, ".";
+        2:  CSubjectVerb(actor,false,"look",0,"looks"); " ridiculous waving ", (the) x1, ".";
     }
+
+!  WaveHands:CSubjectVerb(actor,false,"wave,",0,"waves,"); "feeling foolish.";
+
   WaveHands:
-        print "You wave";
+        CSubjectVerb(actor,false,"wave",0,"waves");
         switch (n) {
         1: ! nothing
-        2: print " at ", (the) x1;
+        2: print "at ", (the) x1;
         }
         ", feeling foolish.";
   Wear: switch (n) {
-        1:  "You can't wear ", (thatorthose) x1, "!";
-        2:  "You're not holding ", (thatorthose) x1, "!";
-        3:  "You're already wearing ", (thatorthose) x1, "!";
-        4:  "You put on ", (the) x1, ".";
+        1:  CSubjectCant(actor,true); " wear ", (ThatOrThose) x1, "!";
+        2:  CSubjectIs__(actor,true); " not holding ", (ThatOrThose) x1, "!";
+        3:  CSubjectIs__(actor,true); " already wearing ", (ThatOrThose) x1, "!";
+        4:  CSubjectVerb(actor,false,"put on",0,"puts on"); " ", (the) x1, ".";
     }
 ! Yes:  see No.
 ];

@@ -206,6 +206,10 @@ Global lm_n;                        ! Parameters used by LibraryMessages
 Global lm_o;                        ! mechanism
 
 #Ifdef DEBUG;
+Constant DEBUG_MESSAGES $0001;
+Constant DEBUG_ACTIONS  $0002;
+Constant DEBUG_TIMERS   $0004;
+Constant DEBUG_CHANGES  $0008;
 Global debug_flag;                  ! Bitmap of flags for tracing actions,
 Global lm_s;
                                     ! calls to object routines, etc.
@@ -418,6 +422,13 @@ Global take_all_rule;               ! Slightly different rules apply to
 
 Global dict_flags_of_noun;          ! Of the noun currently being parsed
                                     ! (a bitmap in #dict_par1 format)
+Constant DICT_VERB $01;
+Constant DICT_META $02;
+Constant DICT_PLUR $04;
+Constant DICT_PREP $08;
+Constant DICT_X654 $70;
+Constant DICT_NOUN $80;
+
 Global pronoun_word;                ! Records which pronoun ("it", "them", ...)
                                     ! caused an error
 Global pronoun_obj;                 ! And what obj it was thought to refer to
@@ -631,6 +642,9 @@ Object  thedark "(darkness object)"
         short_name DARKNESS__TX,
         description [;  return L__M(##Miscellany, 17); ];
 
+! If you want to use the third-person of the narrative voice, you will 
+! need to replace this selfobj with your own.
+
 Object  selfobj "(self object)"
   with  short_name  [;  return L__M(##Miscellany, 18); ],
         description [;  return L__M(##Miscellany, 19); ],
@@ -645,6 +659,7 @@ Object  selfobj "(self object)"
         parse_name 0,
         orders 0,
         number 0,
+        narrative_voice 0,
         posture 0,
         before_implicit [;Take: return 2;],
   has   concealed animate proper transparent;
@@ -1495,7 +1510,7 @@ Object  InformParser "(Inform Parser)"
     ! If the first word is not listed as a verb, it must be a direction
     ! or the name of someone to talk to
 
-    if (verb_word == 0 || ((verb_word->#dict_par1) & 1) == 0) {
+    if (verb_word == 0 || ((verb_word->#dict_par1) & DICT_VERB) == 0) {
 
         ! So is the first word an object contained in the special object "compass"
         ! (i.e., a direction)?  This needs use of NounDomain, a routine which
@@ -1623,13 +1638,13 @@ Object  InformParser "(Inform Parser)"
     ! We now definitely have a verb, not a direction, whether we got here by the
     ! "take ..." or "person, take ..." method.  Get the meta flag for this verb:
 
-    meta = ((verb_word->#dict_par1) & 2)/2;
+    meta = (verb_word->#dict_par1) & DICT_META;
 
     ! You can't order other people to "full score" for you, and so on...
 
-    if (meta == 1 && actor ~= player) {
+    if (meta && actor ~= player) {
         best_etype = VERB_PE;
-        meta = 0;
+        meta = false;
         jump GiveError;
     }
 
@@ -1757,7 +1772,7 @@ Object  InformParser "(Inform Parser)"
                         do {
                             l = NextWord();
                         } until ((wn > num_words) ||
-                                 (l && (l->#dict_par1) & 8 ~= 0));
+                                 (l && (l->#dict_par1) & DICT_PREP ~= 0));
 
                         if (wn > num_words) {
                             #Ifdef DEBUG;
@@ -1873,9 +1888,11 @@ Object  InformParser "(Inform Parser)"
                 AnalyseToken(token);
 
                 if (action_to_be == ##AskTo && found_ttype == ELEMENTARY_TT &&
-                    found_tdata == TOPIC_TOKEN  && line_etype == 100)
-                {
-                    l=inputobjs-->2;
+                    found_tdata == TOPIC_TOKEN && line_etype == 100) {
+                    if (actor ~= player) {
+                        best_etype = VERB_PE; jump GiveError;
+                    }
+                    l = inputobjs-->2;
                     wn--;
                     j = wn;
                     jump Conversation2;
@@ -2740,8 +2757,8 @@ Constant UNLIT_BIT  =  32;
         #Endif; ! DEBUG
 
         k = NextWord();
-        if (k ~= AND1__WD) wn--;  ! allow Oxford commas in input
-        if (k > 0 && k->#dict_par1 & $$10000001 == 1) { 
+        if (k ~= AND1__WD) wn--;  ! allow Serial commas in input
+        if (k > 0 && (k->#dict_par1) & (DICT_NOUN+DICT_VERB) == DICT_VERB) {
             wn--; ! player meant 'THEN'
             jump PassToken;
         }
@@ -2951,7 +2968,7 @@ Constant UNLIT_BIT  =  32;
         if (match_classes-->marker > 0) print (the) k; else print (a) k;
 
         if (i < j-1)  print (string) COMMA__TX;
-        if (i == j-1) print (OxfordComma) j, (string) OR__TX;
+        if (i == j-1) print (SerialComma) j, (string) OR__TX;
     }
     L__M(##Miscellany, 57);
 
@@ -2997,7 +3014,7 @@ Constant UNLIT_BIT  =  32;
     #Endif; ! LanguageIsVerb
     if (first_word ~= 0) {
         j = first_word->#dict_par1;
-        if ((0 ~= j&1) && ~~LanguageVerbMayBeName(first_word)) {
+        if ((j & DICT_VERB) && ~~LanguageVerbMayBeName(first_word)) {
             CopyBuffer(buffer, buffer2);
             return REPARSE_CODE;
         }
@@ -3050,7 +3067,7 @@ Constant UNLIT_BIT  =  32;
 
     if (first_word ~= 0) {
         j = first_word->#dict_par1;
-        if (0 ~= j&1) {
+        if (0 ~= DICT_VERB) {
             CopyBuffer(buffer, buffer2);
             return REPARSE_CODE;
         }
@@ -3081,7 +3098,7 @@ Constant UNLIT_BIT  =  32;
             if (pattern-->j >= 2 && pattern-->j < REPARSE_CODE) {
                 ! was the inference made from some noun words?
                 ! In which case, we can infer again.
-                if (WordValue(NumberWords())->#dict_par1 & 128) continue;
+                if ((WordValue(NumberWords())->#dict_par1) & DICT_NOUN) continue;
                 PronounNotice(pattern-->j);
                 for (k=1 : k<=LanguagePronouns-->0 : k=k+3)
                     if (pattern-->j == LanguagePronouns-->(k+2)) {
@@ -4195,12 +4212,12 @@ Constant SCORE__DIVISOR     = 20;
 
     if (threshold < 0) {
         threshold = 1;
-        dict_flags_of_noun = (w->#dict_par1) & $$01110100;
+        dict_flags_of_noun = (w->#dict_par1) & (DICT_X654+DICT_PLUR);!$$01110100;
         w = NextWord();
         while (Refers(obj, wn-1)) {
             threshold++;
             if (w)
-               dict_flags_of_noun = dict_flags_of_noun | ((w->#dict_par1) & $$01110100);
+               dict_flags_of_noun = dict_flags_of_noun | ((w->#dict_par1) & (DICT_X654+DICT_PLUR));
             w = NextWord();
         }
     }
@@ -4273,7 +4290,7 @@ Constant SCORE__DIVISOR     = 20;
     for (j=1 : j<=s : j=j+3)
         if (i == LanguagePronouns-->j)
             return j+2;
-    if ((i->#dict_par1)&128 == 0) rfalse;
+    if ((i->#dict_par1) & DICT_NOUN == 0) rfalse;
     return i;
 ];
 
@@ -4575,7 +4592,7 @@ Constant SCORE__DIVISOR     = 20;
         }
         d++;
         if (d < c-1) print (string) COMMA__TX;
-        if (d == c-1) print (OxfordComma) c, (string) AND__TX;
+        if (d == c-1) print (SerialComma) c, (string) AND__TX;
     }
     if (player ~= selfobj) {
         print "~", (address) ME1__WD, "~ "; L__M(##Pronouns, 2);
@@ -4668,7 +4685,7 @@ Object  InformLibrary "(Inform Library)"
               .late__error;
 
                 inputobjs-->0 = 0; inputobjs-->1 = 0;
-                inputobjs-->2 = 0; inputobjs-->3 = 0; meta=false;
+                inputobjs-->2 = 0; inputobjs-->3 = 0; meta = false;
 
                 ! The Parser writes its results into inputobjs and meta,
                 ! a flag indicating a "meta-verb".  This can only be set for
@@ -4726,41 +4743,13 @@ Object  InformLibrary "(Inform Library)"
                 }
                 else second = inp2;
 
-                !  -------------------------------------------------------------
-
-                if (actor ~= player) {
-
-                ! The player's "orders" property can refuse to allow
-                ! conversations here, by returning true.  If not, the order is
-                ! sent to the other person's "orders" property.  If that also
-                ! returns false, then: if it was a misunderstood command
-                ! anyway, it is converted to an Answer action (thus
-                ! "floyd, grrr" ends up as "say grrr to floyd").  If it was a
-                ! good command, it is finally offered to the Order: part of
-                ! the other person's "life" property, the old-fashioned
-                ! way of dealing with conversation.
-
-                    j = RunRoutines(player, orders);
-                    if (j == 0) {
-                        j = RunRoutines(actor, orders);
-                        if (j == 0) {
-                            if (action == ##NotUnderstood) {
-                                inputobjs-->3 = actor; actor = player; action = ##Answer;
-                                jump begin__action;
-                            }
-                            if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
-                        }
-                    }
-                    jump turn__end;
-                }
-
                 ! --------------------------------------------------------------
                 ! Generate the action...
 
                 if ((i == 0) ||
                     (i == 1 && inp1 ~= 0) ||
                     (i == 2 && inp1 ~= 0 && inp2 ~= 0)) {
-                    self.begin_action(action, noun, second, 0);
+                    if (self.actor_act(actor, action, noun, second)) jump begin__action;
                     jump turn__end;
                 }
 
@@ -4791,10 +4780,14 @@ Object  InformLibrary "(Inform Library)"
                     PronounNotice(l);
                     print (name) l, ": ";
                     if (inp1 == 0) {
-                        inp1 = l; self.begin_action(action, l, second, 0); inp1 = 0;
+                        inp1 = l;
+                        if (self.actor_act(actor, action, l, second)) jump begin__action;
+                        inp1 = 0;
                     }
                     else {
-                        inp2 = l; self.begin_action(action, noun, l, 0); inp2 = 0;
+                        inp2 = l;
+                        if (self.actor_act(actor, action, noun, l)) jump begin__action;
+                        inp2 = 0;
                     }
                 }
 
@@ -4834,11 +4827,45 @@ Object  InformLibrary "(Inform Library)"
             NoteObjectAcquisitions();
         ],
 
+        actor_act [ p a n s  j sp sa sn ss;
+            sp = actor; actor = p;
+            if (p ~= player) {
+
+                ! The player's "orders" property can refuse to allow
+                ! conversation here, by returning true.  If not, the order is
+                ! sent to the other person's "orders" property.  If that also
+                ! returns false, then: if it was a misunderstood command
+                ! anyway, it is converted to an Answer action (thus
+                ! "floyd, grrr" ends up as "say grrr to floyd").  If it was a
+                ! good command, it is finally offered to the Order: part of
+                ! the other person's "life" property, the old-fashioned
+                ! way of dealing with conversation.
+
+                sa = action; sn = noun; ss = second;
+                action = a; noun = n; second = s;
+                j = RunRoutines(player, orders);
+                if (j == 0) {
+                    j = RunRoutines(actor, orders);
+                    if (j == 0) {
+                        if (action == ##NotUnderstood) {
+                            inputobjs-->3 = actor; actor = player; action = ##Answer;
+                            rtrue; ! abort, not resetting action globals
+                        }
+                        if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
+                    }
+                }
+                action = sa; noun = sn; second = ss;
+            }
+            else
+                self.begin_action(a, n, s, 0);
+            actor = sp;
+            ],
+
         begin_action [ a n s source   sa sn ss;
             sa = action; sn = noun; ss = second;
             action = a; noun = n; second = s;
             #Ifdef DEBUG;
-            if (debug_flag & 2 ~= 0) TraceAction(source);
+            if (debug_flag & DEBUG_ACTIONS) TraceAction(source);
             #Ifnot;
             source = 0;
             #Endif; ! DEBUG
@@ -4948,7 +4975,7 @@ Object  InformLibrary "(Inform Library)"
 
 [ RunTimersAndDaemons i j;
     #Ifdef DEBUG;
-    if (debug_flag & 4 ~= 0) {
+    if (debug_flag & DEBUG_TIMERS) {
         for (i=0 : i<active_timers : i++) {
             j = the_timers-->i;
             if (j ~= 0) {
@@ -5065,12 +5092,6 @@ Object  InformLibrary "(Inform Library)"
     jump RRQL;
 ];
 
-[ R_Process a i j s1 s2;
-    s1 = inp1; s2 = inp2;
-    inp1 = i; inp2 = j; InformLibrary.begin_action(a, i, j, 1);
-    inp1 = s1; inp2 = s2;
-];
-
 [ NoteObjectAcquisitions i;
     objectloop (i in player)
         if (i hasnt moved) {
@@ -5080,6 +5101,19 @@ Object  InformLibrary "(Inform Library)"
                 things_score = things_score + OBJECT_SCORE;
             }
         }
+];
+
+! ----------------------------------------------------------------------------
+! R_Process is invoked by the <...> and <<...>> statements, whose syntax is:
+!   <action [noun] [second]>                ! traditional
+!   <actor, action [noun] [second]>         ! introduced at compiler 6.31
+
+[ R_Process a n s p
+    s1 s2 s3;
+    s1 = inp1; s2 = inp2; s3 = actor;
+    inp1 = n; inp2 = s; if (p) actor = p; else actor = player;
+    InformLibrary.begin_action(a, n, s, 1);
+    inp1 = s1; inp2 = s2; actor = s3;
 ];
 
 ! ----------------------------------------------------------------------------
@@ -5128,7 +5162,7 @@ Object  InformLibrary "(Inform Library)"
 
 [ RunLife a j;
     #Ifdef DEBUG;
-    if (debug_flag & 2 ~= 0) TraceAction(2, j);
+    if (debug_flag & DEBUG_ACTIONS) TraceAction(2, j);
     #Endif; ! DEBUG
     reason_code = j; return RunRoutines(a,life);
 ];
@@ -5494,50 +5528,46 @@ Object  InformLibrary "(Inform Library)"
 
 #Ifdef TARGET_ZCODE;
 
-[ ShowVerbSub address lines da meta i j;
-    if (noun == 0 || ((noun->#dict_par1) & 1) == 0)
+[ ShowVerbSub grammar lines j;
+    if (noun == 0 || ((noun->#dict_par1) & DICT_VERB) == 0)
         "Try typing ~showverb~ and then the name of a verb.";
-    meta = ((noun->#dict_par1) & 2)/2;
-    i = $ff-(noun->#dict_par2);
-    address = (HDR_STATICMEMORY-->0)-->i;
-    lines = address->0;
-    address++;
-    print "Verb ";
-    if (meta) print "meta ";
-    da = HDR_DICTIONARY-->0;
-    for (j=0 : j<(da+5)-->0 : j++)
-        if (da->(j*9 + 14) == $ff-i) print "'", (address) (da + 9*j + 7), "' ";
+    print "Verb";
+    if ((noun->#dict_par1) & DICT_META) print " meta";
+    for (j=dict_start : j<dict_end : j=j+dict_entry_size)
+        if (j->#dict_par2 == noun->#dict_par2)
+            print " '", (address) j, "'";
     new_line;
+    grammar = (HDR_STATICMEMORY-->0)-->($ff-(noun->#dict_par2));
+    lines = grammar->0;
+    grammar++;
     if (lines == 0) "has no grammar lines.";
     for (: lines>0 : lines--) {
-        address = UnpackGrammarLine(address);
+        grammar = UnpackGrammarLine(grammar);
         print "    "; DebugGrammarLine(); new_line;
     }
 ];
 
 #Ifnot; ! TARGET_GLULX
 
-[ ShowVerbSub address lines i j meta wd dictlen entrylen;
-    if (noun == 0 || ((noun->#dict_par1) & 1) == 0)
+[ ShowVerbSub grammar lines j wd dictlen entrylen;
+    if (noun == 0 || ((noun->#dict_par1) & DICT_VERB) == 0)
         "Try typing ~showverb~ and then the name of a verb.";
-    meta = ((noun->#dict_par1) & 2)/2;
-    i = $ff-(noun->#dict_par2);
-    address = (#grammar_table)-->(i+1);
-    lines = address->0;
-    address++;
-    print "Verb ";
-    if (meta) print "meta ";
+    print "Verb";
+    if ((noun->#dict_par1) & DICT_META) print " meta";
     dictlen = #dictionary_table-->0;
     entrylen = DICT_WORD_SIZE + 7;
     for (j=0 : j<dictlen : j++) {
         wd = #dictionary_table + WORDSIZE + entrylen*j;
-        if (wd->#dict_par2 == $ff-i)
-            print "'", (address) wd, "' ";
+        if (wd->#dict_par2 == noun->#dict_par2)
+            print " '", (address) wd, "'";
     }
     new_line;
+    grammar = (#grammar_table)-->($ff-(noun->#dict_par2)+1);
+    lines = grammar->0;
+    grammar++;
     if (lines == 0) "has no grammar lines.";
     for (: lines>0 : lines--) {
-        address = UnpackGrammarLine(address);
+        grammar = UnpackGrammarLine(grammar);
         print "    "; DebugGrammarLine(); new_line;
     }
 ];
@@ -6356,10 +6386,11 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 ];
 
 [ PrintCapitalised obj prop flag nocaps centred  length i width;
-    ! a variation of PrintOrRun, capitalising the first letter and returning nothing
+    ! a variation of PrintOrRun, capitalising the first letter
+    ! and returning nothing
 
     if (obj ofclass String || prop == 0) {
-        PrintToBuffer (StorageForShortName, SHORTNAMEBUF_LEN, obj);
+        PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, obj);
         flag = 1;
     }
     else
@@ -6565,7 +6596,7 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 
 [ EnglishNumber n; LanguageNumber(n); ];
 
-[ OxfordComma n;
+[ SerialComma n;
     #Ifdef SERIAL_COMMAS;
     if (n>2) print ",";
     #Endif;
