@@ -129,7 +129,11 @@ Global gg_statuswin_size = 1;
 #Ifndef sys_statusline_flag;
 Global sys_statusline_flag = 0;     ! non-zero if status line displays time
 #Endif;
-Default START_MOVE 0;               ! Traditionally 0 for Infocom, 1 for Inform
+
+#Ifndef START_MOVE;
+Constant START_MOVE 0;               ! Traditionally 0 for Infocom, 1 for Inform
+#Endif;
+
 Global turns = START_MOVE;          ! Number of turns of play so far
 Global the_time = NULL;             ! Current time (in minutes since midnight)
 Global time_rate = 1;               ! How often time is updated
