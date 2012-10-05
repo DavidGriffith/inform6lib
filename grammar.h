@@ -208,6 +208,9 @@ Verb 'dig'
     * noun                                      -> Dig
     * noun 'with' held                          -> Dig;
 
+Verb 'disrobe' 'doff' 'shed'
+    * held                                      -> Disrobe;
+
 Verb 'drink' 'sip' 'swallow'
     * noun                                      -> Drink;
 
@@ -360,9 +363,6 @@ Verb 'set' 'adjust'
     * noun                                      -> Set
     * noun 'to' special                         -> SetTo;
 
-Verb 'shed' 'disrobe' 'doff'
-    * held                                      -> Disrobe;
-
 Verb 'show' 'display' 'present'
     * creature held                             -> Show reverse
     * held 'to' creature                        -> Show;
@@ -443,18 +443,6 @@ Verb 'turn' 'rotate' 'screw' 'twist' 'unscrew'
     * 'on' noun                                 -> Switchon
     * 'off' noun                                -> Switchoff;
 
-Verb 'wave'
-    *                                           -> WaveHands
-    * noun                                      -> Wave
-    * noun 'at' noun                            -> Wave
-    * 'at' noun                                 -> WaveHands;
-
-Verb 'wear' 'don'
-    * held                                      -> Wear;
-
-Verb 'yes' 'y//'
-    *                                           -> Yes;
-
 Verb 'unlock'
     * noun 'with' held                          -> Unlock;
 
@@ -467,6 +455,18 @@ Verb 'wake' 'awake' 'awaken'
     * creature                                  -> WakeOther
     * creature 'up'                             -> WakeOther
     * 'up' creature                             -> WakeOther;
+
+Verb 'wave'
+    *                                           -> WaveHands
+    * noun                                      -> Wave
+    * noun 'at' noun                            -> Wave
+    * 'at' noun                                 -> WaveHands;
+
+Verb 'wear' 'don'
+    * held                                      -> Wear;
+
+Verb 'yes' 'y//'
+    *                                           -> Yes;
 
 ! ------------------------------------------------------------------------------
 !  This routine is no longer used here, but provided to help existing games
