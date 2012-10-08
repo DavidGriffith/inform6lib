@@ -541,11 +541,9 @@ Constant COMMA__TX      = ", ";
                                     print "you"; return;
     }
     if (obj has pluralname)       { print "they"; return; }
-    if (obj has animate) {
-        if (obj has female)       { print "she"; return; }
-        else
-            if (obj hasnt neuter) { print "he"; return; }
-    }
+    if (obj has female)           { print "she"; return; }
+    if (obj has male or animate)
+        if (obj hasnt neuter)     { print "he"; return; }
                                     print "that";
 ];
 
