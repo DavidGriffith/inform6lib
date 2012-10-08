@@ -100,6 +100,7 @@ Import global special_number;
 Import global parsed_number;
 Import global consult_from;
 Import global consult_words;
+Import global asking_player;
 
 Import global notheld_mode;
 Import global onotheld_mode;

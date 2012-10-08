@@ -301,6 +301,7 @@ Global special_number;              ! Number typed for "special" token
 Global parsed_number;               ! For user-supplied parsing routines
 Global consult_from;                ! Word that a "consult" topic starts on
 Global consult_words;               ! ...and number of words in topic
+Global asking_player;               ! True during disambiguation question
 
 ! ------------------------------------------------------------------------------
 !   Implicit taking
@@ -1724,6 +1725,7 @@ Object  InformParser "(Inform Parser)"
         ! any parameters on the line yet, or any special numbers; the multiple
         ! object is still empty.
 
+        token_filter = 0;
         not_holding = 0;
         inferfrom = 0;
         parameters = 0;
@@ -2961,6 +2963,7 @@ Constant UNLIT_BIT  =  32;
     ! Now we print up the question, using the equivalence classes as worked
     ! out by Adjudicate() so as not to repeat ourselves on plural objects...
 
+    asking_player = true;
     if (context==CREATURE_TOKEN) L__M(##Miscellany, 45, actor);
     else                         L__M(##Miscellany, 46, actor);
 
@@ -3014,12 +3017,14 @@ Constant UNLIT_BIT  =  32;
     #Ifdef LanguageIsVerb;
     if (first_word == 0) {
         j = wn; first_word = LanguageIsVerb(buffer2, parse2, 1); wn = j;
+        asking_player = false;
     }
     #Endif; ! LanguageIsVerb
     if (first_word ~= 0) {
         j = first_word->#dict_par1;
         if ((j & DICT_VERB) && ~~LanguageVerbMayBeName(first_word)) {
             CopyBuffer(buffer, buffer2);
+            asking_player = false;
             return REPARSE_CODE;
         }
     }
@@ -3042,6 +3047,7 @@ Constant UNLIT_BIT  =  32;
     ! Having reconstructed the input, we warn the parser accordingly
     ! and get out.
 
+    asking_player = false;
     return REPARSE_CODE;
 
     ! Now we come to the question asked when the input has run out
@@ -6341,17 +6347,17 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 
 #Ifdef TARGET_ZCODE;
 
-! Platform-independent way of printing strings and properties to a
-! buffer (defined as length word followed by byte characters).
+! Platform-independent way of printing strings, routines and properties
+! to a buffer (defined as length word followed by byte characters).
 
-[ PrintToBuffer buf len a b c;
+[ PrintToBuffer buf len a b c d e;
     print_anything_result = 0;
     @output_stream 3 buf;
     switch (metaclass(a)) {
       String:
         print (string) a;
       Routine:
-        print_anything_result = a(b, c);
+        print_anything_result = a(b, c, d, e);
       Object,Class:
         if (b)
             print_anything_result = PrintOrRun(a, b, true);
@@ -6365,13 +6371,13 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 
 #Ifnot; ! TARGET_GLULX
 
-[ PrintToBuffer buf len a b;
+[ PrintToBuffer buf len a b c d e;
     if (b) {
         if (metaclass(a) == Object && a.#b == WORDSIZE
             && metaclass(a.b) == String)
             buf-->0 = PrintAnyToArray(buf+WORDSIZE, len, a.b);
         else
-            buf-->0 = PrintAnyToArray(buf+WORDSIZE, len, a, b);
+            buf-->0 = PrintAnyToArray(buf+WORDSIZE, len, a, b, c, d, e);
     }
     else
         buf-->0 = PrintAnyToArray(buf+WORDSIZE, len, a);
@@ -6381,51 +6387,65 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 
 #Endif; ! TARGET_
 
+! Print contents of buffer (defined as length word followed by byte characters).
+! no_break == 1: omit trailing newline.
+! set_case == 1: capitalise first letter;
+!          == 2: capitalise first letter, remainder lower case;
+!          == 3: all lower case;
+!          == 4: all upper case.
+! centred == 1:  add leading spaces.
+
+[ PrintFromBuffer buf no_break set_case centred
+    i j k;
+    j = (buf-->0) - 1;
+    if (buf->(j+WORDSIZE) ~= 10 or 13) j++;     ! trim any trailing newline
+    if (centred) {
+        k = (ScreenWidth() - j) / 2;
+        if (k>0) spaces k;
+    }
+    for (i=0 : i<j : i++) {
+        k = buf->(WORDSIZE+i);
+        switch (set_case) {
+          0:    break;
+          1:    if (i) set_case = 0;
+                else   k = UpperCase(k);
+          2:    if (i) k = LowerCase(k);
+                else   k = UpperCase(k);
+          3:           k = LowerCase(k);
+          4:           k = UpperCase(k);
+        }
+        print (char) k;
+    }
+    if (no_break == false) new_line;
+    return j;
+];
+
 ! None of the following functions should be called for zcode if the
 ! output exceeds the size of the buffer.
 
-[ StringSize a b;
-    PrintToBuffer(StorageForShortName, 160, a, b);
+[ StringSize a b c d e;
+    PrintToBuffer(StorageForShortName, 160, a, b, c, d, e);
     return StorageForShortName-->0;
 ];
 
-[ PrintCapitalised obj prop flag nocaps centred  length i width;
-    ! a variation of PrintOrRun, capitalising the first letter
-    ! and returning nothing
-
-    if (obj ofclass String || prop == 0) {
-        PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, obj);
-        flag = 1;
-    }
+[ PrintCapitalised a b no_break no_caps centred;
+    if (metaclass(a) == Routine or String || b == 0 || metaclass(a.b) == Routine or String)
+        PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, a, b);
     else
-        if (obj.#prop > WORDSIZE || metaclass(obj.prop) == Routine or String) {
-            PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, obj, prop);
-        }
-        else
-            if (obj.prop == NULL) rfalse;
-            else                  return RunTimeError(2, obj, prop);
-
-    length = StorageForShortName-->0;
-    width = ScreenWidth();
-    if (centred && length<width)
-        spaces ( (width-length)/2 );
-    if (~~nocaps)
-        StorageForShortName->WORDSIZE = UpperCase(StorageForShortName->WORDSIZE);
-
-    for (i=WORDSIZE: i<length+WORDSIZE: i++) print (char) StorageForShortName->i;
-
-    if (flag == 0 && obj.#prop == WORDSIZE && metaclass(obj.prop) == String)
-        new_line;
+        if (a.b == NULL) rfalse;
+        else             return RunTimeError(2, a, b);
+    if (no_caps == 0 or 1) no_caps = ~~no_caps;
+    PrintFromBuffer(StorageForShortName, no_break, no_caps, centred);
     return print_anything_result;
 ];
 
 [ Centre a b;
-    PrintCapitalised(a, b, 0, 1, 1);
+    PrintCapitalised(a, b, false, true, true);
 ];
 
-[ CapitRule str nocaps;
-    if (nocaps) print (string) str;
-    else        PrintCapitalised(str);
+[ CapitRule str no_caps;
+    if (no_caps) print (string) str;
+    else         PrintCapitalised(str);
 ];
 
 [ PrefaceByArticle o acode pluralise capitalise  i artform findout artval;
@@ -6529,18 +6549,13 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
     if (o has proper) {
         indef_mode = NULL;
         PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, PSN__, o);
-        if (caps_mode) {
-                StorageForShortName->WORDSIZE =
-                    UpperCase(StorageForShortName->WORDSIZE);
-        }
-        for (o=0 : o<StorageForShortName-->0 : o++)
-            print (char) StorageForShortName->(o+WORDSIZE);
+        PrintFromBuffer(StorageForShortName, true, caps_mode);
         caps_mode = saveCaps;
         return;
     }
 
     if (o provides article) {
-        PrintCapitalised(o, article, 1);
+        PrintCapitalised(o, article, true);
         print " ", (PSN__) o;
         indef_mode = saveIndef;
         caps_mode = saveCaps;
@@ -6581,12 +6596,7 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
         if (o has proper) {
             indef_mode = NULL;
             PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, PSN__, o);
-            if (caps_mode) {
-                StorageForShortName->WORDSIZE =
-                    UpperCase(StorageForShortName->WORDSIZE);
-            }
-            for (o=0 : o<StorageForShortName-->0 : o++)
-                print (char) StorageForShortName->(o+WORDSIZE);
+            PrintFromBuffer(StorageForShortName, true, caps_mode);
         }
         else
             PrefaceByArticle(o, 0);
