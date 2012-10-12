@@ -538,6 +538,6 @@ Include "infix";
 
 ! ==============================================================================
 
-#undef LIBRARY_STAGE; Constant LIBRARY_STAGE STAGE_GRAMMAR;
+#undef LIBRARY_STAGE; Constant LIBRARY_STAGE AFTER_GRAMMAR;
 
 ! ==============================================================================

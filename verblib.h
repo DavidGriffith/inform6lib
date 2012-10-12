@@ -47,6 +47,6 @@ Include "verblibm";
 
 ! ==============================================================================
 
-#undef LIBRARY_STAGE; Constant LIBRARY_STAGE STAGE_VERBLIB;
+#undef LIBRARY_STAGE; Constant LIBRARY_STAGE AFTER_VERBLIB;
 
 ! ==============================================================================
