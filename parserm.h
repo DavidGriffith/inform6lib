@@ -5116,7 +5116,7 @@ Object  InformLibrary "(Inform Library)"
 ! ----------------------------------------------------------------------------
 ! R_Process is invoked by the <...> and <<...>> statements, whose syntax is:
 !   <action [noun] [second]>                ! traditional
-!   <actor, action [noun] [second]>         ! introduced at compiler 6.31
+!   <action [noun] [second], actor>         ! introduced at compiler 6.33
 
 [ R_Process a n s p
     s1 s2 s3;
@@ -6445,7 +6445,7 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 
 [ CapitRule str no_caps;
     if (no_caps) print (string) str;
-    else         PrintCapitalised(str, 0, true);
+    else         PrintCapitalised(str);
 ];
 
 [ PrefaceByArticle o acode pluralise capitalise  i artform findout artval;

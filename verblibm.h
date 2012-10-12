@@ -1319,7 +1319,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         inventory_style = ENGLISH_BIT+FULLINV_BIT+RECURSE_BIT;
     else
         inventory_style = ENGLISH_BIT+PARTINV_BIT;
-    <actor, Inv>;
+    <Inv, actor>;
     inventory_style = 0;
 ];
 
@@ -1328,7 +1328,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         inventory_style = NEWLINE_BIT+INDENT_BIT+FULLINV_BIT+RECURSE_BIT;
     else
         inventory_style = NEWLINE_BIT+INDENT_BIT+PARTINV_BIT;
-    <actor, Inv>;
+    <Inv, actor>;
     inventory_style = 0;
 ];
 
@@ -1587,7 +1587,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     ! 1 = Exit object, don't Tell
     ! 2 = don't Exit object          (default with NO_IMPLICIT_ACTIONS)
     if (res == 2) rtrue;
-    ks = keep_silent; keep_silent = 2; <actor, Exit obj>; keep_silent = ks;
+    ks = keep_silent; keep_silent = 2; <Exit obj, actor>; keep_silent = ks;
     if (parent(actor) == obj) rtrue;
     if (res == 0 && ~~keep_silent) L__M(##Exit, 5, obj);
     rfalse;
@@ -1601,7 +1601,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     ! 1 = Close object, don't Tell
     ! 2 = don't Close object          (default with NO_IMPLICIT_ACTIONS)
     if (res == 2) rtrue;
-    ks = keep_silent; keep_silent = 2; <actor, Close obj>; keep_silent = ks;
+    ks = keep_silent; keep_silent = 2; <Close obj, actor>; keep_silent = ks;
     if (obj has open) rtrue;
     if (res == 0 && ~~keep_silent) L__M(##Close, 4, obj);
     rfalse;
@@ -1616,7 +1616,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     ! 2 = don't Open object          (default with NO_IMPLICIT_ACTIONS)
     if (res == 2) rtrue;
     if (obj has locked) rtrue;
-    ks = keep_silent; keep_silent = 2; <actor, Open obj>; keep_silent = ks;
+    ks = keep_silent; keep_silent = 2; <Open obj, actor>; keep_silent = ks;
     if (obj hasnt open) rtrue;
     if (res == 0 && ~~keep_silent) L__M(##Open, 6, obj);
     rfalse;
@@ -1635,7 +1635,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     ! 1 = Take off object, don't Tell
     ! 2 = don't Take off object          (default with NO_IMPLICIT_ACTIONS)
     if (res == 2) rtrue;
-    ks = keep_silent; keep_silent = 1; <actor, Disrobe obj>; keep_silent = ks;
+    ks = keep_silent; keep_silent = 1; <Disrobe obj, actor>; keep_silent = ks;
     if (obj has worn && obj in actor) rtrue;
     if (res == 0 && ~~keep_silent) L__M(##Drop, 3, noun);
     rfalse;
@@ -1681,7 +1681,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ PutOnSub ancestor;
     receive_action = ##PutOn;
-    if (second == d_obj || actor in second) <<actor, Drop noun>>;
+    if (second == d_obj || actor in second) <<Drop noun, actor>>;
     if (parent(noun) == second) return L__M(##Drop,1,noun);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##PutOn, 1, noun);
 
@@ -1718,7 +1718,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ InsertSub ancestor;
     receive_action = ##Insert;
-    if (second == d_obj || actor in second) <<actor, Drop noun>>;
+    if (second == d_obj || actor in second) <<Drop noun, actor>>;
     if (parent(noun) == second) return L__M(##Drop, 1, noun);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##Insert, 1, noun);
 
@@ -1759,9 +1759,9 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ TransferSub;
     if (noun notin actor && AttemptToTakeObject(noun)) return;
-    if (second has supporter) <<actor, PutOn noun second>>;
-    if (second == d_obj) <<actor, Drop noun>>;
-    <<actor, Insert noun second>>;
+    if (second has supporter) <<PutOn noun second, actor>>;
+    if (second == d_obj) <<Drop noun, actor>>;
+    <<Insert noun second, actor>>;
 ];
 
 [ EmptySub; second = d_obj; EmptyTSub(); ];
@@ -1795,7 +1795,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         if (k-- == 0) flag = 1;
         if (flag) break;
         if (keep_silent == 0) print (name) i, ": ";
-        <actor, Transfer i second>;
+        <Transfer i second, actor>;
         i = j;
     }
 ];
@@ -1817,23 +1817,23 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     L__M(##Give, 3, second);
 ];
 
-[ GiveRSub; <actor, Give second noun>; ];
+[ GiveRSub; <Give second noun, actor>; ];
 
 [ ShowSub;
     if (noun notin actor && ImplicitTake(noun)) return L__M(##Show, 1, noun);
-    if (second == player) <<actor, Examine noun>>;
+    if (second == player) <<Examine noun, actor>>;
     if (RunLife(second, ##Show)) return;
     L__M(##Show, 2, second);
 ];
 
-[ ShowRSub; <actor, Show second noun>; ];
+[ ShowRSub; <Show second noun, actor>; ];
 
 ! ----------------------------------------------------------------------------
 !   Travelling around verbs
 ! ----------------------------------------------------------------------------
 
 [ EnterSub ancestor j ks;
-    if (noun has door || noun in compass) <<actor, Go noun>>;
+    if (noun has door || noun in compass) <<Go noun, actor>>;
     if (actor in noun) return L__M(##Enter, 1, noun);
     if (noun hasnt enterable) return L__M(##Enter, 2, noun, verb_word);
 
@@ -1847,7 +1847,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
                 L__M(##Enter, 6, j);
                 keep_silent = 1;
             }
-            <actor, Exit>;
+            <Exit, actor>;
             keep_silent = ks;
             if (actor in j) return;
         }
@@ -1857,10 +1857,10 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
             while (parent(j) ~= ancestor) j = parent(j);
             L__M(##Enter, 7, j);
             ks = keep_silent; keep_silent = 1;
-            <actor, Enter j>;
+            <Enter j, actor>;
             keep_silent = ks;
             if (actor notin j) return;
-            <<actor, Enter noun>>;
+            <<Enter noun, actor>>;
         }
     }
 
@@ -1873,7 +1873,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 
 [ GetOffSub;
-    if (parent(actor) == noun) <<actor, Exit>>;
+    if (parent(actor) == noun) <<Exit, actor>>;
     L__M(##GetOff, 1, noun);
 ];
 
@@ -1886,7 +1886,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
             return L__M(##Exit, 6);
         }
         if ((location.out_to) || (location == thedark && real_location.out_to))
-            <<actor, Go out_obj>>;
+            <<Go out_obj, actor>>;
         return L__M(##Exit, 1);
     }
     if (p has container && p hasnt open && ImplicitOpen(p))
@@ -1907,7 +1907,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ VagueGoSub; L__M(##VagueGo); ];
 
-[ GoInSub; <<actor, Go in_obj>>; ];
+[ GoInSub; <<Go in_obj, actor>>; ];
 
 [ GoSub i j k df movewith thedir old_loc;
 
@@ -2199,7 +2199,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     i = noun.description;
     if (i == 0) {
         if (noun has container)
-            if (noun has open) <<actor, Search noun>>;
+            if (noun has open) <<Search noun, actor>>;
             else return L__M(##Search, 5, noun);
         if (noun has switchable) { L__M(##Examine, 3, noun); rfalse; }
         return L__M(##Examine, 2, noun);
@@ -2346,7 +2346,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     if (parent(second) ~= compass) return L__M(##PushDir, 2, noun);
     if (second == u_obj or d_obj)  return L__M(##PushDir, 3, noun);
     AfterRoutines(); i = noun; move i to actor;
-    <actor, Go second>;
+    <Go second, actor>;
     if (location == thedark) move i to real_location;
     else                     move i to location;
 ];
@@ -2362,7 +2362,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 
 [ AskForSub;
-    if (noun == player) <<actor, Inv>>;
+    if (noun == player) <<Inv, actor>>;
     L__M(##Order, 1, noun);
 ];
 
