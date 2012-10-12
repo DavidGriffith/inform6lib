@@ -20,6 +20,13 @@ Constant LibRelease      "6/12pre";
 Constant LIBRARY_VERSION  612;
 Constant Grammar__Version 2;
 
+Constant STAGE_PREPARSER 10;
+Constant STAGE_PARSER    20;
+Constant STAGE_VERBLIB   30;
+Constant STAGE_GRAMMAR   40;
+
+Constant LIBRARY_STAGE STAGE_PREPARSER;
+
 Default COMMENT_CHARACTER '*';
 
 #Ifdef INFIX;
@@ -124,6 +131,6 @@ Include "parserm";
 
 ! ==============================================================================
 
-Constant LIBRARY_PARSER;        ! for dependency checking
+#undef LIBRARY_STAGE; Constant LIBRARY_STAGE STAGE_PARSER;
 
 ! ==============================================================================

@@ -47,6 +47,6 @@ Include "verblibm";
 
 ! ==============================================================================
 
-Constant LIBRARY_VERBLIB;       ! for dependency checking
+#undef LIBRARY_STAGE; Constant LIBRARY_STAGE STAGE_VERBLIB;
 
 ! ==============================================================================
