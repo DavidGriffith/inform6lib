@@ -208,6 +208,7 @@ Global item_name = "---";
 
 Global lm_n;                        ! Parameters used by LibraryMessages
 Global lm_o;                        ! mechanism
+Global lm_s;
 
 #Ifdef DEBUG;
 Constant DEBUG_MESSAGES $0001;
@@ -215,7 +216,6 @@ Constant DEBUG_ACTIONS  $0002;
 Constant DEBUG_TIMERS   $0004;
 Constant DEBUG_CHANGES  $0008;
 Global debug_flag;                  ! Bitmap of flags for tracing actions,
-Global lm_s;
                                     ! calls to object routines, etc.
 Global x_scope_count;               ! Used in printing a list of everything
 #Endif; ! DEBUG                     ! in scope
