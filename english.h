@@ -30,6 +30,7 @@ Class   CompassDirection
             L__M(##Look, 7, self);
         ],
         compass_look false,
+        parse_name [; return -1;]
   has   scenery;
 
 Object Compass "compass" has concealed;
