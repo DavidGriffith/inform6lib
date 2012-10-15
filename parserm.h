@@ -4621,7 +4621,7 @@ Constant SCORE__DIVISOR     = 20;
         if (LanguagePronouns-->x == dword) {
             LanguagePronouns-->(x+2) = value; return;
         }
-    RunTimeError(14);
+    RunTimeError(12);
 ];
 
 [ PronounValue dword x;
@@ -6338,10 +6338,12 @@ Array AnyToStrArr -> GG_ANYTOSTRING_LEN+1;
 
 [ DecimalNumber num; print num; ];
 
-#IfV5;
+#Ifndef SHORTNAMEBUF_LEN;               ! Can't use 'Default', unfortunately,
+Constant SHORTNAMEBUF_LEN 160;          ! but this is functionally equivalent
+#Endif;
 
+#IfV5;
 #Ifdef VN_1630;
-Constant SHORTNAMEBUF_LEN 160;
 Array StorageForShortName buffer SHORTNAMEBUF_LEN;
 #Ifnot;
 Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
@@ -6369,7 +6371,7 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
             print (name) a;
     }
     @output_stream -3;
-    if (buf-->0 > len) print "Error: Overflow in PrintToBuffer.^";
+    if (buf-->0 > len) RunTimeError(14, len, "in PrintToBuffer()");
     return buf-->0;
 ];
 
@@ -6489,11 +6491,21 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
     #Endif; ! LanguageContractionForms
 
     #Ifdef TARGET_ZCODE;
-    if (standard_interpreter ~= 0 && findout) {
-        StorageForShortName-->0 = SHORTNAMEBUF_LEN;
+    if (standard_interpreter && findout) {
+        i = (HDR_OBJECTS-->0+124+o*14)-->0; ! Property address of object
+        findout = 0;                        ! To find the first char of the
+                                            ! object's short-name, we need
+                                            ! (worst case) to unpack the first
+                                            ! two words
+        if (i->0 > 2) {                     ! If more than two words...
+            i++;                            ! Start of packed name
+            findout = i-->1;                ! Save second word for restoration,
+            i-->1 = i-->1 | WORD_HIGHBIT;   ! then arbitrarily truncate
+        }
         @output_stream 3 StorageForShortName;
         if (pluralise) print (number) pluralise; else print (PSN__) o;
         @output_stream -3;
+        if (findout) i-->1 = findout;       ! Restore truncated short-name
         acode = acode + 3*LanguageContraction(StorageForShortName + 2);
     }
     #Ifnot; ! TARGET_GLULX

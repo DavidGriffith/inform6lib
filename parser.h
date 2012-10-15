@@ -15,6 +15,10 @@ System_file;
 
 ! ------------------------------------------------------------------------------
 
+#Ifndef VN_1633;
+!Message fatalerror "*** Library 6/12 needs Inform v6.33 or later to work ***";
+#Endif; ! VN_
+
 Constant LibSerial       "1209??";
 Constant LibRelease      "6/12pre";
 Constant LIBRARY_VERSION  612;
@@ -25,7 +29,7 @@ Constant AFTER_PARSER    20;
 Constant AFTER_VERBLIB   30;
 Constant AFTER_GRAMMAR   40;
 
-Constant LIBRARY_STAGE BEFORE_PARSER;
+Constant LIBRARY_STAGE = BEFORE_PARSER;
 
 Default COMMENT_CHARACTER '*';
 
@@ -94,10 +98,6 @@ Constant ROM_GAMESERIAL    $36;     ! six ASCII characters
 
 #Endif; ! TARGET_
 
-#Ifndef VN_1633;
-!Message fatalerror "*** Library 6/12 needs Inform v6.33 or later to work ***";
-#Endif; ! VN_
-
 Include "linklpa";
 
 Fake_Action LetGo;
@@ -131,6 +131,6 @@ Include "parserm";
 
 ! ==============================================================================
 
-#undef LIBRARY_STAGE; Constant LIBRARY_STAGE AFTER_PARSER;
+Undef LIBRARY_STAGE; Constant LIBRARY_STAGE = AFTER_PARSER;
 
 ! ==============================================================================

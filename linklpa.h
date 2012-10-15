@@ -35,7 +35,7 @@ Attribute animate;
     #Endif;
 #Endif;
 
-Attribute absent;
+Attribute absent;       Attribute non_floating alias absent;
 Attribute clothing;
 Attribute concealed;
 Attribute container;
