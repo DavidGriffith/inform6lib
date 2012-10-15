@@ -1240,7 +1240,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     objectloop (i has visited) j++;
     objectloop (i has visited) {
         print (name) i; k++;
-        if (k == j) { L__M(##Places, 2); return; }
+        if (k == j) return L__M(##Places, 2);
         if (k == j-1) print (SerialComma) j, (string) AND__TX;
         else          print (string) COMMA__TX;
     }

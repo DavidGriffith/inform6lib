@@ -745,7 +745,7 @@ Constant COMMA__TX      = ", ";
         4:  CSubjectIs__(actor,true); " unable to descend by ", (the) x1, ".";
         5:  CSubjectCant(actor,true); " since ", (the) x1, " ", (IsOrAre) x1, " in the way.";
         6:  CSubjectCant(actor,true); " since ", (the) x1, " ", (nop) PluralObj(x1,"lead","leads"), "nowhere.";
-        7:  CSubjectVerb(actor,false,"depart.",0,"departs.");
+        7:  CSubjectVerb(actor,false," depart.",0," departs."); "";
     }
   Insert: switch (n) {
         1:  CSubjectVerb(actor,true,"need",0,"needs"); " to be holding ", (the) x1, " before ",
@@ -763,8 +763,8 @@ Constant COMMA__TX      = ", ";
   Inv: switch (n) {
         1:  CSubjectIs__(actor,false); " carrying nothing.";
         2:  CSubjectIs__(actor,false); print " carrying";
-        3:  print ":^";
-        4:  print ".^";
+        3:  ":";
+        4:  ".";
     }
   Jump:     CSubjectVerb(actor,false,"jump",0,"jumps"); " on the spot, fruitlessly.";
   JumpOver: switch (n) {
@@ -910,10 +910,10 @@ Constant COMMA__TX      = ", ";
         47: "Sorry, you can only have one item here. Which exactly?";
         48: print "Whom do you want";
             if (x1 ~= player && x1 ~= nothing) print " ", (the) x1;
-            print " to "; PrintCommand(); print "?^";
+            print " to "; PrintCommand(); "?";
         49: print "What do you want";
             if (x1 ~= player && x1 ~= nothing) print " ", (the) x1;
-            print " to "; PrintCommand(); print "?^";
+            print " to "; PrintCommand(); "?";
         50: print "Your score has just gone ";
             if (x1 > 0) print "up"; else { x1 = -x1; print "down"; }
             print " by ", (number) x1, " point";
@@ -923,8 +923,8 @@ Constant COMMA__TX      = ", ";
         53: "^[Please press SPACE.]";
         54: "[Comment recorded.]";
         55: "[Comment NOT recorded.]";
-        56: print ".^";
-        57: print "?^";
+        56: ".";
+        57: "?";
         58: "(first taking ", (the) x1, " ", (nop) SupportObj(x2,"off","out of"), " ", (the) x2, ")";
         59: "You'll have to be more specific.";
         60: print (The) x1, " observes that ";
@@ -957,7 +957,7 @@ Constant COMMA__TX      = ", ";
   Order:    CSubjectHas_(actor); " better things to do.";
   Places: switch (n) {
         1:  print "You have visited: ";
-        2:  print ".^";
+        2:  ".^";
     }
   Pray:     "Nothing practical results from ", (Possessive) actor, " prayer.";
   Prompt:   print "^>";
