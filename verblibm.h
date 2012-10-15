@@ -2497,7 +2497,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 [ SleepSub; L__M(##Sleep, 1, noun); ];
 
 [ SmellSub;
-    if (noun has animate) return L__M(##Smell, 2, noun);
+    if (noun ~= nothing && noun has animate) return L__M(##Smell, 2, noun);
     L__M(##Smell, 1, noun);
 ];
 
