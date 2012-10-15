@@ -439,7 +439,9 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
             WriteAfterEntry(j, depth, stack_pointer);
             give j ~pluralname;
         }
-        else WriteAfterEntry(j,depth,stack_pointer);
+        else {
+            WriteAfterEntry(j,depth,stack_pointer);
+        }
       .Omit_EL2;
 
         if (c_style & ENGLISH_BIT) {
@@ -1279,7 +1281,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     #Ifnot;
     if (deadflag) new_line;
     L__M(##Score, 1);
-    PrintRank();
+    if(PrintRank()==0)
+        LibraryExtensions.RunAll(ext_printrank);
     #Endif; ! NO_SCORE
 ];
 
@@ -1317,7 +1320,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     for (i=0 : i<NUMBER_TASKS : i++)
         if (task_done->i == 1) {
             PANum(TaskScore(i));
-            PrintTaskName(i);
+            if(PrintTaskName(i)==0)
+                LibraryExtensions.RunAll(ext_printtaskname,i);
         }
     if (things_score) {
         PANum(things_score);
@@ -1526,7 +1530,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         k = 0; objectloop (j in player) if (j hasnt worn) k++;
         if (k >= ValueOrRun(player, capacity) && SackIsFull()) return L__M(##Take, 12);
     }
-    if (ObjectDoesNotFit(item, actor)) return;
+    if (ObjectDoesNotFit(item, actor) == 0) 
+        if (LibraryExtensions.RunWhile(ext_objectdoesnotfit, 0, item, actor)) return;
 
     ! Transfer the item.
 
@@ -1721,7 +1726,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     if (children(second) >= ValueOrRun(second, capacity))
         return L__M(##PutOn, 6, second);
-    if (ObjectDoesNotFit(noun, second)) return;
+    if (ObjectDoesNotFit(noun, second)== 0)
+        if (LibraryExtensions.RunWhile(ext_objectdoesnotfit, 0, noun, second)) return;
 
     move noun to second;
 
@@ -1757,7 +1763,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     if (children(second) >= ValueOrRun(second, capacity))
         return L__M(##Insert, 7, second);
-    if (ObjectDoesNotFit(noun, second)) return;
+    if (ObjectDoesNotFit(noun, second)== 0)
+        if (LibraryExtensions.RunWhile(ext_objectdoesnotfit, 0, noun, second)) return;
 
     if (AfterRoutines() == 1) rtrue;
     move noun to second;
@@ -1991,7 +1998,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     else {
         lightflag = false;
         if (k == thedark) {
-            DarkToDark();   ! From real_location To location
+            if(DarkToDark() == 0) ! From real_location To location
+                LibraryExtensions.RunAll(ext_darktodark);
             if (deadflag) rtrue;
         }
         location = thedark;
@@ -2118,7 +2126,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         if (location.initial) PrintOrRun(location, initial);
         if (location == thedark) { lastdesc = thedark; return; }
         descin = location;
-        NewRoom();
+        if(NewRoom()==0) LibraryExtensions.RunAll(ext_newroom);
         lastdesc = descin;
     }
 ];
@@ -2215,7 +2223,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         }
     }
 
-    LookRoutine();
+    if(LookRoutine()==0) LibraryExtensions.RunAll(ext_lookroutine);
     ScoreArrival();
     action = ##Look;
     AfterRoutines();

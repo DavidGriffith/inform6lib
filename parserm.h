@@ -1020,6 +1020,7 @@ Object  InformParser "(Inform Parser)"
                 }
         }
         ix = HandleGlkEvent(gg_event, 1, gg_arguments);
+        if (ix == 0) ix = LibraryExtensions.RunWhile(ext_handleglkevent, 0, gg_event, 1, gg_arguments);
         if (ix == 2) {
             res = gg_arguments-->0;
             done = true;
@@ -1060,6 +1061,7 @@ Object  InformParser "(Inform Parser)"
     while (~~done) {
         glk($00C0, gg_event); ! select
         ix = HandleGlkEvent(gg_event, 1, gg_arguments);
+        if (ix == 0) ix = LibraryExtensions.RunWhile(ext_handleglkevent, 0, gg_event, 1, gg_arguments);
         if (ix == 2) {
             key = gg_arguments-->0;
             done = true;
@@ -1110,6 +1112,7 @@ Object  InformParser "(Inform Parser)"
             }
         }
         ix = HandleGlkEvent(gg_event, 0, a_buffer);
+        if (ix == 0) ix = LibraryExtensions.RunWhile(ext_handleglkevent, 0, gg_event, 0, a_buffer);
         if (ix == 2) done = true;
         else if (ix == -1) done = false;
     }
@@ -1150,7 +1153,8 @@ Object  InformParser "(Inform Parser)"
     ! Print the prompt, and read in the words and dictionary addresses
 
     L__M(##Prompt);
-    AfterPrompt();
+    if (AfterPrompt() == 0)
+        LibraryExtensions.RunAll(ext_afterprompt);
     #IfV5;
     DrawStatusLine();
     #Endif; ! V5
@@ -1328,7 +1332,7 @@ Object  InformParser "(Inform Parser)"
 ! ----------------------------------------------------------------------------
 
 [ Parser__parse  results   syntax line num_lines line_address i j k
-                           token l m line_etype;
+                           token l m line_etype vw;
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -1374,7 +1378,16 @@ Object  InformParser "(Inform Parser)"
     #Endif; ! V5
     #Endif; ! LanguageToInformese
 
-    BeforeParsing();
+    if (BeforeParsing() == 0) {
+        ! Set the "between calls" functionality to
+        LibraryExtensions.SavedWN = wn;
+        ! restore wn each pass
+        LibraryExtensions.BetweenCalls = LibraryExtensions.RestoreWN;
+        LibraryExtensions.RunWhile(ext_beforeparsing, false);
+        ! Turn off the "between calls" functionality
+        LibraryExtensions.BetweenCalls = 0;
+    }
+
     num_words = NumberWords();
 
     k=0;
@@ -1555,7 +1568,9 @@ Object  InformParser "(Inform Parser)"
                 i=NextWord();
                 if (i == comma_word) jump Conversation;
             }
-            verb_word = UnknownVerb(verb_word);
+            vw = verb_word;
+            verb_word = UnknownVerb(vw);
+            if (verb_word == 0) verb_word = LibraryExtensions.RunWhile(ext_unknownverb, 0, vw);
             if (verb_word ~= 0) jump VerbAccepted;
         }
         best_etype = VERB_PE;
@@ -2124,10 +2139,12 @@ Object  InformParser "(Inform Parser)"
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ! If the player was the actor (eg, in "take dfghh") the error must be printed,
-    ! and fresh input called for.  In three cases the oops word must be jiggled.
+    ! If the player was the actor (eg, in "take dfghh") the error must be
+    ! printed, and fresh input called for.  In three cases the oops word
+    ! must be jiggled.
 
     if (ParserError(etype) ~= 0) jump ReType;
+    if (LibraryExtensions.RunWhile(ext_parsererror, 0, etype) ~= 0) jump ReType;
     pronoun_word = pronoun__word; pronoun_obj = pronoun__obj;
 
     if (etype == STUCK_PE) {    L__M(##Miscellany, 27); oops_from = 1; }
@@ -3311,7 +3328,10 @@ Constant SCORE__DIVISOR     = 20;
             #Ifdef NO_TAKE_ALL;
             if (take_all_rule == 2 && match_length == 0) flag = 0;
             #Endif; ! NO_TAKE_ALL
-            switch (ChooseObjects(j, flag)) {
+            n=ChooseObjects(j, flag);
+            if (n == 0)
+                n = LibraryExtensions.RunWhile(ext_chooseobjects, 0, j, flag);
+            switch (n) {
               2: flag = 0;  ! forcing rejection
               1: flag = 1;  ! forcing acceptance
              !0:            ! going with parser's decision
@@ -3526,15 +3546,17 @@ Constant SCORE__DIVISOR     = 20;
                     if (its_owner ~= compass)
                         if (take_all_rule && its_owner &&
                             its_owner has static or scenery &&
-						   (its_owner has supporter ||
-						   (its_owner has container && its_owner has open)))
+                              (its_owner has supporter ||
+                              (its_owner has container && its_owner has open)))
                             its_score = its_score + l_s;
-                        else
+                    else
                             its_score = its_score + SCORE__NOTCOMPASS;
                     #Endif; ! TRADITIONAL_TAKE_ALL
                 }
 
-            its_score = its_score + SCORE__CHOOSEOBJ * ChooseObjects(obj, 2);
+            j = ChooseObjects(obj, 2);
+            if (j == 0) j=LibraryExtensions.RunAll(ext_chooseobjects, 0, obj, 2); 
+            its_score = its_score + SCORE__CHOOSEOBJ * j;
 
             if (obj hasnt scenery) its_score = its_score + SCORE__NOTSCENERY;
             if (obj ~= actor) its_score = its_score + SCORE__NOTACTOR;
@@ -3690,8 +3712,8 @@ Constant SCORE__DIVISOR     = 20;
     #Ifnot;
     if (from == 0) {
         i = verb_word;
-        if (LanguageVerb(i) == 0)
-            if (PrintVerb(i) == 0) print (address) i;
+        if (LanguageVerb(i) == 0 && PrintVerb(i) == 0 && LibraryExtensions.RunWhile(ext_printverb, 0, i) == 0)  
+            print (address) i;
         from++; spacing_flag = true;
     }
 
@@ -3855,7 +3877,7 @@ Constant SCORE__DIVISOR     = 20;
 !  but does not look at anything the player has typed.
 ! ----------------------------------------------------------------------------
 
-[ SearchScope domain1 domain2 context i;
+[ SearchScope domain1 domain2 context i is;
     i = 0;
     !  Everything is in scope to the debugging commands
 
@@ -3896,7 +3918,11 @@ Constant SCORE__DIVISOR     = 20;
         ! which may circumvent the usual routines altogether
         ! if they return true:
 
-        if (actor == domain1 or domain2 && InScope(actor) ~= 0) rtrue;
+        if (actor == domain1 or domain2) {
+            is=InScope(actor);
+            if (is == 0) is = LibraryExtensions.RunWhile(ext_inscope, 0, actor);
+            if (is ~= 0) rtrue;
+        }
 
         if (domain1 ~= 0 && domain1 has supporter or container)
             ScopeWithin_O(domain1, domain1, context);
@@ -4216,6 +4242,14 @@ Constant SCORE__DIVISOR     = 20;
 
     j=--wn;
     threshold = ParseNoun(obj);
+    if (threshold == -1) {
+        ! Set the "between calls" functionality to restore wn each pass
+        LibraryExtensions.SavedWN = wn;
+        LibraryExtensions.BetweenCalls = LibraryExtensions.RestoreWN;
+        threshold = LibraryExtensions.RunWhile(ext_parsenoun,-1,obj);
+        ! Turn off the "between calls" functionality
+        LibraryExtensions.BetweenCalls = 0;
+    }
     #Ifdef DEBUG;
     if (threshold >= 0 && parser_trace >= 5) print "    ParseNoun returned ", threshold, "^";
     #Endif; ! DEBUG
@@ -4455,6 +4489,7 @@ Constant SCORE__DIVISOR     = 20;
     num = WordAddress(wordnum); len = WordLength(wordnum);
 
     tot=ParseNumber(num, len);
+    if (tot == 0) tot = LibraryExtensions.RunWhile(ext_parsenumber, 0, num, len);
     if (tot ~= 0) return tot;
 
     if (len >= 4) mul=1000;
@@ -4829,7 +4864,10 @@ Object  InformLibrary "(Inform Library)"
 
             } ! end of while()
 
-            if (deadflag ~= 2) AfterLife();
+            if (deadflag ~= 2) {
+                if (AfterLife() == 0)
+                    LibraryExtensions.RunAll(ext_afterlife);
+            }
             if (deadflag == 0) jump very__late__error;
             GameEpilogue();
         ], ! end of 'play' property
@@ -4841,7 +4879,8 @@ Object  InformLibrary "(Inform Library)"
             if (deadflag) return;
             RunEachTurnProperties();
             if (deadflag) return;
-            TimePasses();
+            if (TimePasses() == 0)
+                LibraryExtensions.RunAll(ext_timepasses);
             if (deadflag) return;
             AdjustLight();
             if (deadflag) return;
@@ -4958,7 +4997,10 @@ Object  InformLibrary "(Inform Library)"
     switch (deadflag) {
       1:        L__M(##Miscellany, 3);
       2:        L__M(##Miscellany, 4);
-      default:  print " "; DeathMessage(); print " ";
+      default:  print " ";
+            if (DeathMessage() == 0)
+                LibraryExtensions.RunAll(ext_deathmessage);
+            print " ";
     }
     print "***";
     #Ifdef TARGET_ZCODE;
@@ -5046,7 +5088,7 @@ Object  InformLibrary "(Inform Library)"
 
 #Endif; ! TARGET_
 
-[ AfterGameOver i;
+[ AfterGameOver i amus_ret;
 
   .RRQPL;
 
@@ -5085,8 +5127,13 @@ Object  InformLibrary "(Inform Library)"
         new_line; FullScoreSub();
         jump RRQPL;
     }
-    if (deadflag == 2 && i == AMUSING__WD && AMUSING_PROVIDED==0) {
-        new_line; Amusing();
+    if (deadflag == 2 && i == AMUSING__WD) {
+        amus_ret = 0;
+        if (AMUSING_PROVIDED == 0) {
+            new_line;
+            amus_ret = Amusing();
+        }
+        if (amus_ret == 0) LibraryExtensions.RunAll(ext_amusing);
         jump RRQPL;
     }
     #IfV5;
@@ -5160,8 +5207,10 @@ Object  InformLibrary "(Inform Library)"
     parser_one = x; scope_reason = y; actor = a; actors_location = al;
 ];
 
-[ BeforeRoutines;
-    if (GamePreRoutine() ~= 0) rtrue;
+[ BeforeRoutines rv;
+    if (GamePreRoutine()) rtrue;
+    if (rv == 0) rv=LibraryExtensions.RunWhile(ext_gamepreroutine, 0);
+    if (rv ~= 0) rtrue;
     if (RunRoutines(player, orders) ~= 0) rtrue;
     scope_reason = REACT_BEFORE_REASON; parser_one=0;
     SearchScope(ScopeCeiling(player), player, 0);
@@ -5172,13 +5221,15 @@ Object  InformLibrary "(Inform Library)"
     rfalse;
 ];
 
-[ AfterRoutines;
+[ AfterRoutines rv;
     scope_reason = REACT_AFTER_REASON; parser_one = 0;
     SearchScope(ScopeCeiling(player), player, 0); scope_reason = PARSING_REASON;
     if (parser_one ~= 0) rtrue;
     if (location ~= 0 && RunRoutines(location, after) ~= 0) rtrue;
     if (inp1 > 1 && RunRoutines(inp1, after) ~= 0) rtrue;
-    return GamePostRoutine();
+    rv = GamePostRoutine();
+    if (rv == 0) rv=LibraryExtensions.RunWhile(ext_gamepostroutine, 0); 
+    return rv;
 ];
 
 [ RunLife a j;
@@ -6055,6 +6106,7 @@ Object  InformLibrary "(Inform Library)"
     if (gg_quotewin == 0) {
         gg_arguments-->0 = lines;
         ix = InitGlkWindow(GG_QUOTEWIN_ROCK);
+        if (ix == 0) ix = LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, GG_QUOTEWIN_ROCK);
         if (ix == 0)
             gg_quotewin = glk($0023, gg_mainwin, $12, lines, 3,
                 GG_QUOTEWIN_ROCK); ! window_open
@@ -6130,7 +6182,7 @@ Object  InformLibrary "(Inform Library)"
     ! have just typed "restart".
 
     GGRecoverObjects();
-
+    if (res == 0) res = LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, 0);
     res = InitGlkWindow(0);
     if (res ~= 0) return;
 
@@ -6139,6 +6191,7 @@ Object  InformLibrary "(Inform Library)"
     if (gg_mainwin == 0) {
         ! Open the story window.
         res = InitGlkWindow(GG_MAINWIN_ROCK);
+        if (res == 0) res = LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, GG_MAINWIN_ROCK);
         if (res == 0)
             gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
         if (gg_mainwin == 0) {
@@ -6153,6 +6206,7 @@ Object  InformLibrary "(Inform Library)"
 
     if (gg_statuswin == 0) {
         res = InitGlkWindow(GG_STATUSWIN_ROCK);
+        if (res == 0) res = LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, GG_STATUSWIN_ROCK);
         if (res == 0) {
             gg_statuswin_cursize = gg_statuswin_size;
             gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize,
@@ -6164,7 +6218,7 @@ Object  InformLibrary "(Inform Library)"
 
     glk($002F, gg_mainwin); ! set_window
 
-    InitGlkWindow(1);
+    if (InitGlkWindow(1) == 0) LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, 1);
 ];
 
 [ GGRecoverObjects id;
@@ -6184,7 +6238,7 @@ Object  InformLibrary "(Inform Library)"
     gg_command_reading = false;
     #Endif; ! DEBUG
     ! Also tell the game to clear its object references.
-    IdentifyGlkObject(0);
+    if (IdentifyGlkObject(0)==0) LibraryExtensions.RunWhile(ext_identifyglkobject, 0, 0);
 
     id = glk($0040, 0, gg_arguments); ! stream_iterate
     while (id) {
@@ -6197,7 +6251,8 @@ Object  InformLibrary "(Inform Library)"
             GG_COMMANDRSTR_ROCK: gg_commandstr = id;
                                  gg_command_reading = true;
             #Endif; ! DEBUG
-            default: IdentifyGlkObject(1, 1, id, gg_arguments-->0);
+            default: if (IdentifyGlkObject(1, 1, id, gg_arguments-->0) == 0)
+                         LibraryExtensions.RunWhile(ext_identifyglkobject, 0, 1, 1, id, gg_arguments-->0);
         }
         id = glk($0040, id, gg_arguments); ! stream_iterate
     }
@@ -6208,7 +6263,8 @@ Object  InformLibrary "(Inform Library)"
             GG_MAINWIN_ROCK: gg_mainwin = id;
             GG_STATUSWIN_ROCK: gg_statuswin = id;
             GG_QUOTEWIN_ROCK: gg_quotewin = id;
-            default: IdentifyGlkObject(1, 0, id, gg_arguments-->0);
+            default: if (IdentifyGlkObject(1, 0, id, gg_arguments-->0) == 0)
+                        LibraryExtensions.RunWhile(ext_identifyglkobject, 0, 1, 0, id, gg_arguments-->0);
         }
         id = glk($0020, id, gg_arguments); ! window_iterate
     }
@@ -6217,13 +6273,15 @@ Object  InformLibrary "(Inform Library)"
     while (id) {
         switch (gg_arguments-->0) {
             GG_SCRIPTFREF_ROCK: gg_scriptfref = id;
-            default: IdentifyGlkObject(1, 2, id, gg_arguments-->0);
+            default: if (IdentifyGlkObject(1, 2, id, gg_arguments-->0) == 0)
+                        LibraryExtensions.RunWhile(ext_identifyglkobject, 0, 1, 2, id, gg_arguments-->0);
         }
         id = glk($0064, id, gg_arguments); ! fileref_iterate
     }
 
     ! Tell the game to tie up any loose ends.
-    IdentifyGlkObject(2);
+    if (IdentifyGlkObject(2)==0)
+        LibraryExtensions.RunWhile(ext_identifyglkobject, 0, 2);
 ];
 
 ! This somewhat obfuscated function will print anything.
@@ -6733,6 +6791,7 @@ Object  LibraryExtensions "(Library Extensions)"
                 if (obj provides prop && obj.prop ofclass Routine) {
                     rval = obj.prop(a1, a2, a3);
                     if (rval > max) max = rval;
+                    if (self.BetweenCalls~=0) self.BetweenCalls();
                 }
             return max;
         ],
@@ -6742,6 +6801,7 @@ Object  LibraryExtensions "(Library Extensions)"
                 if (obj provides prop && obj.prop ofclass Routine) {
                     rval = obj.prop(a1, a2, a3);
                     if (rval == exitval) return rval;
+                    if (self.BetweenCalls~=0) self.BetweenCalls();
                 }
             return ~~exitval;
         ],
@@ -6751,11 +6811,46 @@ Object  LibraryExtensions "(Library Extensions)"
                 if (obj provides prop && obj.prop ofclass Routine) {
                     rval = obj.prop(a1, a2, a3);
                     if (rval ~= exitval) return rval;
+                    if (self.BetweenCalls~=0) self.BetweenCalls();
                 }
             return exitval;
         ],
+        ! can be set to a function (e.g.: RestoreWN) meant for execution
+        ! after non-terminating calls to extension objects
+        ! (via RunUntil/While/All)
+        BetweenCalls 0,
+        SavedWN 0,
+        RestoreWN[;
+              wn=self.SavedWN;
+        ],
+#Ifdef TARGET_GLULX;
+        ext_initglkwindow,
+        ext_identifyglkobject,
+        ext_handleglkevent,
+#Endif;
         ext_initialise 0,
         ext_messages 0,
+        ext_afterlife 0,
+        ext_afterprompt 0,
+        ext_amusing 0,
+        ext_beforeparsing 0,
+        ext_darktodark 0,
+        ext_deathmessage 0,
+        ext_lookroutine 0,
+        ext_newroom 0,
+        ext_printrank 0,
+        ext_printtaskname 0,
+        ext_timepasses 0,
+        ext_chooseobjects 0,
+        ext_gamepostroutine 0,
+        ext_gamepreroutine 0,
+        ext_parsererror 0,
+        ext_printverb 0,
+        ext_inscope 0,
+        ext_parsenoun 0,
+        ext_parsenumber 0,
+        ext_unknownverb 0,
+        ext_objectdoesnotfit 0,
   has   proper;
 
 ! ==============================================================================
