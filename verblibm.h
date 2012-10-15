@@ -1281,8 +1281,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     #Ifnot;
     if (deadflag) new_line;
     L__M(##Score, 1);
-    if(PrintRank()==0)
-        LibraryExtensions.RunAll(ext_printrank);
+    if(PrintRank() == false) LibraryExtensions.RunAll(ext_printrank);
     #Endif; ! NO_SCORE
 ];
 
@@ -1320,7 +1319,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     for (i=0 : i<NUMBER_TASKS : i++)
         if (task_done->i == 1) {
             PANum(TaskScore(i));
-            if(PrintTaskName(i)==0)
+            if(PrintTaskName(i) == false)
                 LibraryExtensions.RunAll(ext_printtaskname,i);
         }
     if (things_score) {
@@ -1530,8 +1529,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         k = 0; objectloop (j in player) if (j hasnt worn) k++;
         if (k >= ValueOrRun(player, capacity) && SackIsFull()) return L__M(##Take, 12);
     }
-    if (ObjectDoesNotFit(item, actor) == 0) 
-        if (LibraryExtensions.RunWhile(ext_objectdoesnotfit, 0, item, actor)) return;
+    if (ObjectDoesNotFit(item, actor) ||
+        LibraryExtensions.RunWhile(ext_objectdoesnotfit, false, item, actor)) return;
 
     ! Transfer the item.
 
@@ -1726,8 +1725,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     if (children(second) >= ValueOrRun(second, capacity))
         return L__M(##PutOn, 6, second);
-    if (ObjectDoesNotFit(noun, second)== 0)
-        if (LibraryExtensions.RunWhile(ext_objectdoesnotfit, 0, noun, second)) return;
+    if (ObjectDoesNotFit(noun, second) ||
+        LibraryExtensions.RunWhile(ext_objectdoesnotfit, false, noun, second)) return;
 
     move noun to second;
 
@@ -1763,10 +1762,9 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     if (children(second) >= ValueOrRun(second, capacity))
         return L__M(##Insert, 7, second);
-    if (ObjectDoesNotFit(noun, second)== 0)
-        if (LibraryExtensions.RunWhile(ext_objectdoesnotfit, 0, noun, second)) return;
+    if (ObjectDoesNotFit(noun, second) ||
+        LibraryExtensions.RunWhile(ext_objectdoesnotfit, false, noun, second)) return;
 
-    if (AfterRoutines() == 1) rtrue;
     move noun to second;
 
     if (second ~= ancestor) {
@@ -1935,7 +1933,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ GoInSub; <<Go in_obj, actor>>; ];
 
-[ GoSub i j k df movewith thedir next_loc;
+[ GoSub i j k movewith thedir next_loc;
 
     ! first, check if any PushDir object is touchable
     if (second && second notin Compass && ObjectIsUntouchable(second)) return;
@@ -1998,7 +1996,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     else {
         lightflag = false;
         if (k == thedark) {
-            if(DarkToDark() == 0) ! From real_location To location
+            if(DarkToDark() == false) ! From real_location To location
                 LibraryExtensions.RunAll(ext_darktodark);
             if (deadflag) rtrue;
         }
@@ -2126,7 +2124,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         if (location.initial) PrintOrRun(location, initial);
         if (location == thedark) { lastdesc = thedark; return; }
         descin = location;
-        if(NewRoom()==0) LibraryExtensions.RunAll(ext_newroom);
+        if(NewRoom() == false) LibraryExtensions.RunAll(ext_newroom);
         lastdesc = descin;
     }
 ];
@@ -2223,7 +2221,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         }
     }
 
-    if(LookRoutine()==0) LibraryExtensions.RunAll(ext_lookroutine);
+    if(LookRoutine() == false) LibraryExtensions.RunAll(ext_lookroutine);
     ScoreArrival();
     action = ##Look;
     AfterRoutines();
@@ -2772,8 +2770,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     lm_o = x1;
     lm_s = x2;
     action = sw__var;
-    if (RunRoutines(LibraryMessages, before))        { action = s; rfalse; }
-    if (LibraryExtensions.RunWhile(ext_messages, 0)) { action = s; rfalse; }
+    if (RunRoutines(LibraryMessages, before))             { action = s; rfalse; }
+    if (LibraryExtensions.RunWhile(ext_messages, false )) { action = s; rfalse; }
     action = s;
     LanguageLM(n, x1, x2);
 ];
