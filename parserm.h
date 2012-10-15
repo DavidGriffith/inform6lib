@@ -5266,6 +5266,7 @@ Object  InformLibrary "(Inform Library)"
 [ ValueOrRun obj prop;
   !### this is entirely unlikely to work. Does anyone care? (AP)
   ! Well, it's certainly used three times in verblibm.h (RF)
+  ! Update: now not used (RF)
     if (obj.prop < 256) return obj.prop;
     return RunRoutines(obj, prop);
 ];
@@ -6810,33 +6811,40 @@ Object  LibraryExtensions "(Library Extensions)"
         RestoreWN [; wn = self.ext_number_1; ],
 
         ! Special interception points
-        ext_messages            0,  ! Called if LibraryMessages.before() returns false
-                                    ! Runs while extensions return false
+        ext_messages            0,  ! Called if LibraryMessages.before()
+                                    !    returns false
+                                    ! Extensions run while they return false
 
         ! Cross-platform entry points
-        !                             Called:           Runs:
-        ext_afterlife           0,  ! if EP undefined   for all extensions
-        ext_afterprompt         0,  ! if EP undefined   for all extensions
-        ext_amusing             0,  ! if EP undefined   for all extensions
-        ext_beforeparsing       0,  ! if EP undefined   while extensions return false
-        ext_chooseobjects       0,  ! if EP undefined   while extensions return false
-        ext_darktodark          0,  ! if EP undefined   for all extensions
-        ext_deathmessage        0,  ! if EP undefined   for all extensions
-        ext_gamepostroutine     0,  ! if EP undefined   while extensions return false
-        ext_gamepreroutine      0,  ! if EP undefined   while extensions return false
-        ext_initialise          0,  ! always            for all extensions
-        ext_inscope             0,  ! if EP undefined   while extensions return false
-        ext_lookroutine         0,  ! if EP undefined   for all extensions
-        ext_newroom             0,  ! if EP undefined   for all extensions
-        ext_objectdoesnotfit    0,  ! if EP undefined   while extensions return false
-        ext_parsenoun           0,  ! if EP undefined   while extensions return -1
-        ext_parsenumber         0,  ! if EP undefined   while extensions return false
-        ext_parsererror         0,  ! if EP undefined   while extensions return false
-        ext_printrank           0,  ! if EP undefined   for all extensions
-        ext_printtaskname       0,  ! if EP undefined   for all extensions
-        ext_printverb           0,  ! if EP undefined   while extensions return false
-        ext_timepasses          0,  ! if EP undefined   for all extensions
-        ext_unknownverb         0,  ! if EP undefined   while extensions return false
+        !                             Called/Runs
+        ext_afterlife           0,  ! [C2/R1]
+        ext_afterprompt         0,  ! [C2/R1]
+        ext_amusing             0,  ! [C2/R1]
+        ext_beforeparsing       0,  ! [C2/R2]
+        ext_chooseobjects       0,  ! [C2/R2]
+        ext_darktodark          0,  ! [C2/R1]
+        ext_deathmessage        0,  ! [C2/R1]
+        ext_gamepostroutine     0,  ! [C2/R2]
+        ext_gamepreroutine      0,  ! [C2/R2]
+        ext_initialise          0,  ! [C1/R1]
+        ext_inscope             0,  ! [C2/R2]
+        ext_lookroutine         0,  ! [C2/R1]
+        ext_newroom             0,  ! [C2/R1]
+        ext_objectdoesnotfit    0,  ! [C2/R2]
+        ext_parsenoun           0,  ! [C3/R3]
+        ext_parsenumber         0,  ! [C2/R2]
+        ext_parsererror         0,  ! [C2/R2]
+        ext_printrank           0,  ! [C2/R1]
+        ext_printtaskname       0,  ! [C2/R1]
+        ext_printverb           0,  ! [C2/R2]
+        ext_timepasses          0,  ! [C2/R1]
+        ext_unknownverb         0,  ! [C2/R2]
+        !                             [C1] = Called in all cases
+        !                             [C2] = Called if EP is undefined, or returns false
+        !                             [C3] = called if EP is undefined, or returns -1
+        !                             [R1] = All extensions run
+        !                             [R2] = Extensions run while they return false
+        !                             [R3] = Extensions run while they return -1
 
 !FIXME Glulx compilation temporarily broken while Zarf looks at M1029
 !        #Ifdef TARGET_GLULX;
