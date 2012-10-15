@@ -110,7 +110,7 @@ Fake_Action ListMiscellany;
 Fake_Action Miscellany;
 Fake_Action Prompt;
 Fake_Action NotUnderstood;
-Fake_Action GoneFrom;
+Fake_Action Going;
 
 #Ifdef NO_PLACES;
 Fake_Action Places;

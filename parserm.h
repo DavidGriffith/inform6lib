@@ -167,6 +167,7 @@ Global deadflag;                    ! Normally 0, or false; 1 for dead
 Global lightflag = true;            ! Is there currently light to see by?
 Global real_location;               ! When in darkness, location = thedark
                                     ! and this holds the real location
+Global prev_location;               ! The previous value of real_location
 Global visibility_ceiling;          ! Highest object in tree visible from the
                                     ! player's point of view (usually the room,
                                     ! sometimes darkness, sometimes a closed

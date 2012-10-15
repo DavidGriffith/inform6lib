@@ -985,11 +985,11 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ! ----------------------------------------------------------------------------
 
 [ PlayerTo newplace flag;
+    NoteDeparture();
     move player to newplace;
     while (parent(newplace)) newplace = parent(newplace);
-    location = newplace;
-    real_location = location; MoveFloatingObjects();
-    AdjustLight(1);
+    location = real_location = newplace;
+    MoveFloatingObjects(); AdjustLight(1);
     switch (flag) {
       0:    <Look>;
       1:    NoteArrival(); ScoreArrival();
@@ -1928,12 +1928,11 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ GoInSub; <<Go in_obj, actor>>; ];
 
-[ GoSub i j k df movewith thedir old_loc;
+[ GoSub i j k df movewith thedir next_loc;
 
     ! first, check if any PushDir object is touchable
     if (second && second notin Compass && ObjectIsUntouchable(second)) return;
 
-    old_loc = location;
     movewith = 0;
     i = parent(actor);
     if ((location ~= thedark && i ~= location) || (location == thedark && i ~= real_location)) {
@@ -1953,48 +1952,53 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     thedir = noun.door_dir;
     if (metaclass(thedir) == Routine) thedir = RunRoutines(noun, door_dir);
 
-    j = i.thedir; k = metaclass(j);
-    if (k == String) { print (string) j; new_line; rfalse; }
+    next_loc = i.thedir; k = metaclass(next_loc);
+    if (k == String) { print (string) next_loc; new_line; rfalse; }
     if (k == Routine) {
-        j = RunRoutines(i, thedir);
-        if (j == 1) rtrue;
+        next_loc = RunRoutines(i, thedir);
+        if (next_loc == 1) rtrue;
     }
 
-    if (k == nothing || j == 0) {
+    if (k == nothing || next_loc == 0) {
         if (i.cant_go ~= 0 or CANTGO__TX) PrintOrRun(i, cant_go);
-        else L__M(##Go, 2);
+        else                              L__M(##Go, 2);
         rfalse;
     }
-
-    if (j has door) {
-        if (j has concealed) return L__M(##Go, 2);
-        if (j hasnt open && ImplicitOpen(j)) {
-            if (noun == u_obj) return L__M(##Go, 3, j);
-            if (noun == d_obj) return L__M(##Go, 4, j);
-            return L__M(##Go, 5, j);
+    if (next_loc has door) {
+        if (next_loc has concealed) return L__M(##Go, 2);
+        if (next_loc hasnt open && ImplicitOpen(next_loc)) {
+            if (noun == u_obj) return L__M(##Go, 3, next_loc);
+            if (noun == d_obj) return L__M(##Go, 4, next_loc);
+            return L__M(##Go, 5, next_loc);
         }
-        k = RunRoutines(j, door_to);
-        if (k == 0) return L__M(##Go, 6, j);
+        k = RunRoutines(next_loc, door_to);
+        if (k == 0) return L__M(##Go, 6, next_loc);
         if (k == 1) rtrue;
-        j = k;
+        next_loc = k;
     }
-    if (movewith == 0) move actor to j; else move movewith to j;
+
+    action = ##Going;
+    if (RunRoutines(next_loc, before)) { action = ##Go; return; }
+    action = ##Go;
+
+    if (movewith == 0) move actor to next_loc; else move movewith to next_loc;
     if (actor ~= player) return L__M(##Go, 7);
 
-    location = j; MoveFloatingObjects();
-    df = OffersLight(j);
-    if (df) { location = j; real_location = j; lightflag = 1; }
+    k = location; location = next_loc;
+    MoveFloatingObjects();
+    if (OffersLight(location))
+        lightflag = true;
     else {
-        if (old_loc == thedark) {
-            DarkToDark();
+        lightflag = false;
+        if (k == thedark) {
+            DarkToDark();   ! From real_location To location
             if (deadflag) rtrue;
         }
-        real_location = j;
-        location = thedark; lightflag = 0;
+        location = thedark;
     }
-
-    action = ##GoneFrom;
-    if (RunRoutines(old_loc, after)) { action = ##Go; return; }
+    NoteDeparture(); real_location = next_loc;
+    action = ##Going;
+    if (RunRoutines(prev_location, after)) { action = ##Go; return; }
     action = ##Go;
     if (AfterRoutines() || keep_silent) return;
     LookSub(1);
@@ -2117,6 +2121,10 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         NewRoom();
         lastdesc = descin;
     }
+];
+
+[ NoteDeparture;
+    prev_location = real_location;
 ];
 
 [ ScoreArrival;
@@ -2670,7 +2678,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 
 [ GotoSub;
-    if (~~(noun ofclass Object) || (parent(noun))) "[Not a safe place.]";
+    if ((~~noun ofclass Object) || parent(noun)) "[Not a safe place.]";
     PlayerTo(noun);
 ];
 

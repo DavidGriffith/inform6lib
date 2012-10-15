@@ -42,6 +42,7 @@ Import global deadflag;
 
 Import global lightflag;
 Import global real_location;
+Import global prev_location;
 Import global visibility_ceiling;
 Import global lookmode;
 Import global print_player_flag;
