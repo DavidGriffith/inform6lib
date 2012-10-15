@@ -1690,7 +1690,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     i = parent(noun);
     if (i && i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, noun);
     if (i ~= second)   return L__M(##Remove, 2, noun);
-    if (i has animate) return L__M(##Take, 6, i);
+    if (i has animate) return L__M(##Take, 6, i, noun);
 
     if (AttemptToTakeObject(noun)) rtrue;
 
