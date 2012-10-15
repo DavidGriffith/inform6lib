@@ -1526,6 +1526,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         k = 0; objectloop (j in player) if (j hasnt worn) k++;
         if (k >= ValueOrRun(player, capacity) && SackIsFull()) return L__M(##Take, 12);
     }
+    if (ObjectDoesNotFit(item, actor)) return;
 
     ! Transfer the item.
 
