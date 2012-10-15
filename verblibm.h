@@ -1177,6 +1177,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     if (gg_commandstr) {
         if (gg_command_reading) return L__M(##CommandsOn, 2);
         else                    return L__M(##CommandsOn, 3);
+    }
     ! fileref_create_by_prompt
     fref = glk($0062, $103, $01, 0);
     if (fref == 0) return L__M(##CommandsOn, 4);
