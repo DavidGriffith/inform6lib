@@ -1345,7 +1345,7 @@ Object  InformParser "(Inform Parser)"
         rtrue;
     }
 
-    if (held_back_mode == 1) {
+    if (held_back_mode ~= 0) {
         held_back_mode = 0;
         Tokenise__(buffer, parse);
         jump ReParse;
@@ -2858,7 +2858,7 @@ Constant UNLIT_BIT  =  32;
 ! ----------------------------------------------------------------------------
 
 [ NounDomain domain1 domain2 context    first_word i j k l
-                                        answer_words marker;
+                                        answer_words;
     #Ifdef DEBUG;
     if (parser_trace >= 4) {
         print "   [NounDomain called at word ", wn, "^";
@@ -2959,96 +2959,7 @@ Constant UNLIT_BIT  =  32;
     ! from - instead we go and ask a more suitable question...
 
     if (match_from > num_words) jump Incomplete;
-
-    ! Now we print up the question, using the equivalence classes as worked
-    ! out by Adjudicate() so as not to repeat ourselves on plural objects...
-
-    asking_player = true;
-    if (context==CREATURE_TOKEN) L__M(##Miscellany, 45, actor);
-    else                         L__M(##Miscellany, 46, actor);
-
-    j = number_of_classes; marker = 0;
-    for (i=1 : i<=number_of_classes : i++) {
-        while (((match_classes-->marker) ~= i) && ((match_classes-->marker) ~= -i)) marker++;
-        k = match_list-->marker;
-
-        if (match_classes-->marker > 0) print (the) k; else print (a) k;
-
-        if (i < j-1)  print (string) COMMA__TX;
-        if (i == j-1) print (SerialComma) j, (string) OR__TX;
-    }
-    L__M(##Miscellany, 57);
-
-    ! ...and get an answer:
-
-  .WhichOne;
-    #Ifdef TARGET_ZCODE;
-    for (i=WORDSIZE : i<INPUT_BUFFER_LEN : i++) buffer2->i = ' ';
-    #Endif; ! TARGET_ZCODE
-    answer_words = Keyboard(buffer2, parse2);
-
-    ! Conveniently, parse2-->1 is the first word in both ZCODE and GLULX.
-    first_word = (parse2-->1);
-
-    ! Take care of "all", because that does something too clever here to do
-    ! later on:
-
-    if (first_word == ALL1__WD or ALL2__WD or ALL3__WD or ALL4__WD or ALL5__WD) {
-        if (context == MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN or MULTIINSIDE_TOKEN) {
-            l = multiple_object-->0;
-            for (i=0 : i<number_matched && l+i<63 : i++) {
-                k = match_list-->i;
-                multiple_object-->(i+1+l) = k;
-            }
-            multiple_object-->0 = i+l;
-            rtrue;
-        }
-        L__M(##Miscellany, 47);
-        jump WhichOne;
-    }
-
-    ! If the first word of the reply can be interpreted as a verb, then
-    ! assume that the player has ignored the question and given a new
-    ! command altogether.
-    ! (This is one time when it's convenient that the directions are
-    ! not themselves verbs - thus, "north" as a reply to "Which, the north
-    ! or south door" is not treated as a fresh command but as an answer.)
-
-    #Ifdef LanguageIsVerb;
-    if (first_word == 0) {
-        j = wn; first_word = LanguageIsVerb(buffer2, parse2, 1); wn = j;
-        asking_player = false;
-    }
-    #Endif; ! LanguageIsVerb
-    if (first_word ~= 0) {
-        j = first_word->#dict_par1;
-        if ((j & DICT_VERB) && ~~LanguageVerbMayBeName(first_word)) {
-            CopyBuffer(buffer, buffer2);
-            asking_player = false;
-            return REPARSE_CODE;
-        }
-    }
-
-    ! Now we insert the answer into the original typed command, as
-    ! words additionally describing the same object
-    ! (eg, > take red button
-    !      Which one, ...
-    !      > music
-    ! becomes "take music red button".  The parser will thus have three
-    ! words to work from next time, not two.)
-
-    k = WordAddress(match_from) - buffer;
-    l = GetKeyBufLength(buffer2) +1;
-    for (j=buffer + INPUT_BUFFER_LEN - 1 : j>=buffer+k+l : j--) j->0 = j->(-l);
-    for (i=0 : i<l : i++) buffer->(k+i) = buffer2->(WORDSIZE+i);
-    buffer->(k+l-1) = ' ';
-    SetKeyBufLength(GetKeyBufLength() + l);
-
-    ! Having reconstructed the input, we warn the parser accordingly
-    ! and get out.
-
-    asking_player = false;
-    return REPARSE_CODE;
+    return AskPlayer(context);
 
     ! Now we come to the question asked when the input has run out
     ! and can't easily be guessed (eg, the player typed "take" and there
@@ -3166,6 +3077,98 @@ Constant UNLIT_BIT  =  32;
     return REPARSE_CODE;
 
 ]; ! end of NounDomain
+
+
+[ AskPlayer context  i j k l first_word answer_words marker;
+    ! Now we print up the question, using the equivalence classes as worked
+    ! out by Adjudicate() so as not to repeat ourselves on plural objects...
+
+    asking_player = true;
+    if (context==CREATURE_TOKEN) L__M(##Miscellany, 45);
+    else                         L__M(##Miscellany, 46);
+
+    j = number_of_classes; marker = 0;
+    for (i=1 : i<=number_of_classes : i++) {
+        while (((match_classes-->marker) ~= i) && ((match_classes-->marker) ~= -i)) marker++;
+        k = match_list-->marker;
+
+        if (match_classes-->marker > 0) print (the) k; else print (a) k;
+
+        if (i < j-1)  print (string) COMMA__TX;
+        if (i == j-1) print (SerialComma) j, (string) OR__TX;
+    }
+    L__M(##Miscellany, 57);
+
+    ! ...and get an answer:
+
+  .WhichOne;
+    #Ifdef TARGET_ZCODE;
+    for (i=WORDSIZE : i<INPUT_BUFFER_LEN : i++) buffer2->i = ' ';
+    #Endif; ! TARGET_ZCODE
+    answer_words = Keyboard(buffer2, parse2);
+
+    ! Conveniently, parse2-->1 is the first word in both ZCODE and GLULX.
+    first_word = (parse2-->1);
+    asking_player = false;
+
+    ! Take care of "all", because that does something too clever here to do
+    ! later on:
+
+    if (first_word == ALL1__WD or ALL2__WD or ALL3__WD or ALL4__WD or ALL5__WD) {
+        if (context == MULTI_TOKEN or MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN or MULTIINSIDE_TOKEN) {
+            l = multiple_object-->0;
+            for (i=0 : i<number_matched && l+i<63 : i++) {
+                k = match_list-->i;
+                multiple_object-->(i+1+l) = k;
+            }
+            multiple_object-->0 = i+l;
+            rtrue;
+        }
+        L__M(##Miscellany, 47);
+        jump WhichOne;
+    }
+
+    ! If the first word of the reply can be interpreted as a verb, then
+    ! assume that the player has ignored the question and given a new
+    ! command altogether.
+    ! (This is one time when it's convenient that the directions are
+    ! not themselves verbs - thus, "north" as a reply to "Which, the north
+    ! or south door" is not treated as a fresh command but as an answer.)
+
+    #Ifdef LanguageIsVerb;
+    if (first_word == 0) {
+        j = wn; first_word = LanguageIsVerb(buffer2, parse2, 1); wn = j;
+    }
+    #Endif; ! LanguageIsVerb
+    if (first_word ~= 0) {
+        j = first_word->#dict_par1;
+        if ((j & DICT_VERB) && ~~LanguageVerbMayBeName(first_word)) {
+            CopyBuffer(buffer, buffer2);
+            return REPARSE_CODE;
+        }
+    }
+
+    ! Now we insert the answer into the original typed command, as
+    ! words additionally describing the same object
+    ! (eg, > take red button
+    !      Which one, ...
+    !      > music
+    ! becomes "take music red button".  The parser will thus have three
+    ! words to work from next time, not two.)
+
+    k = WordAddress(match_from) - buffer;
+    l = GetKeyBufLength(buffer2) +1;
+    for (j=buffer + INPUT_BUFFER_LEN - 1 : j>=buffer+k+l : j--) j->0 = j->(-l);
+    for (i=0 : i<l : i++) buffer->(k+i) = buffer2->(WORDSIZE+i);
+    buffer->(k+l-1) = ' ';
+    SetKeyBufLength(GetKeyBufLength() + l);
+
+    ! Having reconstructed the input, we warn the parser accordingly
+    ! and get out.
+
+    return REPARSE_CODE;
+];
+
 
 ! ----------------------------------------------------------------------------
 !  The Adjudicate routine tries to see if there is an obvious choice, when
@@ -3873,11 +3876,6 @@ Constant SCORE__DIVISOR     = 20;
         if (indirect(scope_token) ~= 0) rtrue;
     }
 
-    ! Next, call any user-supplied routine adding things to the scope,
-    ! which may circumvent the usual routines altogether if they return true:
-
-    if (actor == domain1 or domain2 && InScope(actor) ~= 0) rtrue;
-
     ! Pick up everything in the location except the actor's possessions;
     ! then go through those.  (This ensures the actor's possessions are in
     ! scope even in Darkness.)
@@ -3887,6 +3885,12 @@ Constant SCORE__DIVISOR     = 20;
            ScopeWithin(advance_warning, 0, context);
     }
     else {
+        ! Next, call any user-supplied routine adding things to the scope,
+        ! which may circumvent the usual routines altogether
+        ! if they return true:
+
+        if (actor == domain1 or domain2 && InScope(actor) ~= 0) rtrue;
+
         if (domain1 ~= 0 && domain1 has supporter or container)
             ScopeWithin_O(domain1, domain1, context);
         ScopeWithin(domain1, domain2, context);
