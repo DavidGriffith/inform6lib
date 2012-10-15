@@ -942,20 +942,25 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     objectloop (i) {
         address = i.&found_in;
         if (address && i hasnt absent && ~~IndirectlyContains(player, i)) {
-            if (metaclass(address-->0) == Routine) {
-                if (i.found_in()) move i to location;
-                else                   remove i;
-            }
+            if (metaclass(address-->0) == Routine)
+                flag = i.found_in();
             else {
-                k = i.#found_in;
-                for (l=0 : l<k/WORDSIZE : l++) {
+                flag = false;
+                k = i.#found_in/WORDSIZE;
+                for (l=0 : l<k : l++) {
                     m = address-->l;
-                    if (m == location || m in location) {
-                        if (i notin location) move i to location;
+                    if ((m in Class && location ofclass m) ||
+                            m == location || m in location)
+                    {
                         flag = true;
+                        break;
                     }
                 }
-                if (flag == false) { if (parent(i)) remove i; }
+            }
+            if (flag) {
+                if (i notin location) move i to location;
+            } else {
+                if (parent(i)) remove i;
             }
         }
     }
@@ -1570,7 +1575,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     ! 1 = Take object, don't Tell
     ! 2 = don't Take object          (default with NO_IMPLICIT_ACTIONS)
     if (res == 2) rtrue;
-    if (parent(obj) has container or supporter) supcon = parent(obj);
+    if (parent(obj) && parent(obj) has container or supporter) supcon = parent(obj);
     ks = keep_silent; keep_silent = 2; AttemptToTakeObject(obj); keep_silent = ks;
     if (obj notin actor) rtrue;
     if (res == 0 && ~~keep_silent)
@@ -1657,7 +1662,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ RemoveSub i;
     i = parent(noun);
-    if (i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, noun);
+    if (i && i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, noun);
     if (i ~= second)   return L__M(##Remove, 2, noun);
     if (i has animate) return L__M(##Take, 6, i);
 
@@ -1721,11 +1726,9 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     if (second == d_obj || actor in second) <<Drop noun, actor>>;
     if (parent(noun) == second) return L__M(##Drop, 1, noun);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##Insert, 1, noun);
-
     ancestor = CommonAncestor(noun, second);
     if (ancestor == noun) return L__M(##Insert, 5, noun);
     if (ObjectIsUntouchable(second)) return;
-
     if (second ~= ancestor) {
         action = ##Receive;
         if (RunRoutines(second,before)) { action = ##Insert; rtrue; }
