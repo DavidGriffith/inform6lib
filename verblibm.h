@@ -2445,6 +2445,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 [ PullSub;
     if (ObjectIsUntouchable(noun)) return;
     if (noun == player)   return L__M(##Pull, 1, noun);
+    if (noun == actor)    return L__M(##Pull, 6, noun);
     if (noun has static)  return L__M(##Pull, 2, noun);
     if (noun has scenery) return L__M(##Pull, 3, noun);
     if (noun has animate) return L__M(##Pull, 5, noun);
@@ -2454,6 +2455,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 [ PushSub;
     if (ObjectIsUntouchable(noun)) return;
     if (noun == player)   return L__M(##Push, 1, noun);
+    if (noun == actor)    return L__M(##Push, 5, noun);
     if (noun has static)  return L__M(##Push, 2, noun);
     if (noun has scenery) return L__M(##Push, 3, noun);
     if (noun has animate) return L__M(##Push, 5, noun);
@@ -2536,7 +2538,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
 [ TurnSub;
     if (ObjectIsUntouchable(noun)) return;
-    if (noun == actor)    return L__M(##Push, 1, noun);
+    if (noun == player)    return L__M(##Push, 1, noun);
+    if (noun == actor)     return L__M(##Turn, 5, noun);
     if (noun has static)   return L__M(##Turn, 2, noun);
     if (noun has scenery)  return L__M(##Turn, 3, noun);
     if (noun has animate)  return L__M(##Turn, 5, noun);
@@ -2555,9 +2558,13 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     if (RunLife(noun, ##WakeOther)) return;
     L__M(##WakeOther, 1, noun);
 ];
-
+!FIXME I'm not sure I like these defaults from 2006 that say "You decide 
+! that's not a good idea" instead of "You look ridiculous waving the 
+! thing".  I'll have to revisit this when the merge from 2006 is 
+! complete.
 [ WaveSub;
     if (noun == player) return L__M(##Wave, 2 ,noun);
+    if (noun == actor) return L__M(##Wave, 3, noun);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##Wave, 1, noun);
     L__M(##Wave, 2 ,noun);
 ];
