@@ -20,7 +20,11 @@ Include "linklv";
 ! ------------------------------------------------------------------------------
 
 [ Banner i;
-   if (Story) {
+    #Ifdef LanguageBanner;
+    LanguageBanner();
+    i = 0;  ! suppress warning
+    #Ifnot;
+    if (Story) {
         #Ifdef TARGET_ZCODE;
         #IfV5; style bold; #Endif;
         print (string) Story;
@@ -55,9 +59,14 @@ Include "linklv";
     #Endif; ! DEBUG
     #Endif; ! INFIX
     new_line;
+    #Endif; ! LanguageBanner
 ];
 
 [ VersionSub ix;
+    #Ifdef LanguageVersionSub;
+    LanguageVersionSub();
+    ix = 0;  ! suppress warning
+    #Ifnot;
     Banner();
     #Ifdef TARGET_ZCODE;
     ix = 0; ! shut up compiler warning
@@ -92,9 +101,13 @@ Include "linklv";
     #Ifdef LanguageVersion;
     print (string) LanguageVersion, "^";
     #Endif; ! LanguageVersion
+    #Endif; ! LanguageVersionSub
 ];
 
 [ RunTimeError n p1 p2;
+    #Ifdef LanguageError;
+    LanguageError(n, p1, p2);
+    #Ifnot;
     #Ifdef DEBUG;
     print "** Library error ", n, " (", p1, ", ", p2, ") **^** ";
     switch (n) {
@@ -123,6 +136,7 @@ Include "linklv";
     #Ifnot;
     "** Library error ", n, " (", p1, ", ", p2, ") **";
     #Endif; ! DEBUG
+    #Endif; ! LanguageError
 ];
 
 ! ----------------------------------------------------------------------------
@@ -1240,7 +1254,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
                else            L__M(##Objects, 4);
                 jump Obj__Ptd;
             }
-            if (j has animate)   { L__M(##Objects, 5);    jump Obj__Ptd; }
+            if (j has animate)   { L__M(##Objects, 5, i); jump Obj__Ptd; }
             if (j has visited)   { L__M(##Objects, 6, j); jump Obj__Ptd; }
             if (j has container) { L__M(##Objects, 8, j); jump Obj__Ptd; }
             if (j has supporter) { L__M(##Objects, 9, j); jump Obj__Ptd; }

@@ -2859,9 +2859,6 @@ Constant UNLIT_BIT  =  32;
 
 [ NounDomain domain1 domain2 context    first_word i j k l
                                         answer_words;
-
-  l=l; ! suppress warning when compiling to GLULX
-
     #Ifdef DEBUG;
     if (parser_trace >= 4) {
         print "   [NounDomain called at word ", wn, "^";
@@ -3053,6 +3050,7 @@ Constant UNLIT_BIT  =  32;
                 for (l=i : l<i+k : l++) buffer->l = buffer->(l+2);
                 #Ifnot; ! TARGET_GLULX
                 k = PrintAnyToArray(buffer+i, INPUT_BUFFER_LEN-i, parse2-->1);
+                l=l; ! suppress compiler warning
                 #Endif; ! TARGET_
                 i = i + k; SetKeyBufLength(i-WORDSIZE);
             }
@@ -3685,6 +3683,10 @@ Constant SCORE__DIVISOR     = 20;
 ! ----------------------------------------------------------------------------
 
 [ PrintCommand from i k spacing_flag;
+    #Ifdef LanguageCommand;
+    LanguageCommand(from);
+    i = k = spacing_flag = 0;   ! suppress warning
+    #Ifnot;
     if (from == 0) {
         i = verb_word;
         if (LanguageVerb(i) == 0)
@@ -3708,6 +3710,7 @@ Constant SCORE__DIVISOR     = 20;
       .TokenPrinted;
         spacing_flag = true;
     }
+    #Endif; ! LanguageCommand
 ];
 
 ! ----------------------------------------------------------------------------
@@ -5890,8 +5893,8 @@ Object  InformLibrary "(Inform Library)"
     SetColour (f, b, w);
 ];
 
-[ RestoreColours;    ! L61007
-    gg_statuswin_cursize = -1;    ! L61113
+[ RestoreColours;    ! L61007, L61113
+    gg_statuswin_cursize = -1;    ! Force window split in StatusLineHeight()
     #Ifdef COLOUR;
     if (clr_on) { ! check colour has been used
         SetColour(clr_fg, clr_bg, 2); ! make sure both sets of variables are restored
