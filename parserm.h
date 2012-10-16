@@ -2188,7 +2188,7 @@ Object  InformParser "(Inform Parser)"
     }
     if (etype == ASKSCOPE_PE) {
         scope_stage = 3;
-        if (indirect(scope_error) == -1) {
+        if (scope_error() == -1) {
             best_etype = nextbest_etype;
             jump GiveError;
         }
@@ -2501,7 +2501,7 @@ Constant UNLIT_BIT  =  32;
         return -1;
 
       GPR_TT:
-        l = indirect(given_tdata);
+        l = given_tdata();
         #Ifdef DEBUG;
         if (parser_trace >= 3) print "  [Outside parsing routine returned ", l, "]^";
         #Endif; ! DEBUG
@@ -2510,7 +2510,7 @@ Constant UNLIT_BIT  =  32;
       SCOPE_TT:
         scope_token = given_tdata;
         scope_stage = 1;
-        l = indirect(scope_token);
+        l = scope_token();
         #Ifdef DEBUG;
         if (parser_trace >= 3) print "  [Scope routine returned multiple-flag of ", l, "]^";
         #Endif; ! DEBUG
@@ -3853,7 +3853,7 @@ Constant SCORE__DIVISOR     = 20;
         rfalse;
     }
     noun = obj;
-    return indirect(token_filter);
+    return token_filter();
 ];
 
 ! ----------------------------------------------------------------------------
@@ -3912,7 +3912,7 @@ Constant SCORE__DIVISOR     = 20;
 
     if (scope_token ~= 0) {
         scope_stage = 2;
-        if (indirect(scope_token) ~= 0) rtrue;
+        if (scope_token()) rtrue;
     }
 
     ! Pick up everything in the location except the actor's possessions;
@@ -4012,7 +4012,7 @@ Constant SCORE__DIVISOR     = 20;
       TESTSCOPE_REASON:
         if (thing == parser_one) parser_two = 1;
       LOOPOVERSCOPE_REASON:
-        indirect(parser_one, thing);
+        parser_one(thing);
         parser_one=p1;
     }
     scope_reason = s;
@@ -4306,7 +4306,7 @@ Constant SCORE__DIVISOR     = 20;
     k = wn; wn = wnum; wd = NextWordStopped(); wn = k;
 
     if (parser_inflection >= 256) {
-        k = indirect(parser_inflection, obj, wd);
+        k = parser_inflection(obj, wd);
         if (k >= 0) return k;
         m = -k;
     }
@@ -5082,11 +5082,11 @@ Object  InformLibrary "(Inform Library)"
 
 #Ifdef TARGET_ZCODE;
 
-[ ActionPrimitive; indirect(#actions_table-->action); ];
+[ ActionPrimitive; (#actions_table-->action)(); ];
 
 #Ifnot; ! TARGET_GLULX
 
-[ ActionPrimitive; indirect(#actions_table-->(action+1)); ];
+[ ActionPrimitive; (#actions_table-->(action+1))(); ];
 
 #Endif; ! TARGET_
 

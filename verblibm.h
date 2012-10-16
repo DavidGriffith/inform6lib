@@ -583,7 +583,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         if (o.invent && RunRoutines(o, invent))
             if (c_style & NEWLINE_BIT) ""; else rtrue;
 
-        if (o has light && o has worn) { L__M(##ListMiscellany, 8);     parenth_flag = true; }
+        if (o has light && o has worn) { L__M(##ListMiscellany, 8, o);  parenth_flag = true; }
         else {
             if (o has light)           { L__M(##ListMiscellany, 9, o);  parenth_flag = true; }
             if (o has worn)            { L__M(##ListMiscellany, 10, o); parenth_flag = true; }
@@ -667,6 +667,58 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 
 ! ----------------------------------------------------------------------------
+! LoopWithinObject(rtn,obj,arg)
+!
+! rtn is the address of a user-supplied routine.
+! obj is an optional parent object whose dependents are to be processed; the
+! default is the current actor (normally the player).
+! arg is an optional argument passed to the rtn; this can be a single variable
+! or constant, or the address of an array (which enables multiple values to be
+! passed and returned).
+!
+! For each object o which is a child, grandchild, great-grandchild, etc, of the
+! original obj, LoopWithinObject() calls rtn(o,arg).
+!
+! The rtn should perform any appropriate testing or processing on each object o,
+! using the optional arg value if necessary. If the rtn returns true (or any
+! positive value), the children of o, if any, are also tested; those children
+! are skipped if rtn returns false. To terminate the loop before all objects
+! have been processed, rtn should return a large negative number (eg -99).
+!
+! To deal with supporters and open containers, so that objects are processed
+! only if they are accessible to the player, rtn might end with these
+! statements:
+!   if ((o has transparent or supporter) || (o has container && o has open)) rtrue;
+!   rfalse;
+! or alternatively with:
+!   c_style = RECURSE_BIT; return WillRecurs(o);
+!
+! LoopWithinObject() returns the number of objects which have been processed.
+! ----------------------------------------------------------------------------
+
+[ LoopWithinObject rtn obj arg
+    n o x y;
+    if (obj == 0) obj = actor;
+    o = child(obj);
+    while (o) {
+        y = parent(o); n++;
+        x = rtn(o, arg);    ! user-supplied routine returning x.
+                            ! if x < 0: skip up to next parent
+                            ! if x = 0: jump across to next sibling
+                            ! if x > 0: continue down to child objects
+        if (y ~= parent(o)) { RT__Err(32, o); rfalse; }
+        if (x > 0 && child(o)) o = child(o);
+        else
+            while (o) {
+                if (++x > 0 && sibling(o)) { o = sibling(o); break; }
+                o = parent(o);
+                if (o == obj) return n;
+            }
+    }
+];
+
+
+! ----------------------------------------------------------------------------
 !  Much better menus can be created using one of the optional library
 !  extensions.  These are provided for compatibility with previous practice:
 ! ----------------------------------------------------------------------------
@@ -677,12 +729,12 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
   .LKRD;
 
     menu_item = 0;
-    lines = indirect(EntryR);
+    lines = EntryR();
     main_title = item_name;
 
     print "--- "; print (string) main_title; print " ---^^";
 
-    if (menu_choices ofclass Routine) menu_choices.call();
+    if (menu_choices ofclass Routine) menu_choices();
     else                              print (string) menu_choices;
 
     for (::) {
@@ -711,7 +763,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         if (i == 0) jump LKRD;
         if (i < 1 || i > lines) continue;
         menu_item = i;
-        j = indirect(ChoiceR);
+        j = ChoiceR();
         if (j == 2) jump LKRD;
         if (j == 3) rfalse;
     }
@@ -732,7 +784,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     if (pretty_flag == 0) return LowKey_Menu(menu_choices, EntryR, ChoiceR);
     menu_nesting++;
     menu_item = 0;
-    lines = indirect(EntryR);
+    lines = EntryR();
     main_title = item_name; main_wid = item_width;
     cl = 7;
 
@@ -778,7 +830,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     @set_cursor y x; font off;
 
     if (menu_choices ofclass String) print (string) menu_choices;
-    else                             menu_choices.call();
+    else                             menu_choices();
 
     x = 1+3*cw;
     for (::) {
@@ -803,7 +855,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
             new_line; new_line; new_line;
 
             menu_item = cl-6;
-            EntryR.call();
+            EntryR();
 
             @erase_window $ffff;
             @split_window ch;
@@ -814,7 +866,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
             print (string) item_name;
             style roman; @set_window 0; new_line;
 
-            i = ChoiceR.call();
+            i = ChoiceR();
             if (i == 2) jump ReDisplay;
             if (i == 3) break;
 
@@ -844,7 +896,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     menu_nesting++;
     menu_item = 0;
-    lines = indirect(EntryR);
+    lines = EntryR();
     main_title = item_name;
     main_wid = item_width;
 
@@ -880,7 +932,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     glk($002B, gg_statuswin, 1, 4); ! window_move_cursor
     if (menu_choices ofclass String) print (string) menu_choices;
-    else                             menu_choices.call();
+    else                             menu_choices();
 
     oldcl = -1;
 
@@ -912,7 +964,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
             glk($002F, gg_mainwin); ! set_window
             new_line; new_line; new_line;
             menu_item = cl+1;
-            EntryR.call();
+            EntryR();
 
             glk($002A, gg_statuswin); ! window_clear
             glk($002A, gg_mainwin); ! window_clear
@@ -928,7 +980,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
             glk($002F, gg_mainwin); ! set_window
             new_line;
-            i = ChoiceR.call();
+            i = ChoiceR();
             if (i == 2) jump ReDisplay;
             if (i == 3) break;
             L__M(##Miscellany, 53);
@@ -1252,17 +1304,17 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
        f = 1; print (the) i; j = parent(i);
         if (j) {
            if (j == player) {
-               if (i has worn) L__M(##Objects, 3);
-               else            L__M(##Objects, 4);
+               if (i has worn) L__M(##Objects, 3, j, i);
+               else            L__M(##Objects, 4, j, i);
                 jump Obj__Ptd;
             }
-            if (j has animate)   { L__M(##Objects, 5, i); jump Obj__Ptd; }
-            if (j has visited)   { L__M(##Objects, 6, j); jump Obj__Ptd; }
-            if (j has container) { L__M(##Objects, 8, j); jump Obj__Ptd; }
-            if (j has supporter) { L__M(##Objects, 9, j); jump Obj__Ptd; }
-            if (j has enterable) { L__M(##Objects, 7, j); jump Obj__Ptd; }
+            if (j has animate)   { L__M(##Objects, 5, j, i); jump Obj__Ptd; }
+            if (j has visited)   { L__M(##Objects, 6, j, i); jump Obj__Ptd; }
+            if (j has container) { L__M(##Objects, 8, j, i); jump Obj__Ptd; }
+            if (j has supporter) { L__M(##Objects, 9, j, i); jump Obj__Ptd; }
+            if (j has enterable) { L__M(##Objects, 7, j, i); jump Obj__Ptd; }
         }
-        L__M(##Objects, 10);
+        L__M(##Objects, 10, j, i);
 
       .Obj__Ptd;
 
@@ -1445,7 +1497,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         while (i ~= ancestor) {
             if (i has container && i hasnt open) {
                 if (flag1) rtrue;
-                return L__M(##Take, 9, i);
+                return L__M(##Take, 9, i, noun);
             }
             i = parent(i);
         }
@@ -1468,11 +1520,11 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
                     return L__M(##Take, 7, i, noun);
                 }
                 if (flag1) rtrue;
-                return L__M(##Take, 8, item);
+                return L__M(##Take, 8, item, noun);
             }
             if (i has container && i hasnt open) {
                 if (flag1) rtrue;
-                return L__M(##Take, 9, i);
+                return L__M(##Take, 9, i, noun);
             }
             i = parent(i);
         }
@@ -1486,7 +1538,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     ! if successful, true if unsuccessful, printing a suitable message
     ! in the latter case.
     ! People cannot ordinarily be taken.
-    if (item == actor) return L__M(##Take, 2);
+    if (item == actor) return L__M(##Take, 2, noun);
     if (item has animate) return L__M(##Take, 3, item);
 
     ancestor = CommonAncestor(actor, item);
@@ -1528,7 +1580,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     if (ObjectDoesNotFit(item, actor) ||
         LibraryExtensions.RunWhile(ext_objectdoesnotfit, false, item, actor)) return;
-    if (AtFullCapacity(item, actor)) return L__M(##Take, 12);
+    if (AtFullCapacity(item, actor)) return L__M(##Take, 12, item);
 
     ! Transfer the item.
 
@@ -1683,7 +1735,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     if (AfterRoutines()) return;
     notheld_mode = onotheld_mode;
     if (notheld_mode == 1 || keep_silent) return;
-    L__M(##Take, 1);
+    L__M(##Take, 1, noun);
 ];
 
 [ RemoveSub i;
@@ -1701,7 +1753,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 
 [ DropSub;
-    if (noun == actor)         return L__M(##PutOn, 4);
+    if (noun == actor)         return L__M(##PutOn, 4, noun);
     if (noun in parent(actor)) return L__M(##Drop, 1, noun);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##Drop, 2, noun);
     if (noun has worn && ImplicitDisrobe(noun)) return;
@@ -1713,7 +1765,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 [ PutOnSub ancestor;
     receive_action = ##PutOn;
     if (second == d_obj || actor in second) <<Drop noun, actor>>;
-    if (parent(noun) == second) return L__M(##Drop,1,noun);
+    if (parent(noun) == second) return L__M(##Drop, 1, noun);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##PutOn, 1, noun);
 
     ancestor = CommonAncestor(noun, second);
@@ -1726,7 +1778,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         action = ##PutOn;
     }
     if (second hasnt supporter) return L__M(##PutOn, 3, second);
-    if (ancestor == actor)      return L__M(##PutOn, 4);
+    if (ancestor == actor)      return L__M(##PutOn, 4, second);
     if (noun has worn && ImplicitDisrobe(noun)) return;
 
     if (ObjectDoesNotFit(noun, second) ||
@@ -1795,7 +1847,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 [ EmptySub; second = d_obj; EmptyTSub(); ];
 
 [ EmptyTSub i j k flag;
-    if (noun == second) return L__M(##EmptyT, 4);
+    if (noun == second) return L__M(##EmptyT, 4, noun);
     if (ObjectIsUntouchable(noun)) return;
     if (noun hasnt container) return L__M(##EmptyT, 1, noun);
     if (noun hasnt open && ImplicitOpen(noun)) return L__M(##EmptyT, 2, noun);
@@ -2232,7 +2284,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 
 [ ExamineSub i;
-    if (location == thedark) return L__M(##Examine, 1);
+    if (location == thedark) return L__M(##Examine, 1, noun);
     i = noun.description;
     if (i == 0) {
         if (noun has container)
@@ -2247,7 +2299,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 
 [ LookUnderSub;
-    if (location == thedark) return L__M(##LookUnder, 1);
+    if (location == thedark) return L__M(##LookUnder, 1, noun);
     L__M(##LookUnder, 2);
 ];
 
@@ -2292,7 +2344,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     if (ObjectIsUntouchable(noun)) return;
     if (noun hasnt lockable) return L__M(##Lock, 1, noun);
     if (noun has locked)     return L__M(##Lock, 2 ,noun);
-    if (noun has open && ImplicitClose(noun)) return L__M(##Lock, 3 ,noun);
+    if (noun has open && ImplicitClose(noun)) return L__M(##Lock, 3, noun);
     if (noun.with_key ~= second) return L__M(##Lock, 4, second);
 
     give noun locked;
@@ -2350,7 +2402,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
     give noun ~worn;
     if (AfterRoutines() || keep_silent) return;
-    L__M(##Disrobe,2,noun);
+    L__M(##Disrobe, 2, noun);
 ];
 
 [ WearSub;
@@ -2537,8 +2589,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
         action = ##ThrowAt;
     }
     if (noun has worn && ImplicitDisrobe(noun)) return;
-    if (second hasnt animate) return L__M(##ThrowAt, 1);
-    if (RunLife(second,##ThrowAt)) return;
+    if (second hasnt animate) return L__M(##ThrowAt, 1, noun);
+    if (RunLife(second, ##ThrowAt)) return;
     L__M(##ThrowAt, 2, noun);
 ];
 
@@ -2578,13 +2630,12 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 ];
 !FIXME I'm not sure I like these defaults from 2006 that say "You decide 
 ! that's not a good idea" instead of "You look ridiculous waving the 
-! thing".  I'll have to revisit this when the merge from 2006 is 
-! complete.
+! thing".  I'll have to revisit this when the merge from 2006 is complete.
 [ WaveSub;
     if (noun == player) return L__M(##Wave, 2 ,noun);
     if (noun == actor) return L__M(##Wave, 3, noun);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##Wave, 1, noun);
-    L__M(##Wave, 2 ,noun);
+    L__M(##Wave, 2, noun);
 ];
 
 [ WaveHandsSub;
