@@ -167,6 +167,7 @@ Constant CONCEAL_BIT   $0800;       ! Omit objects with "concealed" or "scenery"
                                     ! if WORKFLAG_BIT also set, then does _not_
                                     ! apply at top level, but does lower down
 Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
+Constant ID_BIT        $2000;       ! Print object id after each entry
 
 [ NextEntry o odepth;
     for (::) {
@@ -424,10 +425,12 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 
         if (WriteBeforeEntry(j, depth, 0, senc) == 1) jump Omit_FL2;
         if (sizes_p->i == 1) {
-            if (c_style & NOARTICLE_BIT) print (name) j;
+            if (c_style & NOARTICLE_BIT)  print (name) j;
             else {
-                if (c_style & DEFART_BIT) print (the) j; else print (a) j;
+                if (c_style & DEFART_BIT) print (the) j;
+                else                      print (a) j;
             }
+            if (c_style & ID_BIT)         print " (", j, ")";
         }
         else {
             if (c_style & DEFART_BIT) PrefaceByArticle(j, 1, sizes_p->i);
@@ -525,10 +528,12 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
       .Omit_WL;
 
         if (WriteBeforeEntry(j, depth, i, senc) == 1) jump Omit_FL;
-        if (c_style & NOARTICLE_BIT) print (name) j;
+        if (c_style & NOARTICLE_BIT)  print (name) j;
         else {
-            if (c_style & DEFART_BIT) print (the) j; else print (a) j;
+            if (c_style & DEFART_BIT) print (the) j;
+            else                      print (a) j;
         }
+        if (c_style & ID_BIT)         print " (", j, ")";
         WriteAfterEntry(j, depth, stack_pointer);
 
       .Omit_EL;
@@ -2696,6 +2701,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 #Endif; ! TARGET_;
 
 [ XTestMove obj dest;
+    if (~~obj ofclass Object) "[Not an object.]";
+    if (~~dest ofclass Object) "[Destination not an object.]";
     if ((obj <= InformLibrary) || (obj == LibraryMessages) || (obj in 1))
         "[Can't move ", (name) obj, ": it's a system object.]";
     while (dest) {
@@ -2720,22 +2727,23 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 [ XObj obj f;
     if (parent(obj) == 0) print (name) obj; else print (a) obj;
     print " (", obj, ") ";
-    if (f == 1 && parent(obj))
-        print "(in ", (name) parent(obj), " ", parent(obj), ")";
+    if (f && parent(obj))
+        print "in ~", (name) parent(obj), "~ (", parent(obj), ")";
     new_line;
     if (child(obj) == 0) rtrue;
-    if (obj == Class)
-        WriteListFrom(child(obj), NEWLINE_BIT+INDENT_BIT+ALWAYS_BIT+NOARTICLE_BIT, 1);
+    if (obj == Class) ! ???
+        WriteListFrom(child(obj), NEWLINE_BIT+INDENT_BIT+ALWAYS_BIT+ID_BIT+NOARTICLE_BIT, 1);
     else
-        WriteListFrom(child(obj), NEWLINE_BIT+INDENT_BIT+ALWAYS_BIT+FULLINV_BIT, 1);
+        WriteListFrom(child(obj), NEWLINE_BIT+INDENT_BIT+ALWAYS_BIT+ID_BIT+FULLINV_BIT, 1);
 ];
 
 [ XTreeSub i;
+    if (noun && ~~noun ofclass Object) "[Not an object.]";
     if (noun == 0) {
         objectloop (i)
             if (i ofclass Object && parent(i) == 0) XObj(i);
     }
-    else XObj(noun,1);
+    else XObj(noun, true);
 ];
 
 [ GotoSub;
@@ -2743,7 +2751,8 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
     PlayerTo(noun);
 ];
 
-[ GonearSub x;
+[ GoNearSub x;
+    if (~~noun ofclass Object) "[Not a safe place.]";
     x = noun;
     while (parent(x)) x = parent(x);
     PlayerTo(x);
@@ -2752,6 +2761,7 @@ Constant NOARTICLE_BIT $1000;       ! Print no articles, definite or not
 [ Print_ScL obj; print_ret ++x_scope_count, ": ", (a) obj, " (", obj, ")"; ];
 
 [ ScopeSub;
+    if (noun && ~~noun ofclass Object) "[Not an object.]";
     x_scope_count = 0;
     LoopOverScope(Print_ScL, noun);
     if (x_scope_count == 0) "Nothing is in scope.";

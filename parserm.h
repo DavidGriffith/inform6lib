@@ -4196,7 +4196,7 @@ Constant SCORE__DIVISOR     = 20;
 
     if (wn > num_words) {
         if (indef_mode ~= 0)
-            dict_flags_of_noun = $$01110000;  ! Reject "plural" bit
+            dict_flags_of_noun = DICT_X654;  ! Reject "plural" bit
         MakeMatch(obj,0);
         #Ifdef DEBUG;
         if (parser_trace >= 5) print "    Matched (0)^";
@@ -4216,9 +4216,9 @@ Constant SCORE__DIVISOR     = 20;
           .MMbyPN;
 
             if (parser_action == ##PluralFound)
-                dict_flags_of_noun = dict_flags_of_noun | 4;
+                dict_flags_of_noun = dict_flags_of_noun | DICT_PLUR;
 
-            if (dict_flags_of_noun & 4) {
+            if (dict_flags_of_noun & DICT_PLUR) {
                 if (~~allow_plurals) k = 0;
                 else {
                     if (indef_mode == 0) {
@@ -5649,12 +5649,12 @@ Object  InformLibrary "(Inform Library)"
 
 #Endif; ! TARGET_
 
-[ ShowobjSub c f l a n x numattr;
+[ ShowObjSub c f l a n x numattr;
     if (noun == 0) noun = location;
     objectloop (c ofclass Class) if (noun ofclass c) { f++; l=c; }
     if (f == 1) print (name) l, " ~"; else print "Object ~";
     print (name) noun, "~ (", noun, ")";
-    if (parent(noun) ~= 0) print " in ~", (name) parent(noun), "~";
+    if (parent(noun)) print " in ~", (name) parent(noun), "~ (", parent(noun), ")";
     new_line;
     if (f > 1) {
         print "  class ";
@@ -5714,6 +5714,57 @@ Object  InformLibrary "(Inform Library)"
         }
     }
 !   if (f==1) new_line;
+];
+
+[ ShowDictSub
+    dp el ne   x f;
+
+    #Ifdef TARGET_ZCODE;
+    dp = HDR_DICTIONARY-->0;             ! start of dictionary
+    dp = dp + dp->0 + 1;                 ! skip over word-separators table
+    el = dp->0;  dp = dp + 1;            ! entry length
+    ne = dp-->0; dp = dp + WORDSIZE;     ! number of entries
+    #Ifnot; ! TARGET_GLULX;
+    dp = #dictionary_table;              ! start of dictionary
+    el = DICT_WORD_SIZE + 7;             ! entry length
+    ne = dp-->0; dp = dp + WORDSIZE;     ! number of entries
+    #Endif; ! TARGET_
+                                         ! dp now at first entry
+    wn = 2; x = NextWordStopped();
+    switch (x) {
+      0:
+        "That word isn't in the dictionary.";
+      -1:
+        ;                                ! show all entries
+      THEN1__WD:
+        dp = './/'; ne = 1;              ! show '.'
+      COMMA_WORD:
+        dp = ',//'; ne = 1;              ! show ','
+      default:
+        dp = x; ne = 1; f = true;        ! show specified entry, plus associated objects
+    }
+    for ( : ne-- : dp=dp+el) {
+        print (address) dp, " --> ";
+        x = dp->#dict_par1;              ! flag bits
+        if (x == 0)
+            print " no flags";
+        else {
+            if (x & DICT_NOUN) print " noun";
+            !if (x & $0040)     print " BIT_6";
+            !if (x & $0020)     print " BIT_5";
+            !if (x & $0010)     print " BIT_4";
+            if (x & DICT_PREP) print " preposition";
+            if (x & DICT_PLUR) print " plural";
+            if (x & DICT_META) print " meta";
+            if (x & DICT_VERB) print " verb";
+            if (f && (x & DICT_NOUN)) {
+                print " --> refers to these objects:";
+                objectloop (x)
+                    if (WordInProperty(dp, x, name)) print "^  ", (name) x, " (", x, ")";
+            }
+        }
+        new_line;
+    }
 ];
 
 #Endif; ! DEBUG

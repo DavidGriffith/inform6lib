@@ -101,7 +101,9 @@ Verb meta 'changes'
     * 'off'                                     -> ChangesOff;
 
 Verb meta 'gonear'
+    * number                                    -> GoNear
     * noun                                      -> Gonear;
+
 
 Verb meta 'goto'
     * number                                    -> Goto;
@@ -116,7 +118,12 @@ Verb meta 'routines' 'messages'
 
 Verb meta 'scope'
     *                                           -> Scope
+    * number                                    -> Scope
     * noun                                      -> Scope;
+
+Verb meta 'showdict' 'dict'
+    *                                           -> ShowDict
+    * topic                                     -> ShowDict;
 
 Verb meta 'showobj'
     *                                           -> Showobj
@@ -138,13 +145,16 @@ Verb meta 'trace'
     * 'off'                                     -> TraceOff;
 
 Verb meta 'abstract'
+    * number 'to' number                        -> XAbstract
     * noun 'to' noun                            -> XAbstract;
 
 Verb meta 'purloin'
+    * number                                    -> XPurloin
     * multi                                     -> XPurloin;
 
 Verb meta 'tree'
     *                                           -> XTree
+    * number                                    -> XTree
     * noun                                      -> XTree;
 
 #Ifdef TARGET_GLULX;
