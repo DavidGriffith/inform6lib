@@ -1,3 +1,20 @@
+System_file;
+#Ifdef MODULE_MODE;
+Constant DEBUG;
+Constant Grammar__Version 2;
+Include "linklpa";
+Import global just_undone;
+Import global undo_flag;
+Import global print_anything_result;
+Import global saveIndef;
+Import global indef_mode;
+Import global saveCaps;
+Import global caps_mode;
+#Endif; ! MODULE_MODE
+
+
+
+
 ! ----------------------------------------------------------------------------
 !   The Keyboard routine actually receives the player's words,
 !   putting the words in "a_buffer" and their dictionary addresses in
@@ -537,8 +554,7 @@
     else
         if (o has proper) {
             indef_mode = NULL;
-            PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, PSN__, 
-o);
+            PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, PSN__, o);
             PrintFromBuffer(StorageForShortName, true, caps_mode);
         }
         else
