@@ -2655,21 +2655,44 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
 #Ifdef DEBUG;
 
-[ TraceOnSub; parser_trace=1; "[Trace on.]"; ];
+[ TraceOnSub; parser_trace = 1; "[Trace on.]"; ];
 
 [ TraceLevelSub;
     parser_trace = noun;
     print "[Parser tracing set to level ", parser_trace, ".]^";
 ];
 
-[ TraceOffSub; parser_trace=0; "Trace off."; ];
+[ TraceOffSub; parser_trace = 0; "Trace off."; ];
 
-[ RoutinesOnSub;  debug_flag = debug_flag |  DEBUG_MESSAGES; "[Message listing on.]"; ];
-[ RoutinesOffSub; debug_flag = debug_flag & ~DEBUG_MESSAGES; "[Message listing off.]"; ];
-[ ActionsOnSub;   debug_flag = debug_flag |  DEBUG_ACTIONS;  "[Action listing on.]"; ];
-[ ActionsOffSub;  debug_flag = debug_flag & ~DEBUG_ACTIONS;  "[Action listing off.]"; ];
-[ TimersOnSub;    debug_flag = debug_flag |  DEBUG_TIMERS;   "[Timers listing on.]"; ];
-[ TimersOffSub;   debug_flag = debug_flag & ~DEBUG_TIMERS;   "[Timers listing off.]"; ];
+[ RoutinesOnSub;
+    debug_flag = debug_flag |  DEBUG_MESSAGES;
+    "[Message listing on.]";
+];
+
+[ RoutinesOffSub;
+    debug_flag = debug_flag & ~DEBUG_MESSAGES;
+    "[Message listing off.]";
+];
+
+[ ActionsOnSub;
+    debug_flag = debug_flag |  DEBUG_ACTIONS;
+    "[Action listing on.]";
+];
+
+[ ActionsOffSub;
+    debug_flag = debug_flag & ~DEBUG_ACTIONS;
+    "[Action listing off.]";
+];
+
+[ TimersOnSub;
+    debug_flag = debug_flag |  DEBUG_TIMERS;
+    "[Timers listing on.]";
+];
+
+[ TimersOffSub;
+    debug_flag = debug_flag & ~DEBUG_TIMERS;
+    "[Timers listing off.]";
+];
 
 #Ifdef VN_1610;
 

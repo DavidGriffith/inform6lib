@@ -216,6 +216,7 @@ Constant DEBUG_MESSAGES $0001;
 Constant DEBUG_ACTIONS  $0002;
 Constant DEBUG_TIMERS   $0004;
 Constant DEBUG_CHANGES  $0008;
+Constant DEBUG_VERBOSE  $0080;
 Global debug_flag;                  ! Bitmap of flags for tracing actions,
                                     ! calls to object routines, etc.
 Global x_scope_count;               ! Used in printing a list of everything
@@ -4529,6 +4530,63 @@ Constant SCORE__DIVISOR     = 20;
 ];
 
 ! ----------------------------------------------------------------------------
+!  AnyNumber is a general parsing routine which accepts binary, hexadecimal
+!  and decimal numbers up to the full Zcode/Glulx ranges.
+! ----------------------------------------------------------------------------
+
+#Ifdef TARGET_ZCODE;                ! decimal range is -32768 to 32767
+Constant MAX_DECIMAL_SIZE 5;
+Constant MAX_DECIMAL_BASE 3276;
+#Ifnot; ! TARGET_GLULX              ! decimal range is -2147483648 to 2147483647
+Constant MAX_DECIMAL_SIZE 10;
+Constant MAX_DECIMAL_BASE 214748364;
+#Endif; ! TARGET_
+
+[ AnyNumber
+    wa wl sign base digit digit_count num;
+
+    wa = WordAddress(wn); wl = WordLength(wn);
+    sign = 1; base = 10;
+    digit_count = 0;
+    if (wa->0 ~= '-' or '$' or '0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9')
+        return GPR_FAIL;
+    if     (wa->0 == '-') { sign = -1; wa++; wl--; }
+    else {
+        if (wa->0 == '$') { base = 16; wa++; wl--; }
+        if (wa->0 == '$') { base = 2;  wa++; wl--; }
+    }
+    if (wl == 0) return GPR_FAIL;
+    num = 0;
+    for ( : wl : wa++,wl--) {
+        switch (wa->0) {
+          '0' to '9': digit = wa->0 - '0';
+          'A' to 'F': digit = wa->0 - 'A' + 10;
+          'a' to 'f': digit = wa->0 - 'a' + 10;
+          default:    return GPR_FAIL;
+        }
+        if (digit >= base) return GPR_FAIL;
+        digit_count++;
+        switch (base) {
+          2:      if (digit_count > 8*WORDSIZE)  return GPR_FAIL;
+          16:     if (digit_count > 2*WORDSIZE)  return GPR_FAIL;
+          10:
+            if (digit_count >  MAX_DECIMAL_SIZE) return GPR_FAIL;
+            if (digit_count == MAX_DECIMAL_SIZE) {
+                if (num >  MAX_DECIMAL_BASE)     return GPR_FAIL;
+                if (num == MAX_DECIMAL_BASE) {
+                    if (sign == 1  && digit > 7) return GPR_FAIL;
+                    if (sign == -1 && digit > 8) return GPR_FAIL;
+                }
+            }
+        }
+        num = base*num + digit;
+    }
+   parsed_number = num * sign;
+    wn++;
+    return GPR_NUMBER;
+];
+
+! ----------------------------------------------------------------------------
 !  GetGender returns 0 if the given animate object is female, and 1 if male
 !  (not all games will want such a simple decision function!)
 ! ----------------------------------------------------------------------------
@@ -5717,7 +5775,7 @@ Object  InformLibrary "(Inform Library)"
 ];
 
 [ ShowDictSub
-    dp el ne   x f;
+    dp el ne   f x y z;
 
     #Ifdef TARGET_ZCODE;
     dp = HDR_DICTIONARY-->0;             ! start of dictionary
@@ -5746,17 +5804,25 @@ Object  InformLibrary "(Inform Library)"
     for ( : ne-- : dp=dp+el) {
         print (address) dp, " --> ";
         x = dp->#dict_par1;              ! flag bits
+        y = PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, RT__ChPrintA, dp) + WORDSIZE;
+        for (z=WORDSIZE : z<y : z++) {
+            !if (x & DICT_NOUN) StorageForShortName->z = UpperCase(StorageForShortName->z);
+            if (y > WORDSIZE+1 && StorageForShortName->z == ' ' or '.' or ',') x = x | $8000;
+            print (char) StorageForShortName->z;
+        }
+        print " --> ";
         if (x == 0)
             print " no flags";
         else {
-            if (x & DICT_NOUN) print " noun";
             !if (x & $0040)     print " BIT_6";
             !if (x & $0020)     print " BIT_5";
             !if (x & $0010)     print " BIT_4";
-            if (x & DICT_PREP) print " preposition";
-            if (x & DICT_PLUR) print " plural";
-            if (x & DICT_META) print " meta";
+            if (x & $8000)     print " UNTYPEABLE";
+            if (x & DICT_NOUN) print " noun";
+            if (x & DICT_PLUR) print "+plural";
             if (x & DICT_VERB) print " verb";
+            if (x & DICT_META) print "+meta";
+            if (x & DICT_PREP) print " preposition";
             if (f && (x & DICT_NOUN)) {
                 print " --> refers to these objects:";
                 objectloop (x)

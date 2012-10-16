@@ -101,12 +101,12 @@ Verb meta 'changes'
     * 'off'                                     -> ChangesOff;
 
 Verb meta 'gonear'
-    * number                                    -> GoNear
+    * anynumber                                 -> GoNear
     * noun                                      -> Gonear;
 
 
 Verb meta 'goto'
-    * number                                    -> Goto;
+    * anynumber                                 -> Goto;
 
 Verb meta 'random'
     *                                           -> Predictable;
@@ -114,11 +114,12 @@ Verb meta 'random'
 Verb meta 'routines' 'messages'
     *                                           -> RoutinesOn
     * 'on'                                      -> RoutinesOn
+    * 'verbose'                                 -> RoutinesVerbose
     * 'off'                                     -> RoutinesOff;
 
 Verb meta 'scope'
     *                                           -> Scope
-    * number                                    -> Scope
+    * anynumber                                 -> Scope
     * noun                                      -> Scope;
 
 Verb meta 'showdict' 'dict'
@@ -127,7 +128,7 @@ Verb meta 'showdict' 'dict'
 
 Verb meta 'showobj'
     *                                           -> Showobj
-    * number                                    -> Showobj
+    * anynumber                                 -> Showobj
     * multi                                     -> Showobj;
 
 Verb meta 'showverb'
@@ -145,16 +146,16 @@ Verb meta 'trace'
     * 'off'                                     -> TraceOff;
 
 Verb meta 'abstract'
-    * number 'to' number                        -> XAbstract
+    * anynumber 'to' anynumber                  -> XAbstract
     * noun 'to' noun                            -> XAbstract;
 
 Verb meta 'purloin'
-    * number                                    -> XPurloin
+    * anynumber                                 -> XPurloin
     * multi                                     -> XPurloin;
 
 Verb meta 'tree'
     *                                           -> XTree
-    * number                                    -> XTree
+    * anynumber                                 -> XTree
     * noun                                      -> XTree;
 
 #Ifdef TARGET_GLULX;
