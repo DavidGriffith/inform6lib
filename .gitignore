@@ -1,4 +1,5 @@
 *[A-Z]*.h
 *.z*
 *.inf
+*.m*
 scratch/
