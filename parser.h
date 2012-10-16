@@ -125,8 +125,10 @@ Fake_Action Objects;
 
 #Ifdef USE_MODULES;
 Link "parserm";
+Link "io";
 #Ifnot;
 Include "parserm";
+Include "io";
 #Endif; ! USE_MODULES
 
 ! ==============================================================================
