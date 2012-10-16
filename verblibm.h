@@ -2674,6 +2674,11 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     "[Message listing off.]";
 ];
 
+[ RoutinesVerboseSub;
+    debug_flag = debug_flag | (DEBUG_VERBOSE|DEBUG_MESSAGES);
+    "[Verbose message listing on.]";
+];
+
 [ ActionsOnSub;
     debug_flag = debug_flag |  DEBUG_ACTIONS;
     "[Action listing on.]";

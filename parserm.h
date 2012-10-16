@@ -4543,21 +4543,18 @@ Constant MAX_DECIMAL_BASE 214748364;
 #Endif; ! TARGET_
 
 [ AnyNumber
-    wa wl sign base digit digit_count num;
+    wa we sign base digit digit_count num;
 
-    wa = WordAddress(wn); wl = WordLength(wn);
+    wa = WordAddress(wn); we = wa + WordLength(wn);
     sign = 1; base = 10;
-    digit_count = 0;
-    if (wa->0 ~= '-' or '$' or '0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9')
-        return GPR_FAIL;
-    if     (wa->0 == '-') { sign = -1; wa++; wl--; }
+    if     (wa->0 == '-') { sign = -1; wa++; }
     else {
-        if (wa->0 == '$') { base = 16; wa++; wl--; }
-        if (wa->0 == '$') { base = 2;  wa++; wl--; }
+        if (wa->0 == '$') { base = 16; wa++; }
+        if (wa->0 == '$') { base = 2;  wa++; }
     }
-    if (wl == 0) return GPR_FAIL;
-    num = 0;
-    for ( : wl : wa++,wl--) {
+    if (wa >= we) return GPR_FAIL;  ! no digits after -/$
+    while (wa->0 == '0') wa++;      ! skip leading zeros
+    for (num=0,digit_count=1 : wa<we : wa++,digit_count++) {
         switch (wa->0) {
           '0' to '9': digit = wa->0 - '0';
           'A' to 'F': digit = wa->0 - 'A' + 10;
@@ -4567,8 +4564,8 @@ Constant MAX_DECIMAL_BASE 214748364;
         if (digit >= base) return GPR_FAIL;
         digit_count++;
         switch (base) {
-          2:      if (digit_count > 8*WORDSIZE)  return GPR_FAIL;
           16:     if (digit_count > 2*WORDSIZE)  return GPR_FAIL;
+          2:      if (digit_count > 8*WORDSIZE)  return GPR_FAIL;
           10:
             if (digit_count >  MAX_DECIMAL_SIZE) return GPR_FAIL;
             if (digit_count == MAX_DECIMAL_SIZE) {
