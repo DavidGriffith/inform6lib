@@ -6432,16 +6432,13 @@ Object  LibraryExtensions "(Library Extensions)"
         !                             [R1] = All extensions run
         !                             [R2] = Extensions run while they return false
         !                             [R3] = Extensions run while they return -1
-
-!FIXME Glulx compilation temporarily broken while Zarf looks at M1029
-!        #Ifdef TARGET_GLULX;
-!        ! Glulx entry points
-!        !                             Called:           Runs:
-!        ext_handleglkevent      0,  ! if EP undefined   while extensions return false
-!        ext_identifyglkobject   0,  ! if EP undefined   while extensions return false
-!        ext_initglkwindow       0,  ! if EP undefined   while extensions return false
-!        #Endif; ! TARGET_GLULX;
-
-  has   proper;
+        #Ifdef TARGET_GLULX;
+        ! Glulx entry points
+        !                             Called:           Runs:
+        ext_handleglkevent      0,  ! if EP undefined   while extensions return false
+        ext_identifyglkobject   0,  ! if EP undefined   while extensions return false
+        ext_initglkwindow       0,  ! if EP undefined   while extensions return false
+        #Endif; ! TARGET_GLULX;
+        has   proper;
 
 ! ==============================================================================
