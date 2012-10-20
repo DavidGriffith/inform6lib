@@ -1,4 +1,20 @@
+! ==============================================================================
+!   IO:  Input-Output Routines.
+!
+!   Supplied for use with Inform 6 -- Release 6/12 -- Serial number 121019
+!
+!   Copyright Graham Nelson 1993-2012 but freely usable (see manuals)
+!
+!   This file is automatically Included in your game file by "Parser".
+! ------------------------------------------------------------------------------
+!   During development of 6/12 it was noticed that too much stuff was
+!   crammed into parserm.h.  V5 modules cannot exceed 65535 bytes, so
+!   IO-related routines were moved into this new file.
+! ------------------------------------------------------------------------------
+
+
 System_file;
+
 #Ifdef MODULE_MODE;
 Constant DEBUG;
 Constant Grammar__Version 2;
@@ -11,8 +27,6 @@ Import global indef_mode;
 Import global saveCaps;
 Import global caps_mode;
 #Endif; ! MODULE_MODE
-
-
 
 
 ! ----------------------------------------------------------------------------
