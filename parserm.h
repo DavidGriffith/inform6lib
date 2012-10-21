@@ -5771,6 +5771,7 @@ Object  InformLibrary "(Inform Library)"
 !   if (f==1) new_line;
 ];
 
+[ ShowDictSub_helper x; print (address) x; ];
 [ ShowDictSub
     dp el ne   f x y z;
 
@@ -5801,7 +5802,7 @@ Object  InformLibrary "(Inform Library)"
     for ( : ne-- : dp=dp+el) {
         print (address) dp, " --> ";
         x = dp->#dict_par1;              ! flag bits
-        y = PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, RT__ChPrintA, dp) + WORDSIZE;
+        y = PrintToBuffer(StorageForShortName, SHORTNAMEBUF_LEN, ShowDictSub_helper, dp) + WORDSIZE;
         for (z=WORDSIZE : z<y : z++) {
             !if (x & DICT_NOUN) StorageForShortName->z = UpperCase(StorageForShortName->z);
             if (y > WORDSIZE+1 && StorageForShortName->z == ' ' or '.' or ',') x = x | $8000;
