@@ -117,7 +117,7 @@ Include "linklv";
       3:    print "Entry in property list not routine or string: ~", (property) p2, "~ list of ~",
                   (name) p1, "~ (", p1, ")";
       4:    print "Too many timers/daemons are active simultaneously.
-                  The limit is the library constant MAX_TIMERS 
+                  The limit is the library constant MAX_TIMERS
                   (currently ", MAX_TIMERS, ") and should be increased";
       5:    print "Object ~", (name) p1, "~ has no ~", (property) p2, "~ property";
       7:    print "The object ~", (name) p1, "~ can only be used as a player object if it has
@@ -129,6 +129,7 @@ Include "linklv";
       12:   print "Tried to set a non-existent pronoun using SetPronoun";
       13:   print "A 'topic' token can only be followed by a preposition";
       14:   print "Overflowed buffer limit of ", p1, " using '@@64output_stream 3' ", (string) p2;
+      15:   print "LoopWithinObject broken because the object ", (name) p1, " was moved while the loop passed through it.";
       default:
             print "(unexplained)";
     }
@@ -711,7 +712,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
                             ! if x < 0: skip up to next parent
                             ! if x = 0: jump across to next sibling
                             ! if x > 0: continue down to child objects
-        if (y ~= parent(o)) { RT__Err(32, o); rfalse; }
+        if (y ~= parent(o)) { RunTimeError(15, o); rfalse; }
         if (x > 0 && child(o)) o = child(o);
         else
             while (o) {
