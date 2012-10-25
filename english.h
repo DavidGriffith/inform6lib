@@ -667,7 +667,7 @@ Constant COMMA__TX      = ", ";
     }
   Eat: switch (n) {
         1:  CSubjectIs__(x1,true); " plainly inedible.";
-        2:  CSubjectVerb(actor,false,"eat",0,"eats"); print (the) x1, " " ;
+        2:  CSubjectVerb(actor,false,"eat",0,"eats"); print " ", (the) x1;
                 if (actor == player) ". Not bad."; else ".";
     }
   EmptyT: switch (n) {
