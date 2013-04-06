@@ -6675,20 +6675,10 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 
     #Ifdef TARGET_ZCODE;
     if (standard_interpreter && findout) {
-        i = (HDR_OBJECTS-->0+124+o*14)-->0; ! Property address of object
-        findout = 0;                        ! To find the first char of the
-                                            ! object's short-name, we need
-                                            ! (worst case) to unpack the first
-                                            ! two words
-        if (i->0 > 2) {                     ! If more than two words...
-            i++;                            ! Start of packed name
-            findout = i-->1;                ! Save second word for restoration,
-            i-->1 = i-->1 | WORD_HIGHBIT;   ! then arbitrarily truncate
-        }
+        StorageForShortName-->0 = SHORTNAMEBUF_LEN;
         @output_stream 3 StorageForShortName;
         if (pluralise) print (number) pluralise; else print (PSN__) o;
         @output_stream -3;
-        if (findout) i-->1 = findout;       ! Restore truncated short-name
         acode = acode + 3*LanguageContraction(StorageForShortName + 2);
     }
     #Ifnot; ! TARGET_GLULX
