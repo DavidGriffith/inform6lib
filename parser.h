@@ -16,7 +16,7 @@ System_file;
 ! ------------------------------------------------------------------------------
 
 #Ifndef VN_1633;
-!Message fatalerror "*** Library 6/12 needs Inform v6.33 or later to work ***";
+Message fatalerror "*** Library 6/12 needs Inform v6.33 or later to work ***";
 #Endif; ! VN_
 
 Constant LibSerial       "1209??";
