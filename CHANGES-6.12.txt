@@ -11,6 +11,9 @@ http://www.inform-fiction.org/patches/library.html.
 New things added in Release 6/12
 ================================
 
+First-person and third-person narrative voices are now natively 
+supported.
+
 There is now a Global no_infer_message which can be used in the 
 ChooseObjects() routine to suppress an inference message for a 
 particular match.
