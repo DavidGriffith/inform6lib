@@ -1643,9 +1643,9 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     }
     else {
         #Ifdef NO_IMPLICIT_ACTIONS;
-        res = 2;
-        #Ifnot;
         res = 0;
+        #Ifnot;
+        res = 2;
         #Endif;
     }
     return res;
