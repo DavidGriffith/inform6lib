@@ -1950,7 +1950,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         }
     }
 
-    if (noun has container && noun hasnt open && ~~ImplicitOpen(noun)) return L__M(##Enter, 3, noun);
+    if (noun has container && noun hasnt open && ImplicitOpen(noun)) return L__M(##Enter, 3, noun);
     move actor to noun;
 
     if (AfterRoutines() || keep_silent) return;

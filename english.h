@@ -959,6 +959,7 @@ Constant COMMA__TX      = ", ";
                 if (WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT) == 0) "nothing.";
                 ".";
         5:  CSubjectVerb(actor,false,"open",0,"opens"); " ", (the) x1, ".";
+        6:  "(first opening ", (the) x1, ")";
     }
   Order:    CSubjectHas_(actor); " better things to do.";
   Places: switch (n) {
