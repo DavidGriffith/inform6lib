@@ -30,6 +30,12 @@ TRADITIONAL_TAKE_ALL at the beginning of your program.
 
 Issues addressed in Release 6/12 (12????)
 =========================================
+Issue L61115
+'multiheld' can match unholdable objects
+Problem: Contrary to the DM4, multiheld sometimes matches objects that 
+are not held. This would be OK if the objects were then implicitly 
+taken, like they are for held, but they are not.
+
 Issue L61101
 each_turn property causes runtime error.
 Problem: An each_turn property with both a local routine and a routine 
