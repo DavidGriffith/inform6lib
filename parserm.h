@@ -2623,13 +2623,20 @@ Constant UNLIT_BIT  =  32;
     ! In either case below we use NounDomain, giving it the token number as
     ! context, and two places to look: among the actor's possessions, and in the
     ! present location.  (Note that the order depends on which is likeliest.)
-
     if (token ~= HELD_TOKEN) {
         i = multiple_object-->0;
         #Ifdef DEBUG;
         if (parser_trace >= 3) print "  [Calling NounDomain on location and actor]^";
         #Endif; ! DEBUG
         l = NounDomain(actors_location, actor, token);
+
+	if (l notin actor && token == MULTIHELD_TOKEN) {
+	    if (ImplicitTake(l)) {
+		etype = NOTHELD_PE;
+		jump FailToken;
+	    }
+	}
+
         if (l == REPARSE_CODE) return l;                  ! Reparse after Q&A
         if (indef_wanted == 100 && l == 0 && number_matched == 0)
             l = 1;  ! ReviseMulti if TAKE ALL FROM empty container
@@ -2705,13 +2712,10 @@ Constant UNLIT_BIT  =  32;
                 #Endif; ! DEBUG
             }
         }
-    }
 
-    else {
-
+    } else {
     ! Case 2: token is "held" (which fortunately can't take multiple objects)
     ! and may generate an implicit take
-
         l = NounDomain(actor,actors_location,token);       ! Same as above...
         if (l == REPARSE_CODE) return GPR_REPARSE;
         if (l == 0) {
@@ -2738,6 +2742,7 @@ Constant UNLIT_BIT  =  32;
         ! Anyway for now all we do is record the number of the object to take.
 
         o = parent(l);
+
         if (o ~= actor) {
             if (notheld_mode == 1) {
                 saved_oops = oops_from;
