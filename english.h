@@ -458,11 +458,11 @@ Constant COMMA__TX      = ", ";
 [ CSubjectIsnt obj reportage;
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
-          1:  print "I'm not "; return;
-!          3:  print (object) player, " isn't "; return;
-          3:  player.short_name(); print " isn't "; return;
+          1:  print "I'm not"; return;
+!          3:  print (object) player, " isn't"; return;
+          3:  player.short_name(); print " isn't"; return;
         }
-        print "You aren't "; return;
+        print "You aren't"; return;
     }
     SubjectNotPlayer(obj, reportage, "aren't", "isn't");
 ];
@@ -471,8 +471,8 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I've "; return;
-!          3:  print (object) player, " has "; return;
-          3:  player.short_name(); print " has "; return;
+!          3:  print (object) player, " has"; return;
+          3:  player.short_name(); print " has"; return;
         }
         print "You've "; return;
     }
