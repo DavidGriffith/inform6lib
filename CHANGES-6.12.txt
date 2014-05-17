@@ -30,12 +30,6 @@ TRADITIONAL_TAKE_ALL at the beginning of your program.
 
 Issues addressed in Release 6/12 (12????)
 =========================================
-Issue L61115
-'multiheld' can match unholdable objects
-Problem: Contrary to the DM4, multiheld sometimes matches objects that 
-are not held. This would be OK if the objects were then implicitly 
-taken, like they are for held, but they are not.
-
 Issue L61101
 each_turn property causes runtime error.
 Problem: An each_turn property with both a local routine and a routine 
@@ -47,6 +41,20 @@ GET IN now matches Compass object
 Adding "in_obj.&name-->0 = '.ignore';" to Initialise() reverts back to 
 the previous behavior.  
 Status: Maybe fix?
+
+Issue L61103
+"statusline time;" statement isn't recognized
+Problem: When I compile Greystone with 6.30 and 6/11 my statusline time; 
+statement is seemingly ignored; the game runs by moves and not a clock. 
+If I revert back to 6.21 and 6/10 the statusline is indeed a clock again 
+and not a move counter.
+Status: Nothing yet
+
+Issue L61104
+ListMaker doesn't support 'serial' commas
+Problem: The WriteListFrom() listmaker doesn't support 'serial' commas 
+(aka Oxford or Harvard commas): Tom, Dick, and Harry.
+Status: Fixed
 
 Issue L61105
 'Game uses colour' bit is always set.
@@ -85,6 +93,13 @@ Issue L61109
 Problem with 'Give reverse' grammar
 Status: Fixed
 
+Issue L61110
+Inference message inconsistency
+Problem: In a pile of several indistinguishable objects, taking them 
+from the floor does not generate an (inference) message, but it does 
+when the final one is taken. (See also Suggestion 48)
+Status: Fixed
+
 Issue L61111  
 Multiple AGAINs treated as one
 Status: Fixed
@@ -110,14 +125,31 @@ Status: Fixed
 
 Issue L61114
 Numbers in the name property
-Problem: See file nametest.inf
-Status: trying to understand the problem
+Problem: Code such as this would cause "GET 1" to not match the box:
+  Object  -> box1 "box marked 1"
+    with  name 'box' 'marked' '1//',
+    description "It's a wooden box marked with the number 1.";
+  Object  -> box2 "box marked 2"
+    with  name 'box' 'marked' '2//',
+    description "It's a wooden box marked with the number 2.";
+Status: Fixed
+
+Issue L61115
+'multiheld' can match unholdable objects
+Problem: Contrary to the DM4, multiheld sometimes matches objects that 
+are not held. This would be OK if the objects were then implicitly 
+taken, like they are for held, but they are not.
+Status: Fixed
 
 Issue L61116
 Poor response from WAVE SELF
 Problem: The message produced by WAVE SELF -- "But you aren't holding 
 you" -- makes little sense.
 Status: Fixed
+
+Issue L61117
+Problem with <action> statements in Infix
+Status: Nothing yet
 
 Issue L61118
 'thedark.initial' is never called
@@ -132,6 +164,16 @@ DarkToDark() is called on dark-to-dark, but absolutely nothing is called
 on light-to-dark.
 Status: Fixed
 
+Issue L61119
+TRACE should distinguish matched and inferred tokens
+Problem:  When the parser partially matches a phrase, the TRACE command 
+should not say "token resulted in success" for terms that it did not 
+match but sucessfully inferred; instead it should state that those 
+terms were inferred. This would avoid the phrase "token resulted in 
+success" phrase meaning two different things -- actually matching and 
+inferring. 
+Status: Nothing yet
+
 Issue L61120
 Preposition parsing is too simplistic
 Status: Fixed (by way of L61127)
@@ -144,6 +186,19 @@ error messages:
   [** Programming error: tried to test "has" or "hasnt" of nothing **]
   [** Programming error: tried to test "has" or "hasnt" of nothing **]
   That's hardly portable.
+Status: Fixed
+
+Issue L61122
+Conflict between 'describe' and 'initial' properties
+Problem: This object displays its 'initial' message even though it has a 
+'moved' attribute; this is because of the presence of the 'describe' 
+property, even though it returns false.
+Status: Fixed
+
+Issue L61123
+Minor problem with parse_name
+Problem: A (rather minor) error with the parse_name routine. On page 
+209, the DM4 states: ...
 Status: Fixed
 
 Issue L61124
@@ -171,6 +226,11 @@ entries 0..number_matched-1). In particular this causes errors when the
 match_list is of full length (64 entries). Similarly for match_scores.
 Status: Fixed
 
+Issue L61126
+parser_inflection requires common properties in Glulx
+Problem: See http://inform-fiction.org/patches/L61126.html
+Status: Probably this is a Glulx interpreter bug
+
 Issue L61127 
 Improve multiexcept look-ahead
 Problem: When the parser processes a grammar line that uses multiexcept 
@@ -186,6 +246,13 @@ This also fixes L61120
 Status: Fixed
 I have also applied a fix submitted by Egon at 
 http://inform7.com/mantis/view.php?id=636.
+
+Issue L61128
+OOPS sometimes changes wrong word
+Problem: The OOPS command doesn't necessarily change the faulty word. In 
+the examples below, 'ZZZ' should be corrected to 'RUBY'. This happens in 
+the first example, but not the second.
+Status: Nothing yet
 
 Issue L61129
 Results from 'grammar' property are misplaced.
