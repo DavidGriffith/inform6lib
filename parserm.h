@@ -2287,7 +2287,7 @@ Constant UNLIT_BIT  =  32;
     indef_nspec_at = 0;
 ];
 
-[ Descriptors  o x flag cto type n;
+[ Descriptors  allow_multiple o x flag cto type n;
     ResetDescriptors();
     if (wn > num_words) return 0;
 
@@ -2326,7 +2326,7 @@ Constant UNLIT_BIT  =  32;
             if (take_all_rule == 1) take_all_rule = 2;
             indef_type = indef_type | PLURAL_BIT;
         }
-        if (allow_plurals) {
+        if (allow_plurals && allow_multiple) {
             n = TryNumber(wn-1);
             if (n == 1) { indef_mode = 1; flag = 1; }
             if (n > 1) {
@@ -2340,6 +2340,7 @@ Constant UNLIT_BIT  =  32;
             wn--;  ! Skip 'of' after these
     }
     wn--;
+    if ((indef_wanted > 0) && (~~allow_multiple)) return MULTI_PE;
     return 0;
 ];
 
@@ -2592,9 +2593,6 @@ Constant UNLIT_BIT  =  32;
 
     if (o == ME1__WD or ME2__WD or ME3__WD) { pronoun_word = o; pronoun_obj = player; }
 
-!    L61114 fix by Nathan Schwartzman
-!    Not sure if this will cause any regressions
-! It did.
     allow_plurals = true;
     desc_wn = wn;
 
