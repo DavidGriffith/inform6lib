@@ -2340,7 +2340,7 @@ Constant UNLIT_BIT  =  32;
             wn--;  ! Skip 'of' after these
     }
     wn--;
-    if ((indef_wanted > 0) && (~~allow_multiple)) return MULTI_PE;
+    if ((indef_wanted > 0) && (allow_multiple)) return MULTI_PE;
     return 0;
 ];
 
