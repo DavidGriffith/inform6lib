@@ -291,7 +291,10 @@ Global parser_inflection;           ! A property (usually "name") to find
 Global actor;                       ! Person asked to do something
 Global actors_location;             ! Like location, but for the actor
 Global meta;                        ! Verb is a meta-command (such as "save")
+
+#Ifdef INFIX;
 Global infix_verb;                  ! Verb is an Infix command
+#Endif;
 
 Array  multiple_object --> 64;      ! List of multiple parameters
 Global multiflag;                   ! Multiple-object flag passed to actions
@@ -1374,12 +1377,13 @@ Object  InformParser "(Inform Parser)"
 
     Keyboard(buffer, parse);
 
+#Ifdef INFIX;
     ! An Infix verb is a special kind of meta verb.  We mark them here.
     if (GetNthChar(buffer, 0) == ';')
 	infix_verb = true;
     else
 	infix_verb = false;
-
+#Endif;
 
   .ReParse;
 
@@ -5014,13 +5018,25 @@ Object  InformLibrary "(Inform Library)"
 !FIXME working on L61117 here
             #Iftrue (Grammar__Version == 1);
             if ((meta || BeforeRoutines() == false) && action < 256) {
-		if (infix_verb) BeforeRoutines();
-                ActionPrimitive();
+		#Ifdef INFIX;
+		if (infix_verb) {
+		    if (BeforeRoutines() == false)
+			ActionPrimitive();
+		} else ActionPrimitive();
+		#Ifnot;
+		ActionPrimitive();
+		#Endif;
 	    }
             #Ifnot;
             if ((meta || BeforeRoutines() == false) && action < 4096) {
-		if (infix_verb) BeforeRoutines();
-                ActionPrimitive();
+		#Ifdef INFIX;
+		if (infix_verb) {
+		    if (BeforeRoutines() == false)
+			ActionPrimitive();
+		} else ActionPrimitive();
+		#Ifnot;
+		ActionPrimitive();
+		#Endif;
 	    }
             #Endif; ! Grammar__Version
             action = sa; noun = sn; second = ss;
