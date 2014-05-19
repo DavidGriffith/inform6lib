@@ -5015,7 +5015,6 @@ Object  InformLibrary "(Inform Library)"
             source = 0;
             #Endif; ! DEBUG
 
-!FIXME working on L61117 here
             #Iftrue (Grammar__Version == 1);
             if ((meta || BeforeRoutines() == false) && action < 256) {
 		#Ifdef INFIX;
