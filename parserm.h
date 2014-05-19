@@ -291,6 +291,7 @@ Global parser_inflection;           ! A property (usually "name") to find
 Global actor;                       ! Person asked to do something
 Global actors_location;             ! Like location, but for the actor
 Global meta;                        ! Verb is a meta-command (such as "save")
+Global infix_verb;                  ! Verb is an Infix command
 
 Array  multiple_object --> 64;      ! List of multiple parameters
 Global multiflag;                   ! Multiple-object flag passed to actions
@@ -934,6 +935,12 @@ Object  InformParser "(Inform Parser)"
 
 #Ifdef TARGET_ZCODE;
 
+[ GetNthChar a_buffer n i;
+    for (i = 0: a_buffer->(2+i) == ' ': i++)
+	;
+    return a_buffer->(2+i+n);
+];
+
 [ KeyboardPrimitive  a_buffer a_table;
     read a_buffer a_table;
 
@@ -963,6 +970,12 @@ Object  InformParser "(Inform Parser)"
 ];
 
 #Ifnot; ! TARGET_GLULX
+
+[ GetNthChar a_buffer n i;
+    for (i = 0: a_buffer->(4+i) == ' ': i++)
+        ;
+    return a_buffer->(4+i+n);
+];
 
 [ KeyCharPrimitive win nostat done res ix jx ch;
     jx = ch; ! squash compiler warnings
@@ -1158,6 +1171,7 @@ Object  InformParser "(Inform Parser)"
     #IfV5;
     DrawStatusLine();
     #Endif; ! V5
+
     KeyboardPrimitive(a_buffer, a_table);
     nw = NumberWords(a_table);
 
@@ -1359,6 +1373,13 @@ Object  InformParser "(Inform Parser)"
   .ReType;
 
     Keyboard(buffer, parse);
+
+    ! An Infix verb is a special kind of meta verb.  We mark them here.
+    if (GetNthChar(buffer, 0) == ';')
+	infix_verb = true;
+    else
+	infix_verb = false;
+
 
   .ReParse;
 
@@ -4929,7 +4950,6 @@ Object  InformLibrary "(Inform Library)"
                 if (meta) continue;
                 if (~~deadflag) self.end_turn_sequence();
                 else if (START_MOVE ~= 1) turns++;
-
             } ! end of while()
 
             if (deadflag ~= 2 && AfterLife() == false)
@@ -4990,12 +5010,18 @@ Object  InformLibrary "(Inform Library)"
             #Ifnot;
             source = 0;
             #Endif; ! DEBUG
+
+!FIXME working on L61117 here
             #Iftrue (Grammar__Version == 1);
-            if ((meta || BeforeRoutines() == false) && action < 256)
+            if ((meta || BeforeRoutines() == false) && action < 256) {
+		if (infix_verb) BeforeRoutines();
                 ActionPrimitive();
+	    }
             #Ifnot;
-            if ((meta || BeforeRoutines() == false) && action < 4096)
+            if ((meta || BeforeRoutines() == false) && action < 4096) {
+		if (infix_verb) BeforeRoutines();
                 ActionPrimitive();
+	    }
             #Endif; ! Grammar__Version
             action = sa; noun = sn; second = ss;
         ],
