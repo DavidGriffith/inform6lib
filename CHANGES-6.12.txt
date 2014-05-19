@@ -149,7 +149,7 @@ Status: Fixed
 
 Issue L61117
 Problem with <action> statements in Infix
-Status: Nothing yet
+Status: Fixed
 
 Issue L61118
 'thedark.initial' is never called
