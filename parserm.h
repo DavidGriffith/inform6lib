@@ -939,8 +939,9 @@ Object  InformParser "(Inform Parser)"
 #Ifdef TARGET_ZCODE;
 
 [ GetNthChar a_buffer n i;
-    for (i = 0: a_buffer->(2+i) == ' ': i++)
-	;
+    for (i = 0: a_buffer->(2+i) == ' ': i++) {
+	if (i > a_buffer->(1)) return false;
+    }
     return a_buffer->(2+i+n);
 ];
 
@@ -975,8 +976,9 @@ Object  InformParser "(Inform Parser)"
 #Ifnot; ! TARGET_GLULX
 
 [ GetNthChar a_buffer n i;
-    for (i = 0: a_buffer->(4+i) == ' ': i++)
-        ;
+    for (i = 0: a_buffer->(4+i) == ' ': i++) {
+	if (i > a_buffer->(1)) return false;
+    }
     return a_buffer->(4+i+n);
 ];
 
