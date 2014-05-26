@@ -431,6 +431,7 @@ Constant COMMA__TX      = ", ";
 
 [ CSubjectVerb obj reportage v1 v2 v3;
     if (v2 == 0) v2 = v1; if (v3 == 0) v3 = v1;
+
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I ", (string) v1; return;
@@ -566,7 +567,7 @@ Constant COMMA__TX      = ", ";
 
 [ DecideAgainst;
     CSubjectVerb(actor,false,"decide",0,"decides"); 
-    "that's not such a good idea.";
+    " that's not such a good idea.";
 ];
 
 #Ifdef TARGET_ZCODE;
@@ -657,9 +658,9 @@ Constant COMMA__TX      = ", ";
     }
   Dig:      "Digging would achieve nothing here.";
   Disrobe: switch (n) {
-        1:  CSubjectIs__(actor,true); " not wearing ", (ThatOrThose) x1, ".";
-        2:  CSubjectVerb(actor,false," take off",0,"takes off");
-            "", (the) x1, ".";
+        1:  CSubjectIs__(actor,true); "not wearing ", (ThatOrThose) x1, ".";
+        2:  CSubjectVerb(actor,false,"take off",0,"takes off");
+            " ", (the) x1, ".";
     }
   Drink:    "There's nothing suitable to drink here.";
   Drop: switch (n) {
@@ -751,7 +752,7 @@ Constant COMMA__TX      = ", ";
         4:  CSubjectIs__(actor,true); " unable to descend by ", (the) x1, ".";
         5:  CSubjectCant(actor,true); " since ", (the) x1, " ", (IsOrAre) x1, " in the way.";
         6:  CSubjectCant(actor,true); " since ", (the) x1, " ", (nop) PluralObj(x1,"lead","leads"), "nowhere.";
-        7:  CSubjectVerb(actor,false," depart.",0," departs."); "";
+        7:  CSubjectVerb(actor,false,"depart.",0,"departs."); "";
     }
   Insert: switch (n) {
         1:  CSubjectVerb(actor,true,"need",0,"needs"); " to be holding ", (the) x1, " before ",
@@ -1110,7 +1111,7 @@ Constant COMMA__TX      = ", ";
         12: CSubjectIs__(actor,true); " carrying too many things already.";
     }
   Taste: switch (n) {
-        1:  CSubjectVerb(actor,true,"taste",0,"tastes"); "nothing unexpected.";
+        1:  CSubjectVerb(actor,true,"taste",0,"tastes"); " nothing unexpected.";
         2:  DecideAgainst();
     }
   Tell: switch (n) {
@@ -1124,7 +1125,7 @@ Constant COMMA__TX      = ", ";
         2:  CSubjectVerb(actor,true,"lack",0,"lacks"); " the nerve when it comes to the crucial moment.";
     }
   Tie: switch (n) {
-        1:  CSubjectVerb(actor,true,"would",0,0); "achieve nothing by this.";
+        1:  CSubjectVerb(actor,true,"would",0,0); " achieve nothing by this.";
         2:  DecideAgainst();
     }
   Touch: switch (n) {
