@@ -645,7 +645,9 @@ Constant COMMA__TX      = ", ";
         #Endif; ! TARGET_
     }
   Consult:  CSubjectVerb(actor,true,"discover",0,"discovers");
-            " nothing of interest in ", (the) x1, ".";
+            print " nothing of interest in ";
+            if (x1 == player) { OnesSelf(x1); ".";}
+            else print_ret (the) x1, ".";
   Cut: switch (n) {
         1:  "Cutting ", (ThatOrThose) x1, " up would achieve little.";
         2:  DecideAgainst();
