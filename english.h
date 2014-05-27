@@ -504,6 +504,8 @@ Constant COMMA__TX      = ", ";
         if (player provides narrative_voice) switch(player.narrative_voice) {
             1: print "myself"; return;
             2: player.short_name(); return;
+            3: if (obj has female) {print "herself"; return;}
+               print "himself"; return;
         }
         print "yourself"; return;
     }
