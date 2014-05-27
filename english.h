@@ -434,7 +434,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I ", (string) v1; return;
-          3:  player.short_name(); print " ", (string) v3; return;
+          3:  print (string) player.short_name, " ", (string) v3; return;
         }
         print "You ", (string) v2; return;
     }
@@ -445,7 +445,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I'm"; return;
-          3: player.short_name(); print " is"; return;
+          3:  print (string) player.short_name, " is"; return;
        }
         print "You're"; return;
     }
@@ -456,7 +456,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I'm not"; return;
-          3:  player.short_name(); print " isn't"; return;
+          3:  print (string) player.short_name, " isn't"; return;
         }
         print "You aren't"; return;
     }
@@ -467,7 +467,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I've "; return;
-          3:  player.short_name(); print " has"; return;
+          3:  print (string) player.short_name, " has"; return;
         }
         print "You've "; return;
     }
@@ -478,7 +478,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I'll"; return;
-          3:  player.short_name(); print " will"; return;
+          3:  print (string) player.short_name, " will"; return;
         }
         print "You'll"; return;
     }
@@ -502,7 +502,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch(player.narrative_voice) {
             1: print "myself"; return;
-            2: player.short_name(); return;
+            2: print (string) player.short_name; return;
             3: if (obj has female) {print "herself"; return;}
                print "himself"; return;
         }
@@ -518,7 +518,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch(player.narrative_voice) {
           1: if (caps) print "M"; else print "m"; print "y"; return;
-          3: player.short_name(); print "'s"; return;
+          3: print (string) player.short_name, "'s"; return;
         }
         if (caps) print "Y"; else print "y";
         print "our"; return;

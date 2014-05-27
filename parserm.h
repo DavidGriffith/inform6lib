@@ -657,7 +657,8 @@ Object  thedark "(darkness object)"
 ! need to replace this selfobj with your own.
 
 Object  selfobj "(self object)"
-  with  short_name  [;  return L__M(##Miscellany, 18); ],
+  with  name,
+        short_name  YOURSELF__TX,
         description [;  return L__M(##Miscellany, 19); ],
         before NULL,
         after NULL,
