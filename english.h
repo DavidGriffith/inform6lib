@@ -431,7 +431,6 @@ Constant COMMA__TX      = ", ";
 
 [ CSubjectVerb obj reportage v1 v2 v3;
     if (v2 == 0) v2 = v1; if (v3 == 0) v3 = v1;
-
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I ", (string) v1; return;
@@ -536,11 +535,15 @@ Constant COMMA__TX      = ", ";
 
 [ theActor obj;
     if (obj == player) {
-        if (obj provides narrative_voice) switch (obj.narrative_voice) {
-          1:                        print "I"; return;
-          3:                        print (object) obj; return;
+        if (obj provides narrative_voice) {
+            switch (obj.narrative_voice) {
+              1:  print "I"; return;
+              3:  if (obj has neuter) { print "it"; return; }
+                  if (obj has female) { print "she"; return; }
+                  print "he"; return;
+            }
         }
-                                    print "you"; return;
+        print "you"; return;
     }
     if (obj has pluralname)       { print "they"; return; }
     if (obj has female)           { print "she"; return; }
