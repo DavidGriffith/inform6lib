@@ -2564,7 +2564,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ SqueezeSub;
     if (ObjectIsUntouchable(noun)) return;
     if (noun has animate && noun ~= player) return L__M(##Squeeze, 1, noun);
-    L__M(##Squeeze, 3, noun);
+    L__M(##Squeeze, 2, noun);
 ];
 
 [ StrongSub; L__M(##Strong, 1, noun); ];
