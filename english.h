@@ -774,7 +774,7 @@ Constant COMMA__TX      = ", ";
     }
   Jump:     CSubjectVerb(actor,false,"jump",0,"jumps"); " on the spot, fruitlessly.";
   JumpOver: switch (n) {
-        1:  CSubjectVerb(actor,true,"would",0,0); "achieve nothing by this.";
+        1:  CSubjectVerb(actor,true,"would",0,0); " achieve nothing by this.";
         2:  DecideAgainst();
     }
   Kiss:     "Keep your mind on the game.";
@@ -1021,7 +1021,7 @@ Constant COMMA__TX      = ", ";
 !FIXME "...achive nothing by this" appears more than once.  Maybe make 
 ! something similar to DecideAgainst() for such instances?
   Rub: switch (n) {
-        1:  CSubjectVerb(actor,true,"achieve",0,"achieves"); "nothing by this.";
+        1:  CSubjectVerb(actor,true,"achieve",0,"achieves"); " nothing by this.";
         2:  DecideAgainst();
     }
   Save: switch (n) {
@@ -1069,7 +1069,7 @@ Constant COMMA__TX      = ", ";
   Sing:     print_ret (PossessiveCaps) actor, " singing is abominable.";
   Sleep:    CSubjectIsnt(actor,true); " feeling especially drowsy.";
   Smell: switch (n) {
-        1:  CSubjectVerb(actor,true,"smell",0,"smells"); "nothing unexpected.";
+        1:  CSubjectVerb(actor,true,"smell",0,"smells"); " nothing unexpected.";
         2:  DecideAgainst();
     }
             #Ifdef DIALECT_US;
@@ -1079,7 +1079,7 @@ Constant COMMA__TX      = ", ";
             #Endif;
   Squeeze: switch (n) {
         1:  DecideAgainst();
-        2:  CSubjectVerb(actor,true,"achieve",0,"achieves"); "nothing by this.";
+        2:  CSubjectVerb(actor,true,"achieve",0,"achieves"); " nothing by this.";
     }
   Strong:   "Real adventurers do not use such language.";
   Swim:     "There's not enough water to swim in.";
@@ -1153,9 +1153,6 @@ Constant COMMA__TX      = ", ";
         2:  CSubjectVerb(actor,false,"look",0,"looks"); " ridiculous waving ", (the) x1, ".";
         3:  DecideAgainst();
     }
-
-!  WaveHands:CSubjectVerb(actor,false,"wave,",0,"waves,"); "feeling foolish.";
-
   WaveHands:
         CSubjectVerb(actor,false,"wave",0,"waves");
         switch (n) {
