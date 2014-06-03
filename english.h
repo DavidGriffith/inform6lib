@@ -466,10 +466,10 @@ Constant COMMA__TX      = ", ";
 [ CSubjectHas_ obj reportage;
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
-          1:  print "I've "; return;
+          1:  print "I've"; return;
           3:  print (string) player.short_name, " has"; return;
         }
-        print "You've "; return;
+        print "You've"; return;
     }
     SubjectNotPlayer(obj, reportage, "have", "has");
 ];
