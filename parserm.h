@@ -283,6 +283,8 @@ Global parser_two;                  !
 Array  inputobjs       --> 16;      ! For parser to write its results in
 Global parser_inflection;           ! A property (usually "name") to find
                                     ! object names in
+Global parser_inflection_func;      ! Programmer sets this to true when
+                                    ! parser_infection is a function
 
 ! ------------------------------------------------------------------------------
 !   Parser output
@@ -1391,6 +1393,7 @@ Object  InformParser "(Inform Parser)"
   .ReParse;
 
     parser_inflection = name;
+    parser_inflection_func = false;
 
     ! Initially assume the command is aimed at the player, and the verb
     ! is the first word
@@ -1931,6 +1934,7 @@ Object  InformParser "(Inform Parser)"
             if (token ~= ENDIT_TOKEN) {
                 scope_reason = PARSING_REASON;
                 parser_inflection = name;
+                parser_inflection_func = false;
                 AnalyseToken(token);
 
                 if (action_to_be == ##AskTo && found_ttype == ELEMENTARY_TT &&
@@ -4338,13 +4342,14 @@ Constant SCORE__DIVISOR     = 20;
 
     k = wn; wn = wnum; wd = NextWordStopped(); wn = k;
 
-    if (parser_inflection >= 256) {
+    if (parser_inflection_func || parser_inflection >= 256) {
         k = parser_inflection(obj, wd);
         if (k >= 0) return k;
         m = -k;
     }
     else
         m = parser_inflection;
+
     k = obj.&m; l = (obj.#m)/WORDSIZE-1;
     for (m=0 : m<=l : m++)
         if (wd == k-->m) rtrue;

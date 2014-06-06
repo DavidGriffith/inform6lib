@@ -26,6 +26,13 @@ TAKE ALL has been modified such that scenery or animate objects will not
 be taken.  To revert back to traditional behavior, define Constant 
 TRADITIONAL_TAKE_ALL at the beginning of your program.
 
+To deal with L61126, a new global has been introduced: 
+parser_inflection_func.  Whenever parser_inflection is set as a 
+function, parser_inflection_func must be set to true.  When the parser 
+is done with it, parser_inflection_func is set back to false.  Under the 
+Z-machine, it is possible to tell if a global is a common property or a 
+function.  This is not so with the Glulx VM.  For background on how one 
+might use parser_inflection, see Section 35 of the DM4.
 
 
 Issues addressed in Release 6/12 (12????)
@@ -228,8 +235,9 @@ Status: Fixed
 
 Issue L61126
 parser_inflection requires common properties in Glulx
-Problem: See http://inform-fiction.org/patches/L61126.html
-Status: Probably this is a Glulx interpreter bug
+Problem: Glulx cannot distinguish between a global that is a function or 
+a common property.  They must be addressed differently.
+Status: Fixed
 
 Issue L61127 
 Improve multiexcept look-ahead
