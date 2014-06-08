@@ -378,7 +378,7 @@ Global inferfrom;                   ! The point from which the rest of the
                                     ! command must be inferred
 Global inferword;                   ! And the preposition inferred
 Global dont_infer;                  ! Another dull flag
-Global no_infer_message;            ! Use in ChooseObjects to suppress
+Global no_infer_message = false;    ! Use in ChooseObjects to suppress
                                     ! an inference message.
 
 Global action_to_be;                ! (If the current line were accepted.)
@@ -4813,8 +4813,6 @@ Constant MAX_DECIMAL_BASE 214748364;
 
 Object  InformLibrary "(Inform Library)"
   with  play [ i j k l;
-
-            no_infer_message = false;
 
             #Ifdef TARGET_ZCODE;
             ZZInitialise();
