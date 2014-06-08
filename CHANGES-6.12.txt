@@ -31,8 +31,9 @@ parser_inflection_func.  Whenever parser_inflection is set as a
 function, parser_inflection_func must be set to true.  When the parser 
 is done with it, parser_inflection_func is set back to false.  Under the 
 Z-machine, it is possible to tell if a global is a common property or a 
-function.  This is not so with the Glulx VM.  For background on how one 
-might use parser_inflection, see Section 35 of the DM4.
+function.  This is not so with the Glulx VM.  This change goes for both 
+Z-machine and Glulx.  For background on how one might use 
+parser_inflection, see Section 35 of the DM4.
 
 
 Issues addressed in Release 6/12 (12????)

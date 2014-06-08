@@ -4342,7 +4342,7 @@ Constant SCORE__DIVISOR     = 20;
 
     k = wn; wn = wnum; wd = NextWordStopped(); wn = k;
 
-    if (parser_inflection_func || parser_inflection >= 256) {
+    if (parser_inflection_func) {
         k = parser_inflection(obj, wd);
         if (k >= 0) return k;
         m = -k;
