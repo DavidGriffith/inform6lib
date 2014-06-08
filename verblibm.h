@@ -17,6 +17,8 @@ Include "linklpa";
 Include "linklv";
 #Endif; ! MODULE_MODE
 
+Global no_implicit_actions = false;
+
 ! ------------------------------------------------------------------------------
 
 [ Banner i;
@@ -1642,11 +1644,10 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         if (sav_sec) second = sav_sec;
     }
     else {
-        #Ifdef NO_IMPLICIT_ACTIONS;
-        res = 2;
-        #Ifnot;
-        res = 0;
-        #Endif;
+	if (no_implicit_actions)
+            res = 2;
+        else
+            res = 0;
     }
     return res;
 ];
@@ -1657,7 +1658,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Take, obj);
     ! 0 = Take object, Tell the user (normal default)
     ! 1 = Take object, don't Tell
-    ! 2 = don't Take object          (default with NO_IMPLICIT_ACTIONS)
+    ! 2 = don't Take object          (default with no_implicit_actions)
     if (res == 2) rtrue;
     if (parent(obj) && parent(obj) has container or supporter) supcon = parent(obj);
     ks = keep_silent; keep_silent = 2; AttemptToTakeObject(obj); keep_silent = ks;
@@ -1674,7 +1675,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Exit, obj);
     ! 0 = Exit object, Tell the user (normal default)
     ! 1 = Exit object, don't Tell
-    ! 2 = don't Exit object          (default with NO_IMPLICIT_ACTIONS)
+    ! 2 = don't Exit object          (default with no_implicit_actions)
     if (res == 2) rtrue;
     ks = keep_silent; keep_silent = 2; <Exit obj, actor>; keep_silent = ks;
     if (parent(actor) == obj) rtrue;
@@ -1688,7 +1689,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Close, obj);
     ! 0 = Close object, Tell the user (normal default)
     ! 1 = Close object, don't Tell
-    ! 2 = don't Close object          (default with NO_IMPLICIT_ACTIONS)
+    ! 2 = don't Close object          (default with no_implicit_actions)
     if (res == 2) rtrue;
     ks = keep_silent; keep_silent = 2; <Close obj, actor>; keep_silent = ks;
     if (obj has open) rtrue;
@@ -1702,7 +1703,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Open, obj);
     ! 0 = Open object, Tell the user (normal default)
     ! 1 = Open object, don't Tell
-    ! 2 = don't Open object          (default with NO_IMPLICIT_ACTIONS)
+    ! 2 = don't Open object          (default with no_implicit_actions)
     if (res == 2) rtrue;
     if (obj has locked) rtrue;
     ks = keep_silent; keep_silent = 2; <Open obj, actor>; keep_silent = ks;
@@ -1722,7 +1723,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Disrobe, obj);
     ! 0 = Take off object, Tell the user (normal default)
     ! 1 = Take off object, don't Tell
-    ! 2 = don't Take off object          (default with NO_IMPLICIT_ACTIONS)
+    ! 2 = don't Take off object          (default with no_implicit_actions)
     if (res == 2) rtrue;
     ks = keep_silent; keep_silent = 1; <Disrobe obj, actor>; keep_silent = ks;
     if (obj has worn && obj in actor) rtrue;
