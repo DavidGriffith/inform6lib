@@ -14,17 +14,30 @@ New things added in Release 6/12
 First-person and third-person narrative voices are now natively 
 supported.
 
-There is now a Global no_infer_message which can be used in the 
-ChooseObjects() routine to suppress an inference message for a 
-particular match.
+The default mode is now VERBOSE.
 
-If you define a Constant NO_IMPLICIT_ACTIONS, the library will not 
-attempt to do things that implicitly must be done like taking an object 
-from a sack before dropping it.
+There is now a Global "no_infer_message" which can be used in the 
+ChooseObjects() routine to suppress an inference message for a 
+particular match.  This global is reset to false after the turn is 
+complete.
+
+There is now a Global "no_implicit_actions" which can be used to tell 
+the library not attempt to do things that implicitly must be done.  For 
+example, the PC is holding a sack containing an apple and the command 
+"DROP APPLE" is typed.  With no_implicit_actions set to true, the 
+Library will complain instead of taking the apple out of the sack before 
+dropping it.  Once this global is set, it stays set.
+
+If you add "Constant NO_INITIAL_LOOK;" to the beginning of your code, 
+the library will not do an initial LOOK at the beginning of your 
+program.
+
+If the author writes an Epilogue() function, this function will execute 
+when the game ends.
 
 TAKE ALL has been modified such that scenery or animate objects will not 
-be taken.  To revert back to traditional behavior, define Constant 
-TRADITIONAL_TAKE_ALL at the beginning of your program.
+be taken.  To revert back to traditional behavior, add "Constant 
+TRADITIONAL_TAKE_ALL;" at the beginning of your program.
 
 To deal with L61126, a new global has been introduced: 
 parser_inflection_func.  Whenever parser_inflection is set as a 
@@ -56,7 +69,7 @@ Problem: When I compile Greystone with 6.30 and 6/11 my statusline time;
 statement is seemingly ignored; the game runs by moves and not a clock. 
 If I revert back to 6.21 and 6/10 the statusline is indeed a clock again 
 and not a move counter.
-Status: Nothing yet
+Status: Unable to reproduce
 
 Issue L61104
 ListMaker doesn't support 'serial' commas
@@ -237,7 +250,9 @@ Status: Fixed
 Issue L61126
 parser_inflection requires common properties in Glulx
 Problem: Glulx cannot distinguish between a global that is a function or 
-a common property.  They must be addressed differently.
+a common property.  They must be addressed differently.  Code has been 
+introduced to require the author to explicity declare if 
+parser_inflection is a function or a common property.
 Status: Fixed
 
 Issue L61127 
