@@ -723,6 +723,7 @@ Constant COMMA__TX      = ", ";
             print " ";
             SupportObj(x1,"off","out of"); " ", (the) x1, ".";
         4:  CSubjectIsnt(actor,true);
+            print " ";
             SupportObj(x1,"on","in"); " ", (the) x1, ".";
         5:  "(first getting ", (nop) SupportObj(x1,"off","out of"),
               " ", (the) x1, ")";
