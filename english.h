@@ -657,7 +657,7 @@ Constant COMMA__TX      = ", ";
     }
   Dig:      "Digging would achieve nothing here.";
   Disrobe: switch (n) {
-        1:  CSubjectIs__(actor,true); "not wearing ", (ThatOrThose) x1, ".";
+        1:  CSubjectIs__(actor,true); " not wearing ", (ThatOrThose) x1, ".";
         2:  CSubjectVerb(actor,false,"take off",0,"takes off");
             " ", (the) x1, ".";
     }
@@ -759,7 +759,7 @@ Constant COMMA__TX      = ", ";
                 (theActor) actor, " can put ", (ItOrThem) x1, " into something else.";
         2:  CSubjectCant(x1,true); " contain things.";
         3:  CSubjectIs__(x1,true); " closed.";
-        4:  CSubjectWill(actor,true); "need to take ", (ItOrThem) x1, " off first.";
+        4:  CSubjectWill(actor,true); " need to take ", (ItOrThem) x1, " off first.";
         5:  CSubjectCant(actor,true); " put something inside itself.";
         6:  "(first taking ", (ItOrThem) x1, " off)";
         7:  "There is no more room in ", (the) x1, ".";
