@@ -1158,7 +1158,7 @@ Constant COMMA__TX      = ", ";
         CSubjectVerb(actor,false,"wave",0,"waves");
         switch (n) {
         1: ! nothing
-        2: print "at ", (the) x1;
+        2: print " at ", (the) x1;
         }
         ", feeling foolish.";
   Wear: switch (n) {
