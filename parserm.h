@@ -658,8 +658,9 @@ Object  thedark "(darkness object)"
 ! If you want to use the third-person of the narrative voice, you will 
 ! need to replace this selfobj with your own.
 
-Object  selfobj "(self object)"
-  with  short_name  YOURSELF__TX,
+Object  selfobj	 "(self object)"
+  with  name '(self object)',
+        short_name  YOURSELF__TX,
         description [;  return L__M(##Miscellany, 19); ],
         before NULL,
         after NULL,
@@ -673,9 +674,11 @@ Object  selfobj "(self object)"
         orders 0,
         number 0,
         narrative_voice 0,
+	nameless true,
         posture 0,
         before_implicit [;Take: return 2;],
   has   concealed animate proper transparent;
+
 
 ! ============================================================================
 !  The definition of the token-numbering system used by Inform.
@@ -4980,7 +4983,6 @@ Object  InformLibrary "(Inform Library)"
         actor_act [ p a n s  j sp sa sn ss;
             sp = actor; actor = p;
             if (p ~= player) {
-
                 ! The player's "orders" property can refuse to allow
                 ! conversation here, by returning true.  If not, the order is
                 ! sent to the other person's "orders" property.  If that also
@@ -5556,11 +5558,14 @@ Object  InformLibrary "(Inform Library)"
         if (i has animate) give i transparent;
         i = parent(i);
     }
-    if (player == selfobj) player.short_name = FORMER__TX;
+    if (player == selfobj && player.nameless == true)
+	player.short_name = FORMER__TX;
 
     player = obj;
 
-    if (player == selfobj) player.short_name = NULL;
+    if (player == selfobj && player.nameless == true)
+	player.short_name = NULL;
+
     give player transparent concealed animate proper;
     i = player; while (parent(i) ~= 0) i = parent(i);
     location = i; real_location = location;
