@@ -659,7 +659,7 @@ Object  thedark "(darkness object)"
 ! need to replace this selfobj with your own.
 
 Object  selfobj	 "(self object)"
-  with  name '(self object)',
+  with name ',a' ',b' ',c' ',d' ',e',
         short_name  YOURSELF__TX,
         description [;  return L__M(##Miscellany, 19); ],
         before NULL,
@@ -668,12 +668,13 @@ Object  selfobj	 "(self object)"
         each_turn NULL,
         time_out NULL,
         describe NULL,
+        article "the",
         add_to_scope 0,
         capacity 100,
         parse_name 0,
         orders 0,
         number 0,
-        narrative_voice 0,
+        narrative_voice 2,
 	nameless true,
         posture 0,
         before_implicit [;Take: return 2;],
@@ -5559,7 +5560,10 @@ Object  InformLibrary "(Inform Library)"
         i = parent(i);
     }
     if (player == selfobj && player.nameless == true)
-	player.short_name = FORMER__TX;
+        if (player.narrative_voice == 1)
+	    player.short_name = MYFORMER__TX;
+        else if (player.narrative_voice == 2)
+            player.short_name = FORMER__TX;
 
     player = obj;
 
@@ -6758,7 +6762,6 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
       String:   print "<string ~", (string) o, "~>"; rtrue;
       nothing:  print "<illegal object number ", o, ">"; rtrue;
     }
-    if (o == player) { print (string) YOURSELF__TX; rtrue; }
     #Ifdef LanguagePrintShortName;
     if (LanguagePrintShortName(o)) rtrue;
     #Endif; ! LanguagePrintShortName
@@ -6825,12 +6828,6 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 ];
 
 [ CDefart o saveIndef saveCaps;
-    #Ifdef YOU__TX;
-    if (o == player) {
-        print (string) YOU__TX;
-        return;
-    }
-    #Endif;
     saveIndef = indef_mode; indef_mode = false;
     saveCaps = caps_mode; caps_mode = true;
     if (~~o ofclass Object) {

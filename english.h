@@ -345,6 +345,7 @@ Constant MOVES__TX      = "Moves: ";
 Constant TIME__TX       = "Time: ";
 Constant CANTGO__TX     = "You can't go that way.";
 Constant FORMER__TX     = "your former self";
+Constant MYFORMER__TX   = "my former self";
 Constant YOURSELF__TX   = "yourself";
 Constant YOU__TX        = "You";
 Constant DARKNESS__TX   = "Darkness";
@@ -434,7 +435,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I ", (string) v1; return;
-          3:  PrintOrRun(player, short_name, 1);
+          3:  CDefart(player);
               print " ", (string) v3; return;
         }
         print "You ", (string) v2; return;
@@ -446,7 +447,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I'm"; return;
-          3:  PrintOrRun(player, short_name, 1);
+          3:  CDefart(player);
               print " is"; return;
        }
         print "You're"; return;
@@ -458,7 +459,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I'm not"; return;
-          3:  PrintOrRun(player, short_name, 1);
+          3:  CDefart(player);
               print " isn't"; return;
         }
         print "You aren't"; return;
@@ -470,7 +471,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I've"; return;
-          3:  PrintOrRun(player, short_name, 1);
+          3:  CDefart(player);
               print " has"; return;
         }
         print "You've"; return;
@@ -482,7 +483,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I'll"; return;
-          3:  PrintOrRun(player, short_name, 1);
+          3:  CDefart(player);
               print " will"; return;
         }
         print "You'll"; return;
@@ -522,7 +523,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch(player.narrative_voice) {
           1:  if (caps) print "M"; else print "m"; print "y"; return;
-          3:  PrintOrRun(player, short_name, 1);
+          3:  CDefart(player);
               print "'s"; return;
         }
         if (caps) print "Y"; else print "y";
