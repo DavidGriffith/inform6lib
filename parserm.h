@@ -2663,14 +2663,14 @@ Constant UNLIT_BIT  =  32;
         #Endif; ! DEBUG
         l = NounDomain(actors_location, actor, token);
 
-        if (l == REPARSE_CODE) return l;                  ! Reparse after Q&A
-
-	if (l ~= nothing && l notin actor && token == MULTIHELD_TOKEN) {
-	    if (ImplicitTake(l)) {
-		etype = NOTHELD_PE;
-		jump FailToken;
-	    }
-	}
+!FIXME this caused trouble with DROP and with no_implicit_actions
+!        if (l == REPARSE_CODE) return l;                  ! Reparse after Q&A
+!	if (l ~= nothing && l notin actor && token == MULTIHELD_TOKEN) {
+!	    if (ImplicitTake(l)) {
+!		etype = NOTHELD_PE;
+!		jump FailToken;
+!	    }
+!	}
 
         if (indef_wanted == 100 && l == 0 && number_matched == 0)
             l = 1;  ! ReviseMulti if TAKE ALL FROM empty container
