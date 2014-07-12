@@ -1028,8 +1028,6 @@ Constant COMMA__TX      = ", ";
         1:  "Restore failed.";
         2:  "Ok.";
     }
-!FIXME "...achive nothing by this" appears more than once.  Maybe make 
-! something similar to DecideAgainst() for such instances?
   Rub: switch (n) {
         1:  CSubjectVerb(actor,true,true,"achieve",0,"achieves"); " nothing by this.";
         2:  DecideAgainst();
