@@ -2384,6 +2384,7 @@ Constant UNLIT_BIT  =  32;
 ! ----------------------------------------------------------------------------
 
 [ CreatureTest obj;
+    if (actor ~= player) rtrue;
     if (obj has animate) rtrue;
     if (obj hasnt talkable) rfalse;
     if (action_to_be == ##Ask or ##Answer or ##Tell or ##AskFor) rtrue;
