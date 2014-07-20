@@ -2182,6 +2182,7 @@ Object  InformParser "(Inform Parser)"
     if (etype == UPTO_PE) {     L__M(##Miscellany, 28);
         for (m=0 : m<32 : m++) pattern-->m = pattern2-->m;
         pcount = pcount2; PrintCommand(0); L__M(##Miscellany, 56);
+        oops_from = wn-1;
     }
     if (etype == NUMBER_PE)     L__M(##Miscellany, 29);
     if (etype == CANTSEE_PE) {  L__M(##Miscellany, 30); oops_from=saved_oops; }
@@ -3802,8 +3803,6 @@ Constant SCORE__DIVISOR     = 20;
 ! ----------------------------------------------------------------------------
 
 [ CantSee  i w e;
-    saved_oops=oops_from;
-
     if (scope_token ~= 0) {
         scope_error = scope_token;
         return ASKSCOPE_PE;
@@ -3823,6 +3822,7 @@ Constant SCORE__DIVISOR     = 20;
         Descriptors();  ! skip past THE etc
         if (i has visited && Refers(i,wn) == 1) e = SCENERY_PE;
     }
+    saved_oops = wn;
     wn++;
     return e;
 ];
