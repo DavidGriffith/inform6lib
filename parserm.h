@@ -1313,6 +1313,12 @@ Object  InformParser "(Inform Parser)"
     w2 = a_table-->(3*oops_from - 1); ! Length of word to go
     #Endif; ! TARGET_
 
+#IfDef OOPS_CHECK;
+    print "[~";
+    for (i=0 : i<w2 : i++) for (i=0 : i<w2 : i++) print (char)a_buffer->(i+w);
+    print "~ --> ~";
+#Endif;
+
     ! Write spaces over the word to be corrected:
 
     for (i=0 : i<w2 : i++) a_buffer->(i+w) = ' ';
@@ -1328,7 +1334,16 @@ Object  InformParser "(Inform Parser)"
 
     ! Write the correction in:
 
-    for (i=0 : i<x2 : i++) a_buffer->(i+w) = buffer2->(i+x1);
+    for (i=0 : i<x2 : i++) {
+        a_buffer->(i+w) = buffer2->(i+x1);
+#IfDef OOPS_CHECK;
+        print (char) buffer2->(i+x1);
+#Endif;
+    }
+
+#IfDef OOPS_CHECK;
+        print "~]^^";
+#Endif;
 
     Tokenise__(a_buffer, a_table);
     nw=NumberWords(a_table);
