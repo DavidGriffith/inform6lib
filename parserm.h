@@ -3837,7 +3837,7 @@ Constant SCORE__DIVISOR     = 20;
         Descriptors();  ! skip past THE etc
         if (i has visited && Refers(i,wn) == 1) e = SCENERY_PE;
     }
-    saved_oops = wn;
+    saved_oops = match_from + match_length;
     wn++;
     return e;
 ];
