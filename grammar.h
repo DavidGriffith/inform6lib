@@ -225,10 +225,12 @@ Verb 'disrobe' 'doff' 'shed'
 Verb 'drink' 'sip' 'swallow'
     * noun                                      -> Drink;
 
-Verb 'drop' 'discard' 'throw'
+Verb 'drop' 'discard'
     * multiheld                                 -> Drop
     * multiexcept 'in'/'into'/'down' noun       -> Insert
-    * multiexcept 'on'/'onto' noun              -> PutOn
+    * multiexcept 'on'/'onto' noun              -> PutOn;
+
+Verb 'throw'
     * held 'at'/'against'/'on'/'onto' noun      -> ThrowAt;
 
 Verb 'eat'
