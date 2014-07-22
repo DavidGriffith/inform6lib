@@ -482,6 +482,7 @@ Array  match_scores --> MATCH_LIST_SIZE;  ! An array of match scores for them
 Global number_matched;              ! How many items in it?  (0 means none)
 Global number_of_classes;           ! How many equivalence classes?
 Global match_length;                ! How many words long are these matches?
+Global saved_ml;
 Global match_from;                  ! At what word of the input do they begin?
 Global bestguess_score;             ! What did the best-guess object score?
 
@@ -569,6 +570,7 @@ Constant comma_word = 'comma,';     ! An "untypeable word" used to substitute
 
 Global wn;                          ! Word number within "parse" (from 1)
 Global num_words;                   ! Number of words typed
+Global num_desc;                    ! Number of descriptors typed
 Global verb_word;                   ! Verb word (eg, take in "take all" or
                                     ! "dwarf, take all") - address in dict
 Global verb_wordnum;                ! its number in typing order (eg, 1 or 3)
@@ -1348,6 +1350,7 @@ Object  InformParser "(Inform Parser)"
     Tokenise__(a_buffer, a_table);
     nw=NumberWords(a_table);
 
+!    saved_ml = 0;
     return nw;
 ]; ! end of Keyboard
 
@@ -2338,9 +2341,11 @@ Constant UNLIT_BIT  =  32;
     indef_nspec_at = 0;
 ];
 
-[ Descriptors  allow_multiple o x flag cto type n;
+[ Descriptors  allow_multiple o x flag cto type n m;
     ResetDescriptors();
     if (wn > num_words) return 0;
+
+    m = wn;
 
     for (flag=true : flag :) {
         o = NextWordStopped(); flag = false;
@@ -2391,6 +2396,7 @@ Constant UNLIT_BIT  =  32;
             wn--;  ! Skip 'of' after these
     }
     wn--;
+    num_desc = wn - m;
     if ((indef_wanted > 0) && (allow_multiple)) return MULTI_PE;
     return 0;
 ];
@@ -2698,6 +2704,7 @@ Constant UNLIT_BIT  =  32;
         }
         if (l == 0) {
             if (indef_possambig) {
+                saved_ml = match_length;
                 ResetDescriptors();
                 wn = desc_wn;
                 jump TryAgain2;
@@ -3838,6 +3845,12 @@ Constant SCORE__DIVISOR     = 20;
         if (i has visited && Refers(i,wn) == 1) e = SCENERY_PE;
     }
     saved_oops = match_from + match_length;
+
+    if (saved_ml)
+        saved_oops = num_desc + match_from + saved_ml;
+    else
+        saved_oops = num_desc + match_from + match_length;
+
     wn++;
     return e;
 ];
