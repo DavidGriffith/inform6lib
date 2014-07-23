@@ -1655,7 +1655,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ ImplicitTake obj
     res ks supcon;
     if (obj in actor) rfalse;
-    if (action_to_be == ##Drop) rtrue;
+    if (action_to_be == ##Drop) rfalse;
     res = CheckImplicitAction(##Take, obj);
     ! 0 = Take object, Tell the user (normal default)
     ! 1 = Take object, don't Tell
