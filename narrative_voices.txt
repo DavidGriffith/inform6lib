@@ -43,15 +43,14 @@ For third-person mode, some additional properties are necessary:
 The name property must be specified like this.  There are five slots to 
 which you may add dictionary words.
 
-That's all there is to it.  This does, however, require a bit more 
-discipline when it comes to writing your prose and dealing with the 
-default responses from new verbs you introduce.  If the player always 
-controls the same character and/or the narrative voice never changes, 
-you can write your verb subroutines to always talk about George.  If the 
-player changes characters or the narrative voice changes, things get a 
-bit more complicated.  Problems like that can be solved by careful use 
-of the CSubject functions which are detailed at the end of this 
-document.
+Using these modes may require a bit more discipline when it comes to 
+writing your prose and dealing with the default responses from new verbs 
+you introduce.  If the player always controls the same character and/or 
+the narrative voice never changes, you can write your verb subroutines 
+to always talk about George.  If the player changes characters or the 
+narrative voice changes, things get a bit more complicated.  Problems 
+like that can be solved by careful use of the CSubject functions which 
+are detailed at the end of this document.
 
 Previously if you changed the player-character to something other than 
 selfobj, the former player-character would be described as "Your former 
@@ -92,7 +91,7 @@ This results in a room description like this:
     a revolver
 
 The default article used to describe a non-proper PC is "the".  If you 
-want to talk about just "a detective", just set player.article to "a".
+want to talk about "a detective", just set player.article to "a".
 
 There is another property for the player object: nameless.  This has 
 meaning only in the first-person or second-person narrative voices.  
@@ -105,14 +104,76 @@ used, the nameless property is ignored.  "The detective" isn't
 namelessness.  It's just not a proper name.
 
 
-The Library uses the CSubject subroutines to figure out when to say 
-"I", "You", or "George".  You can use them too.  They are documented 
-here:
+The Library uses the CSubject subroutines to figure out when to say "I", 
+"You", or "George".  You can use them too.  The most important of these 
+is CSubjectVerb().  It handles the conjugation of verbs used by the 
+actor.  These are its parameters:
+	obj		The actor who is doing something.
+	reportage	Boolean: causes the actor to "observe"[1]
+	nocaps		Boolean: Don't capitalise if "you" is used[2].
+	v1		1st person "I" present verb.
+	v2		2nd person "You" present verb[3].
+	v3		3rd person "He", "she", or "it" present verb.
 
-Function Name:	CSubjectVerb
-Parameters:	obj		The character who is doing something
-		reportage
-		v1
-		v2
-		v3
+[1] In the Library itself, "reportage" is used in SubjectNotPlayer() 
+which determines the correct conjugation for certain actions performed 
+by NPCs.  If this is "false", then this will happen:
+    > SALLY, RUB LAMP
+    Sally achieves nothing by this.
+If this is "true" then this happens:
+    > SALLY, RUB LAMP
+    Sally observes that she achieves nothing by this.
+This sort of thing can be important if you want to imply that the NPC is 
+aware of the result of an action.
+
+[2] When the second-person voice is used, responses very often begin 
+with "You".  Suppose you want to put a conjunction like "but" in front 
+of "you".  For instance: 
+    > EAT PUDDING
+    But you can't have any pudding if you don't eat your meat!
+See that "you" is not capitalised.  If you omit this parameter, it will 
+be false and therefore the game will capitalise "you".  If you want to 
+use a conjunction as in the above example, pass "true".
+
+[3] The v2 parameter is usually not necessary because the first and 
+second person present forms of verbs are usually the same.  Unless you 
+have something special planned, pass 0 for v2
+
+
+Examples of using CSubjectVerb() can be seen in the english.h file.
+Here's an example:
+    CSubjectVerb(actor,false,true,"close",0,"closes"); " ", (the) x1, ".";
+
+The rest of the CSubject functions are wrappers for commonly used verbs: 
+"is", "isn't", "has", "will", "can", "can't", and "don't".  These 
+have only three parameters: obj, reportage, and caps.  You can call 
+these with two or one parameters if you like.  The functions will 
+receive 0 (also false) for missing trailing parameters.  Here they are 
+along with sample calls:
+
+CSubjectIs()
+    CSubjectIs(x1,true,true); " already closed.";
+
+CSubjectIsnt()
+    print "But ";
+    CSubjectIsnt(actor,true,false);
+    " in anything at the moment.";
+
+CSubjectHas()
+    CSubjectHas(actor,false,true); " better things to do.";
+
+CSubjectWill()
+    CSubjectWill(actor,true,true); " first have to close ", (the) x1, ".";
+
+CSubjectCan()
+    CSubjectCan(actor,true,true);
+    " only get into something free-standing.";
+
+CSubjectCant()
+    CSubjectCant(actor,true, true);
+    " usefully blow ", (thatorthose) x1, ".";    
+
+CSubjectDont()
+    CSubjectDont(x1,true,true); " seem to fit the lock.";
+
 
