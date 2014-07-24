@@ -1,9 +1,14 @@
 ! ==============================================================================
 !   PARSERM:  Core of parser.
 !
-!   Supplied for use with Inform 6 -- Release 6/11 -- Serial number 040227
+!   Supplied for use with Inform 6 -- Release 6/12 -- Serial number 140801
 !
-!   Copyright Graham Nelson 1993-2004 but freely usable (see manuals)
+!   Copyright Graham Nelson 1993-2004 and David Griffith 2012-2014
+!
+!   This code is licensed under either the traditional Inform license as
+!   described by the DM4 or the Artistic License version 2.0.  See the
+!   file COPYING in the distribution archive or at
+!   https://github.com/DavidGriffith/inform6lib/
 !
 !   This file is automatically Included in your game file by "Parser".
 ! ------------------------------------------------------------------------------
@@ -2686,7 +2691,6 @@ Constant UNLIT_BIT  =  32;
         #Endif; ! DEBUG
         l = NounDomain(actors_location, actor, token);
 
-!FIXME this caused trouble with DROP and with no_implicit_actions
         if (l == REPARSE_CODE) return l;                  ! Reparse after Q&A
         if (l ~= nothing && l notin actor && token == MULTIHELD_TOKEN or MULTIEXCEPT_TOKEN) {
 	    if (ImplicitTake(l)) {
