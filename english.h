@@ -436,7 +436,8 @@ Constant COMMA__TX      = ", ";
 ];
 
 [ CSubjectVerb obj reportage caps v1 v2 v3;
-    if (v2 == 0) v2 = v1; if (v3 == 0) v3 = v1;
+    if (v2 == 0) v2 = v1;
+    if (v3 == 0) v3 = v1;
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I ", (string) v1; return;
@@ -449,7 +450,7 @@ Constant COMMA__TX      = ", ";
     SubjectNotPlayer(obj, reportage, caps, v2, v3);
 ];
 
-[ CSubjectIs__ obj reportage caps;
+[ CSubjectIs obj reportage caps;
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I'm"; return;
@@ -475,7 +476,7 @@ Constant COMMA__TX      = ", ";
     SubjectNotPlayer(obj, reportage, "aren't", "isn't");
 ];
 
-[ CSubjectHas_ obj reportage caps;
+[ CSubjectHas obj reportage caps;
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I've"; return;
@@ -501,7 +502,7 @@ Constant COMMA__TX      = ", ";
     SubjectNotPlayer(obj, reportage, "will", "will");
 ];
 
-[ CSubjectCan_ obj reportage caps;
+[ CSubjectCan obj reportage caps;
     CSubjectVerb(obj, reportage, caps, "can", 0, "can");
 ];
 
@@ -635,8 +636,8 @@ Constant COMMA__TX      = ", ";
         2:  DecideAgainst();
     }
   Close: switch (n) {
-        1:  CSubjectIs__(x1,true,true); " not something ", (theActor) actor, " can close.";
-        2:  CSubjectIs__(x1,true,true); " already closed.";
+        1:  CSubjectIs(x1,true,true); " not something ", (theActor) actor, " can close.";
+        2:  CSubjectIs(x1,true,true); " already closed.";
         3:  CSubjectVerb(actor,false,true,"close",0,"closes"); " ", (the) x1, ".";
         4:  "(first closing ", (the) x1, ")";
     }
@@ -673,13 +674,13 @@ Constant COMMA__TX      = ", ";
     }
   Dig:      "Digging would achieve nothing here.";
   Disrobe: switch (n) {
-        1:  CSubjectIs__(actor,true,true); " not wearing ", (ThatOrThose) x1, ".";
+        1:  CSubjectIs(actor,true,true); " not wearing ", (ThatOrThose) x1, ".";
         2:  CSubjectVerb(actor,false,true,"take off",0,"takes off");
             " ", (the) x1, ".";
     }
   Drink:    "There's nothing suitable to drink here.";
   Drop: switch (n) {
-        1:  CSubjectIs__(x1,true,true); " already here.";
+        1:  CSubjectIs(x1,true,true); " already here.";
         2:  print "Perhaps ", (theActor) actor, " should take ", (the) x1;
             if (parent(x1) has supporter) print " off ";
 	    else print " out of ";
@@ -688,20 +689,20 @@ Constant COMMA__TX      = ", ";
         4:  "Dropped.";
     }
   Eat: switch (n) {
-        1:  CSubjectIs__(x1,true,true); " plainly inedible.";
+        1:  CSubjectIs(x1,true,true); " plainly inedible.";
         2:  CSubjectVerb(actor,false,true,"eat",0,"eats"); print " ", (the) x1;
                 if (actor == player) ". Not bad."; else ".";
     }
   EmptyT: switch (n) {
         1:  CSubjectCant(x1,true,true); " contain things.";
-        2:  CSubjectIs__(x1,true,true); " closed.";
-        3:  CSubjectIs__(x1,true,true); " empty already.";
+        2:  CSubjectIs(x1,true,true); " closed.";
+        3:  CSubjectIs(x1,true,true); " empty already.";
         4:  "That would scarcely empty anything.";
     }
   Enter: switch (n) {
-        1:  print "But "; CSubjectIs__(actor,true,false);
+        1:  print "But "; CSubjectIs(actor,true,false);
             " already ", (nop) SupportObj(x1,"on","in"), (the) x1, ".";
-        2:  CSubjectIs__(x1,true,true);
+        2:  CSubjectIs(x1,true,true);
             print " not something ", (theActor) actor, " can ";
                 switch (x2) {
                   'stand':  "stand on.";
@@ -711,7 +712,7 @@ Constant COMMA__TX      = ", ";
                 }
         3:  CSubjectCant(actor,true,true);
             " get into the closed ", (name) x1, ".";
-        4:  CSubjectCan_(actor,true,true);
+        4:  CSubjectCan(actor,true,true);
             " only get into something free-standing.";
         5:  CSubjectVerb(actor,false,true,"get",0,"gets");
             SupportObj(x1," onto"," into"); " ", (the) x1, ".";
@@ -724,7 +725,7 @@ Constant COMMA__TX      = ", ";
         1:  "Darkness, noun.  An absence of light to see by.";
         2:  CSubjectVerb(actor,true,true,"see",0,"sees");
             " nothing special about ", (the) x1, ".";
-        3:  CSubjectIs__(x1,true,true); print " currently switched ";
+        3:  CSubjectIs(x1,true,true); print " currently switched ";
                 if (x1 has on) "on."; else "off.";
     }
   Exit: switch (n) {
@@ -762,8 +763,8 @@ Constant COMMA__TX      = ", ";
   Go: switch (n) {
         1:  CSubjectWill(actor,true,true); " have to get ", (nop) SupportObj(x1,"off","out of"), " ", (the) x1, " first.";
         2:  CSubjectCant(actor,true,true); " go that way.";
-        3:  CSubjectIs__(actor,true,true); " unable to climb ", (the) x1, ".";
-        4:  CSubjectIs__(actor,true,true); " unable to descend by ", (the) x1, ".";
+        3:  CSubjectIs  (actor,true,true); " unable to climb ", (the) x1, ".";
+        4:  CSubjectIs  (actor,true,true); " unable to descend by ", (the) x1, ".";
         5:  CSubjectCant(actor,true,true); " since ", (the) x1, " ", (IsOrAre) x1, " in the way.";
         6:  CSubjectCant(actor,true,true); " since ", (the) x1, " ", (nop) PluralObj(x1,"lead","leads"), "nowhere.";
         7:  CSubjectVerb(actor,false,true,"depart.",0,"departs."); "";
@@ -772,18 +773,18 @@ Constant COMMA__TX      = ", ";
         1:  CSubjectVerb(actor,true,true,"need",0,"needs"); " to be holding ", (the) x1, " before ",
                 (theActor) actor, " can put ", (ItOrThem) x1, " into something else.";
         2:  CSubjectCant(x1,true,true); " contain things.";
-        3:  CSubjectIs__(x1,true,true); " closed.";
+        3:  CSubjectIs  (x1,true,true); " closed.";
         4:  CSubjectWill(actor,true,true); " need to take ", (ItOrThem) x1, " off first.";
         5:  CSubjectCant(actor,true,true); " put something inside itself.";
         6:  "(first taking ", (ItOrThem) x1, " off)";
         7:  "There is no more room in ", (the) x1, ".";
         8:  "Done.";
         9:  CSubjectVerb(actor,false,true,"put",0,"puts"); " ", (the) x1, " into ", (the) x2, ".";
-        10: CSubjectIs__(x1,true,true); " too big to fit ", (nop) SupportObj(x2,"on","in"), (the) x2, ".";
+        10: CSubjectIs  (x1,true,true); " too big to fit ", (nop) SupportObj(x2,"on","in"), (the) x2, ".";
     }
   Inv: switch (n) {
-        1:  CSubjectIs__(actor,false); " carrying nothing.";
-        2:  CSubjectIs__(actor,false); print " carrying";
+        1:  CSubjectIs  (actor,false); " carrying nothing.";
+        2:  CSubjectIs  (actor,false); print " carrying";
         3:  ":";
         4:  ".";
     }
@@ -832,7 +833,7 @@ Constant COMMA__TX      = ", ";
              of locations (even if you haven't been there before).";
   Lock: switch (n) {
         1:  CSubjectDont(x1,true,true); " seem to be something ", (theActor) actor, " can lock.";
-        2:  CSubjectIs__(x1,true,true); " locked at the moment.";
+        2:  CSubjectIs  (x1,true,true); " locked at the moment.";
         3:  CSubjectWill(actor,true,true); " first have to close ", (the) x1, ".";
         4:  CSubjectDont(x1,true,true); " seem to fit the lock.";
         5:  CSubjectVerb(actor,false,true,"lock",0,"locks"); " ", (the) x1, ".";
@@ -850,7 +851,7 @@ Constant COMMA__TX      = ", ";
                 if (x1 has supporter) print "^On "; else print "^In ";
                 print (the) x1, " ", (theActor) actor, " can";
             }
-            else { new_line; CSubjectCan_(actor,false,true); }
+            else { new_line; CSubjectCan(actor,false,true); }
             if (n == 5) print " also";
             print " see ";
             WriteListFrom(child(x1),
@@ -911,7 +912,7 @@ Constant COMMA__TX      = ", ";
         34: "You can only use multiple objects once on a line.";
         35: "I'm not sure what ~", (address) x1, "~ refers to.";
         36: "You excepted something not included anyway!";
-        37: CSubjectCan_(actor,true,true); " only do that to something animate.";
+        37: CSubjectCan(actor,true,true); " only do that to something animate.";
             #Ifdef DIALECT_US;
         38: "That's not a verb I recognize.";
             #Ifnot;
@@ -967,16 +968,16 @@ Constant COMMA__TX      = ", ";
         10: print "   (lost)";
     }
   Open: switch (n) {
-        1:  CSubjectIs__(x1,true,true); " not something ", (theActor) actor, " can open.";
+        1:  CSubjectIs  (x1,true,true); " not something ", (theActor) actor, " can open.";
         2:  CSubjectVerb(x1,true,true,"seem",0,"seems"); " to be locked.";
-        3:  CSubjectIs__(x1,true,true); " already open.";
+        3:  CSubjectIs  (x1,true,true); " already open.";
         4:  CSubjectVerb(actor,false,true,"open",0,"opens"); print " ", (the) x1, ", revealing ";
                 if (WriteListFrom(child(x1), ENGLISH_BIT+TERSE_BIT+CONCEAL_BIT) == 0) "nothing.";
                 ".";
         5:  CSubjectVerb(actor,false,true,"open",0,"opens"); " ", (the) x1, ".";
         6:  "(first opening ", (the) x1, ")";
     }
-  Order:    CSubjectHas_(actor,false,true); " better things to do.";
+  Order:    CSubjectHas(actor,false,true); " better things to do.";
   Places: switch (n) {
         1:  print "You have visited: ";
         2:  ".^";
@@ -992,8 +993,8 @@ Constant COMMA__TX      = ", ";
     }
   Pull,Push,Turn: switch (n) {
         1:  "Punishing yourself that way isn't likely to help matters.";
-        2:  CSubjectIs__(x1,true,true); " fixed in place.";
-        3:  CSubjectIs__(actor,true,true); " unable to.";
+        2:  CSubjectIs  (x1,true,true); " fixed in place.";
+        3:  CSubjectIs  (actor,true,true); " unable to.";
         4:  "Nothing obvious happens.";
         5:  "That would be less than courteous.";
         6:  DecideAgainst();
@@ -1020,7 +1021,7 @@ Constant COMMA__TX      = ", ";
         2:  print "Are you sure you want to quit? ";
     }
   Remove: switch (n) {
-        1:  CSubjectIs__(x1,true,true); " unfortunately closed.";
+        1:  CSubjectIs  (x1,true,true); " unfortunately closed.";
         2:  print "But ";
             CSubjectIsnt(x1,true,false); " there now.";
         3:  "Removed.";
@@ -1034,7 +1035,8 @@ Constant COMMA__TX      = ", ";
         2:  "Ok.";
     }
   Rub: switch (n) {
-        1:  CSubjectVerb(actor,true,true,"achieve",0,"achieves"); " nothing by this.";
+        1:  CSubjectVerb(actor,true,true,"achieve",0,"achieves");
+            " nothing by this.";
         2:  DecideAgainst();
     }
   Save: switch (n) {
@@ -1077,7 +1079,7 @@ Constant COMMA__TX      = ", ";
   SetTo:    CSubjectCant(actor,true,true); " set ", (ThatOrThose) x1, " to anything.";
   Show: switch (n) {
         1:  CSubjectIsnt(actor,true,true); " holding ", (the) x1, ".";
-        2:  CSubjectIs__(x1,true,true); " unimpressed.";
+        2:  CSubjectIs  (x1,true,true); " unimpressed.";
     }
   Sing:     print_ret (PossessiveCaps) actor, " singing is abominable.";
   Sleep:    CSubjectIsnt(actor,true,true); " feeling especially drowsy.";
@@ -1098,28 +1100,28 @@ Constant COMMA__TX      = ", ";
   Swim:     "There's not enough water to swim in.";
   Swing:    "There's nothing sensible to swing here.";
   SwitchOff: switch (n) {
-        1:  CSubjectIs__(x1,true,true); " not something ", (theActor) actor, " can switch.";
-        2:  CSubjectIs__(x1,true,true); " already off.";
+        1:  CSubjectIs  (x1,true,true); " not something ", (theActor) actor, " can switch.";
+        2:  CSubjectIs  (x1,true,true); " already off.";
         3:  CSubjectVerb(actor,false,true,"switch",0,"switches"); " ", (the) x1, " off.";
     }
   SwitchOn: switch (n) {
-        1:  CSubjectIs__(x1,true,true); " not something ", (theActor) actor, " can switch.";
-        2:  CSubjectIs__(x1,true,true); " already on.";
+        1:  CSubjectIs  (x1,true,true); " not something ", (theActor) actor, " can switch.";
+        2:  CSubjectIs  (x1,true,true); " already on.";
         3:  CSubjectVerb(actor,false,true,"switch",0,"switches"); " ", (the) x1, " on.";
     }
   Take: switch (n) {
         1:  "Taken.";
-        2:  CSubjectIs__(actor,false,true); " always self-possessed.";
+        2:  CSubjectIs  (actor,false,true); " always self-possessed.";
         3:  "I don't suppose ", (the) x1, " would care for that.";
         4:  CSubjectWill(actor,true,true); " have to get ", (nop) SupportObj(x1,"off","out of"), " ", (the) x1, " first.";
         5:  CSubjectVerb(actor,true,true,"already have",0,"already has"); " ", (ThatOrThose) x1, ".";
         6:  CSubjectVerb(x2,true,true,"seem",0,"seems"); " to belong to ", (the) x1, ".";
         7:  CSubjectVerb(x2,true,true,"seem",0,"seems"); " to be a part of ", (the) x1, ".";
-        8:  CSubjectIs__(x1,true,true); " not available.";
-        9:  CSubjectIs__(x1,true,true); " not open.";
-        10: CSubjectIs__(x1,true,true); " hardly portable.";
-        11: CSubjectIs__(x1,true,true); " fixed in place.";
-        12: CSubjectIs__(actor,true,true); " carrying too many things already.";
+        8:  CSubjectIs  (x1,true,true); " not available.";
+        9:  CSubjectIs  (x1,true,true); " not open.";
+        10: CSubjectIs  (x1,true,true); " hardly portable.";
+        11: CSubjectIs  (x1,true,true); " fixed in place.";
+        12: CSubjectIs  (actor,true,true); " carrying too many things already.";
     }
   Taste: switch (n) {
         1:  CSubjectVerb(actor,true,true,"taste",0,"tastes"); " nothing unexpected.";
@@ -1147,7 +1149,7 @@ Constant COMMA__TX      = ", ";
 ! Turn: see Pull.
   Unlock:  switch (n) {
         1:  CSubjectDont(x1,true,true); " seem to be something ", (theActor) actor, " can unlock.";
-        2:  CSubjectIs__(x1,true,true); " unlocked at the moment.";
+        2:  CSubjectIs  (x1,true,true); " unlocked at the moment.";
         3:  CSubjectDont(x1,true,true); " seem to fit the lock.";
         4:  CSubjectVerb(actor,false,true,"unlock",0,"unlocks"); " ", (the) x1, ".";
         5:  "(first unlocking ", (the) x1, ")";
@@ -1175,8 +1177,8 @@ Constant COMMA__TX      = ", ";
         ", feeling foolish.";
   Wear: switch (n) {
         1:  CSubjectCant(actor,true,true); " wear ", (ThatOrThose) x1, "!";
-        2:  CSubjectIs__(actor,true,true); " not holding ", (ThatOrThose) x1, "!";
-        3:  CSubjectIs__(actor,true,true); " already wearing ", (ThatOrThose) x1, "!";
+        2:  CSubjectIs  (actor,true,true); " not holding ", (ThatOrThose) x1, "!";
+        3:  CSubjectIs  (actor,true,true); " already wearing ", (ThatOrThose) x1, "!";
         4:  CSubjectVerb(actor,false,true,"put on",0,"puts on"); " ", (the) x1, ".";
     }
 ! Yes:  see No.
