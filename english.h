@@ -447,7 +447,7 @@ Constant COMMA__TX      = ", ";
         if (caps) { print "You ", (string) v2; return; }
 	print "you ", (string) v2; return;
     }
-    SubjectNotPlayer(obj, reportage, caps, v2, v3);
+    SubjectNotPlayer(obj, reportage, v2, v3);
 ];
 
 [ CSubjectIs obj reportage caps;
