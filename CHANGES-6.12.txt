@@ -1,10 +1,11 @@
-Life and Times of the Inform Library
-====================================
+Life and Times of the Inform Library Release 6/12
+=================================================
 
 This release of the Inform Library marks the first release of the Inform 
 6 library after custody was taken over by David Griffith.  This release 
 focuses mainly on bugs reported at 
-http://www.inform-fiction.org/patches/library.html.
+http://www.inform-fiction.org/patches/library.html.  A few significant 
+enhancements have been added as well.
 
 
 
@@ -12,7 +13,7 @@ New things added in Release 6/12
 ================================
 
 First-person and third-person narrative voices are now natively 
-supported.
+supported.  See narrative_voices.txt for information on how to use them.
 
 The default mode is now VERBOSE.
 
@@ -32,8 +33,8 @@ If you add "Constant NO_INITIAL_LOOK;" to the beginning of your code,
 the library will not do an initial LOOK at the beginning of your 
 program.
 
-If the author writes an Epilogue() function, this function will execute 
-when the game ends.
+There is now an option Epilogue() function.  This will execute when the 
+game ends.
 
 TAKE ALL has been modified such that scenery or animate objects will not 
 be taken.  To revert back to traditional behavior, add "Constant 
@@ -49,8 +50,9 @@ Z-machine and Glulx.  For background on how one might use
 parser_inflection, see Section 35 of the DM4.
 
 
-Issues addressed in Release 6/12 (12????)
+Issues addressed in Release 6/12
 =========================================
+
 Issue L61101
 each_turn property causes runtime error.
 Problem: An each_turn property with both a local routine and a routine 
@@ -61,7 +63,7 @@ Issue L61102
 GET IN now matches Compass object
 Adding "in_obj.&name-->0 = '.ignore';" to Initialise() reverts back to 
 the previous behavior.  
-Status: Maybe fix?
+Status: Fixed
 
 Issue L61103
 "statusline time;" statement isn't recognized
@@ -193,7 +195,7 @@ match but sucessfully inferred; instead it should state that those
 terms were inferred. This would avoid the phrase "token resulted in 
 success" phrase meaning two different things -- actually matching and 
 inferring. 
-Status: Nothing yet
+Status: Won't fix.  Maybe will fix in 6/13.
 
 Issue L61120
 Preposition parsing is too simplistic
@@ -268,7 +270,7 @@ eventually succeeds might not even need disambiguation (thanks to a
 different token type or ChooseObjects).
 This also fixes L61120
 Status: Fixed
-I have also applied a fix submitted by Egon at 
+I have also applied a fix submitted by Nathan Schwartzman at 
 http://inform7.com/mantis/view.php?id=636.
 
 Issue L61128
@@ -276,7 +278,7 @@ OOPS sometimes changes wrong word
 Problem: The OOPS command doesn't necessarily change the faulty word. In 
 the examples below, 'ZZZ' should be corrected to 'RUBY'. This happens in 
 the first example, but not the second.
-Status: Nothing yet
+Status: Fixed
 
 Issue L61129
 Results from 'grammar' property are misplaced.
@@ -293,3 +295,5 @@ Other bugs fixed in Release 6/12
 ================================
 
 WAVE AT has been improved.
+Handling of ambiguous orders given to NPCs has been improved.
+Fixed a problem with misparsing caused by incomplete orders.
