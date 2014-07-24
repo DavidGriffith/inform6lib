@@ -145,11 +145,11 @@ Here's an example:
     CSubjectVerb(actor,false,true,"close",0,"closes"); " ", (the) x1, ".";
 
 The rest of the CSubject functions are wrappers for commonly used verbs: 
-"is", "isn't", "has", "will", "can", "can't", and "don't".  These 
-have only three parameters: obj, reportage, and caps.  You can call 
-these with two or one parameters if you like.  The functions will 
-receive 0 (also false) for missing trailing parameters.  Here they are 
-along with sample calls:
+"is", "isn't", "has", "will", "can", "can't", and "don't".  These have 
+only three parameters: obj, reportage, and nocaps.  You can call these 
+with two or one parameters if you like.  The functions will receive 0 
+(also false) for missing trailing parameters.  Here they are along with 
+sample calls:
 
 CSubjectIs()
     CSubjectIs(x1,true,true); " already closed.";
