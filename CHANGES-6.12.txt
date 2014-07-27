@@ -33,12 +33,16 @@ If you add "Constant NO_INITIAL_LOOK;" to the beginning of your code,
 the library will not do an initial LOOK at the beginning of your 
 program.
 
-There is now an option Epilogue() function.  This will execute when the 
-game ends.
+There is now an optional Epilogue() function.  This will execute when 
+the game ends.
 
 TAKE ALL has been modified such that scenery or animate objects will not 
 be taken.  To revert back to traditional behavior, add "Constant 
 TRADITIONAL_TAKE_ALL;" at the beginning of your program.
+
+If you want to use color in your game, you must add "Constant COLOUR;" 
+or "Constant COLOR;" to the beginnning of your code.  This was required 
+to fix L61105.
 
 To deal with L61126, a new global has been introduced: 
 parser_inflection_func.  Whenever parser_inflection is set as a 
