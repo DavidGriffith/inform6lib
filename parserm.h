@@ -62,7 +62,9 @@ Constant COLOUR;
 #Endif;
 
 #Ifdef COLOUR;
-Global clr_on;
+Global clr_on = 1;
+#Ifnot;
+Global clr_on = 0;
 #Endif;
 
 ! ------------------------------------------------------------------------------
@@ -239,6 +241,7 @@ Global clr_bgstatus = 1;            ! background colour of statusline
 #Endif; ! COLOUR
 Global statuswin_current;           ! if writing to top window
 
+Constant CLR_CURRENT 0;
 Constant CLR_DEFAULT 1;
 Constant CLR_BLACK   2;
 Constant CLR_RED     3;
@@ -6036,25 +6039,23 @@ Object  InformLibrary "(Inform Library)"
 
 #Ifdef COLOUR;
 [ SetColour f b window;
-    if (f && b) {
-        if (window == 0) {  ! if setting both together, set reverse
-            clr_fgstatus = b;
-            clr_bgstatus = f;
-            }
-        if (window == 1) {
-            clr_fgstatus = f;
-            clr_bgstatus = b;
-        }
-        if (window == 0 or 2) {
-            clr_fg = f;
-            clr_bg = b;
-        }
-        if (clr_on) {
-            if (statuswin_current)
-                @set_colour clr_fgstatus clr_bgstatus;
-            else
-                @set_colour clr_fg clr_bg;
-        }
+    if (window == 0) {  ! if setting both together, set reverse
+        clr_fgstatus = b;
+        clr_bgstatus = f;
+    }
+    if (window == 1) {
+        clr_fgstatus = f;
+        clr_bgstatus = b;
+    }
+    if (window == 0 or 2) {
+        clr_fg = f;
+        clr_bg = b;
+    }
+    if (clr_on) {
+        if (statuswin_current)
+            @set_colour clr_fgstatus clr_bgstatus;
+        else
+            @set_colour clr_fg clr_bg;
     }
 ];
 #Endif; ! COLOUR
