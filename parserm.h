@@ -649,6 +649,12 @@ Global old_herobj = NULL;           ! The object which is currently "her"
 #Endif; ! EnglishNaturalLanguage
 
 ! ============================================================================
+! For present and past tenses
+! ----------------------------------------------------------------------------
+Constant PRESENT_TENSE 0;
+Constant PAST_TENSE    1;
+
+! ============================================================================
 ! "Darkness" is not really a place: but it has to be an object so that the
 !  location-name on the status line can be "Darkness".
 ! ----------------------------------------------------------------------------
@@ -678,6 +684,7 @@ Object  selfobj	 "(self object)"
         orders 0,
         number 0,
         narrative_voice 2,
+        narrative_tense PRESENT_TENSE,
 	nameless true,
         posture 0,
         before_implicit [;Take: return 2;],

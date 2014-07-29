@@ -1,8 +1,8 @@
-The Inform Library version 6/12 introduces a fun new way of storytelling 
-by allowing the author to use first-person and third-person narrative 
-voices.  The typical way to write interactive fiction has been for the 
-game to talk about the player in the second-person narrative voice.  For 
-example:
+The Inform Library version 6/12 introduces two fun new ways of 
+storytelling.  First, you can use first-person and third person 
+narrative voices.  Second, you can use past tense.  The typical way to 
+write interactive fiction has been for the game to talk about the player 
+in the second-person narrative voice in the present tense.  For example:
 
   > PUT COOKIE ON TABLE
   You put the cookie on the table.
@@ -114,6 +114,7 @@ actor.  These are its parameters:
 	v1		1st person "I" present verb.
 	v2		2nd person "You" present verb[3].
 	v3		3rd person "He", "she", or "it" present verb.
+	past		The past tense form of the verb[4].
 
 [1] In the Library itself, "reportage" is used in SubjectNotPlayer() 
 which determines the correct conjugation for certain actions performed 
@@ -137,12 +138,34 @@ use a conjunction as in the above example, pass "true".
 
 [3] The v2 parameter is usually not necessary because the first and 
 second person present forms of verbs are usually the same.  Unless you 
-have something special planned, pass 0 for v2
+have something special planned, pass 0 for v2.
+
+[4] Past tense can be useful for implementing a flashback.  For 
+instance:
+    > EXAMINE VASE
+    This vase was very expensive-looking.
 
 
 Examples of using CSubjectVerb() can be seen in the english.h file.
 Here's an example:
-    CSubjectVerb(actor,false,true,"close",0,"closes"); " ", (the) x1, ".";
+   CSubjectVerb(actor,false,true,"close",0,"closes","closed"); " ", 
+     (the) x1, ".";
+
+The default is to use the present tense.  If you want to change to the 
+past tense, set player.narrative_tense to PAST_TENSE.  To change back, 
+change it to PRESENT_TENSE.  If you're doing something more complicated, 
+like going back and forth between the present and the past, it can be 
+handy to create a "past PC" with its own posessions and properties.  
+That one always has its narrative_tense set to PAST_TENSE.  Then when 
+you want to flash back, simply call ChangePlayer().
+
+There are frequent situations where you need to select between present 
+and past tense forms of phrases in ways that CSubjectVerb() is not 
+appropriate.  Use the Tense() function for that.  The Library itself 
+uses Tense() to keep things straight.  Here's how to use it:
+    print "After the storm, there still ";
+    Tense("isn't", "wasn't"); 
+    " enough rainfall.";
 
 The rest of the CSubject functions are wrappers for commonly used verbs: 
 "is", "isn't", "has", "will", "can", "can't", and "don't".  These have 
