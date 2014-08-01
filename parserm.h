@@ -2204,8 +2204,8 @@ Object  InformParser "(Inform Parser)"
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! If the player was the actor (eg, in "take dfghh") the error must be
-    ! printed, and fresh input called for.  In three cases the oops word
-    ! must be jiggled.
+    ! printed, and fresh input called for.  In four cases the oops word
+    ! must be jiggled (where oops_from is set to something).
 
     if (ParserError(etype)) jump ReType;
     if (LibraryExtensions.RunWhile(ext_parsererror, false, etype)) jump ReType;
@@ -2688,7 +2688,7 @@ Constant UNLIT_BIT  =  32;
 
     oops_from = wn;
 
-    ! So, two cases.  Case 1: token not equal to "held" (so, no implicit takes)
+    ! So, two cases.  Case 1: token not equal to "held"
     ! but we may well be dealing with multiple objects
 
     ! In either case below we use NounDomain, giving it the token number as
@@ -3858,7 +3858,6 @@ Constant SCORE__DIVISOR     = 20;
         Descriptors();  ! skip past THE etc
         if (i has visited && Refers(i,wn) == 1) e = SCENERY_PE;
     }
-    saved_oops = match_from + match_length;
 
     if (saved_ml)
         saved_oops = num_desc + match_from + saved_ml;
