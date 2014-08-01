@@ -2356,15 +2356,12 @@ Constant UNLIT_BIT  =  32;
     indef_nspec_at = 0;
 ];
 
-[ Descriptors  allow_multiple o x flag cto type n m;
+[ Descriptors  o x flag cto type m;
     ResetDescriptors();
     if (wn > num_words) return 0;
-
     m = wn;
-
     for (flag=true : flag :) {
         o = NextWordStopped(); flag = false;
-
        for (x=1 : x<=LanguageDescriptors-->0 : x=x+4)
             if (o == LanguageDescriptors-->x) {
                 flag = true;
@@ -2372,7 +2369,6 @@ Constant UNLIT_BIT  =  32;
                 if (type ~= DEFART_PK) indef_mode = true;
                 indef_possambig = true;
                 indef_cases = indef_cases & (LanguageDescriptors-->(x+1));
-
                 if (type == POSSESS_PK) {
                     cto = LanguageDescriptors-->(x+3);
                     switch (cto) {
@@ -2383,11 +2379,9 @@ Constant UNLIT_BIT  =  32;
                         if (indef_owner == NULL) indef_owner = InformParser;
                     }
                 }
-
                 if (type == light)  indef_type = indef_type | LIT_BIT;
                 if (type == -light) indef_type = indef_type | UNLIT_BIT;
             }
-
         if (o == OTHER1__WD or OTHER2__WD or OTHER3__WD) {
             indef_mode = 1; flag = 1;
             indef_type = indef_type | OTHER_BIT;
@@ -2397,22 +2391,11 @@ Constant UNLIT_BIT  =  32;
             if (take_all_rule == 1) take_all_rule = 2;
             indef_type = indef_type | PLURAL_BIT;
         }
-        if (allow_plurals && allow_multiple) {
-            n = TryNumber(wn-1);
-            if (n == 1) { indef_mode = 1; flag = 1; }
-            if (n > 1) {
-                indef_guess_p = 1;
-                indef_mode = 1; flag = 1; indef_wanted = n;
-                indef_nspec_at = wn-1;
-                indef_type = indef_type | PLURAL_BIT;
-            }
-        }
         if (flag == 1 && NextWordStopped() ~= OF1__WD or OF2__WD or OF3__WD or OF4__WD)
             wn--;  ! Skip 'of' after these
     }
     wn--;
     num_desc = wn - m;
-    if ((indef_wanted > 0) && (allow_multiple)) return MULTI_PE;
     return 0;
 ];
 
