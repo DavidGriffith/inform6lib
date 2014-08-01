@@ -34,7 +34,7 @@ Global no_implicit_actions = false;
     if (Story) {
         #Ifdef TARGET_ZCODE;
         #IfV5; style bold; #Endif;
-        print (string) Story;
+        print "^", (string) Story;
         #IfV5; style roman; #Endif;
         #Ifnot; ! TARGET_GLULX;
         glk($0086, 3); ! set header style
