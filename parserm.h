@@ -6108,7 +6108,7 @@ Object  InformLibrary "(Inform Library)"
                     glk($00B0, swin, i, 7, fwd);
                     glk($00B0, swin, i, 8, bwd);
                 }
-
+            }
             ! Now re-open the windows to apply the hints
             if (gg_statuswin) glk($0024, gg_statuswin, 0); ! close_window
 
