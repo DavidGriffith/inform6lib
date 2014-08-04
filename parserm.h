@@ -279,6 +279,8 @@ Global receive_action;              ! Either ##PutOn or ##Insert, whichever is
                                     ! action being tried when an object's
                                     ! "before" rule is checking "Receive"
 
+Global no_implicit_actions;         ! Don't implicitly do things.
+
 ! ==============================================================================
 !   Parser variables: first, for communication to the parser
 ! ------------------------------------------------------------------------------
@@ -2119,7 +2121,8 @@ Object  InformParser "(Inform Parser)"
                     ! i = 2: don't Take the object, continue
                     ! i = 3: don't Take the object, don't continue
                     if (i > 2) { best_etype = NOTHELD_PE; jump GiveError; }
-                    if (i < 2) {        ! perform the implicit Take
+                    ! perform the implicit Take
+                    if (i < 2 && ~~no_implicit_actions) {
                         if (i ~= 1)     ! and tell the player
                             L__M(##Miscellany, 26, not_holding);
                         notheld_mode = 1;

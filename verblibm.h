@@ -22,8 +22,6 @@ Include "linklpa";
 Include "linklv";
 #Endif; ! MODULE_MODE
 
-Global no_implicit_actions = false;
-
 ! ------------------------------------------------------------------------------
 
 [ Banner i;
