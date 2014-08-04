@@ -2252,9 +2252,9 @@ Object  InformParser "(Inform Parser)"
             else {
                 #Ifdef NO_TAKE_ALL;
                 if (take_all_rule == 2) L__M(##Miscellany, 59);
-                else                    L__M(##Miscellany, 44);
+                else                    L__M(##Miscellany, 44, verb_word);
                 #Ifnot;
-                L__M(##Miscellany, 44);
+                L__M(##Miscellany, 44, verb_word);
                 #Endif; ! NO_TAKE_ALL
             }
         }
