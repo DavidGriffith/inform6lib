@@ -456,6 +456,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  print "I ", (string) v1; return;
+          2:  ! Do nothing.
           3:  CDefart(player);
               print " ", (string) v3; return;
           default: RunTimeError(16, player.narrative_voice);
@@ -470,6 +471,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  Tense("I'm", "I was"); return;
+          2:  ! Do nothing.
           3:  CDefart(player);
               Tense(" is", " was"); return;
           default: RunTimeError(16, player.narrative_voice);
@@ -485,6 +487,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  Tense("I'm not", "I wasn't"); return;
+          2:  ! Do nothing.
           3:  CDefart(player);
               Tense(" isn't", " wasn't"); return;
           default: RunTimeError(16, player.narrative_voice);
@@ -500,6 +503,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  Tense("I've", "I had"); return;
+          2:  ! Do nothing.
           3:  CDefart(player);
               Tense(" has", " had"); return;
           default: RunTimeError(16, player.narrative_voice);
@@ -515,6 +519,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch (player.narrative_voice) {
           1:  Tense("I'll", "I would've"); return;
+          2:  ! Do nothing.
           3:  CDefart(player);
               Tense(" will", " would've"); return;
           default: RunTimeError(16, player.narrative_voice);
@@ -542,9 +547,10 @@ Constant COMMA__TX      = ", ";
 [ OnesSelf obj;
     if (obj == player) {
         if (player provides narrative_voice) switch(player.narrative_voice) {
-            1: print "myself"; return;
-            3: if (obj has female) {print "herself"; return;}
-               print "himself"; return;
+            1:  print "myself"; return;
+            2:  ! Do nothing.
+            3:  if (obj has female) {print "herself"; return;}
+                print "himself"; return;
           default: RunTimeError(16, player.narrative_voice);
         }
         print "yourself"; return;
@@ -559,6 +565,7 @@ Constant COMMA__TX      = ", ";
     if (obj == player) {
         if (player provides narrative_voice) switch(player.narrative_voice) {
           1:  if (caps) print "M"; else print "m"; print "y"; return;
+          2:  ! Do nothing.
           3:  CDefart(player);
               print "'s"; return;
           default: RunTimeError(16, player.narrative_voice);
@@ -581,6 +588,7 @@ Constant COMMA__TX      = ", ";
         if (obj provides narrative_voice) {
             switch (obj.narrative_voice) {
               1:  print "I"; return;
+              2:  ! Do nothing.
               3:  if (obj has neuter) { print "it"; return; }
                   if (obj has female) { print "she"; return; }
                   print "he"; return;
@@ -617,7 +625,7 @@ Constant COMMA__TX      = ", ";
 ! omitted, then nothing will be printed if the appropriate tense is past.
 ! ----------------------------------------------------------------------------
 [ Tense present past;
-    if (player.narrative_tense == PAST_TENSE) {
+    if (player provides narrative_tense && player.narrative_tense == PAST_TENSE) {
         if (past == false) return;
         print (string) past;
     }
