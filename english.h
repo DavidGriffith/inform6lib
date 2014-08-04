@@ -458,6 +458,7 @@ Constant COMMA__TX      = ", ";
           1:  print "I ", (string) v1; return;
           3:  CDefart(player);
               print " ", (string) v3; return;
+          default: RunTimeError(16, player.narrative_voice);
         }
         if (nocaps) { print "you ", (string) v2; return; }
 	print "You ", (string) v2; return;
@@ -471,6 +472,7 @@ Constant COMMA__TX      = ", ";
           1:  Tense("I'm", "I was"); return;
           3:  CDefart(player);
               Tense(" is", " was"); return;
+          default: RunTimeError(16, player.narrative_voice);
         }
         if (nocaps) Tense("you're", "you were");
         else Tense("You're", "You were");
@@ -485,6 +487,7 @@ Constant COMMA__TX      = ", ";
           1:  Tense("I'm not", "I wasn't"); return;
           3:  CDefart(player);
               Tense(" isn't", " wasn't"); return;
+          default: RunTimeError(16, player.narrative_voice);
         }
         if (nocaps) Tense("you aren't", "you weren't");
         else Tense("You aren't", "You weren't");
@@ -499,6 +502,7 @@ Constant COMMA__TX      = ", ";
           1:  Tense("I've", "I had"); return;
           3:  CDefart(player);
               Tense(" has", " had"); return;
+          default: RunTimeError(16, player.narrative_voice);
         }
         if (nocaps) Tense("you've", "you'd");
         else Tense("You've", "You'd");
@@ -513,6 +517,7 @@ Constant COMMA__TX      = ", ";
           1:  Tense("I'll", "I would've"); return;
           3:  CDefart(player);
               Tense(" will", " would've"); return;
+          default: RunTimeError(16, player.narrative_voice);
         }
         if (nocaps) Tense("you'll", "you'd");
         else Tense("You'll", "You'd");
@@ -540,6 +545,7 @@ Constant COMMA__TX      = ", ";
             1: print "myself"; return;
             3: if (obj has female) {print "herself"; return;}
                print "himself"; return;
+          default: RunTimeError(16, player.narrative_voice);
         }
         print "yourself"; return;
     }
@@ -555,6 +561,7 @@ Constant COMMA__TX      = ", ";
           1:  if (caps) print "M"; else print "m"; print "y"; return;
           3:  CDefart(player);
               print "'s"; return;
+          default: RunTimeError(16, player.narrative_voice);
         }
         if (caps) print "Y"; else print "y";
         print "our"; return;
@@ -577,6 +584,7 @@ Constant COMMA__TX      = ", ";
               3:  if (obj has neuter) { print "it"; return; }
                   if (obj has female) { print "she"; return; }
                   print "he"; return;
+              default: RunTimeError(16, player.narrative_voice);
             }
         }
         print "you"; return;

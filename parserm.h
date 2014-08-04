@@ -5587,11 +5587,16 @@ Object  InformLibrary "(Inform Library)"
         if (i has animate) give i transparent;
         i = parent(i);
     }
-    if (player == selfobj && player.nameless == true)
-        if (player.narrative_voice == 1)
-	    player.short_name = MYFORMER__TX;
-        else if (player.narrative_voice == 2)
-            player.short_name = FORMER__TX;
+    if (player == selfobj && player.nameless == true) {
+        if (player provides narrative_voice) {
+            if (player.narrative_voice == 1)
+                player.short_name = MYFORMER__TX;
+            else if (player.narrative_voice == 2)
+                player.short_name = FORMER__TX;
+        }
+        player.short_name = FORMER__TX;
+    }
+
 
     player = obj;
 
@@ -6849,6 +6854,7 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
                   1:  print (address) ME1__WD;
                   2:  ThatOrThose(player);
                   3:  print (PSN__) o;
+                  default: RunTimeError(16, player.narrative_voice);
                 }
             }
             else ThatOrThose(player);

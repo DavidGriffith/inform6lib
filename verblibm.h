@@ -135,6 +135,7 @@ Include "linklv";
       13:   print "A 'topic' token can only be followed by a preposition";
       14:   print "Overflowed buffer limit of ", p1, " using '@@64output_stream 3' ", (string) p2;
       15:   print "LoopWithinObject broken because the object ", (name) p1, " was moved while the loop passed through it.";
+      16:   print "Attempt to use illegal narrative_voice of ", p1, ".";
       default:
             print "(unexplained)";
     }
