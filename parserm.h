@@ -6843,8 +6843,20 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
     caps_mode = false;
     if ((~~o ofclass Object) || o has proper) {
         indef_mode = NULL;
-        print (PSN__) o;
-        indef_mode = saveIndef;
+        if (o == player) {
+            if (player provides narrative_voice) {
+                switch (player.narrative_voice) {
+                  1:  print (address) ME1__WD;
+                  2:  ThatOrThose(player);
+                  3:  print (PSN__) o;
+                }
+            }
+            else ThatOrThose(player);
+        } else {
+            print (PSN__) o;
+            indef_mode = saveIndef;
+        }
+
         return;
     }
     PrefaceByArticle(o, 1);
