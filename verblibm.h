@@ -1766,7 +1766,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ DropSub;
     if (noun == actor)         return L__M(##PutOn, 4, noun);
     if (noun in parent(actor)) return L__M(##Drop, 1, noun);
-    if (noun notin actor && ImplicitTake(noun)) return L__M(##Drop, 2, noun);
+    if (noun notin actor && ~~ImplicitTake(noun)) return L__M(##Drop, 2, noun);
     if (noun has worn && ImplicitDisrobe(noun)) return;
     move noun to parent(actor);
     if (AfterRoutines() || keep_silent) return;
