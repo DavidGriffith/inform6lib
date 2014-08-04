@@ -6093,46 +6093,44 @@ Object  InformLibrary "(Inform Library)"
 
 #Ifdef COLOUR;
 [ SetColour f b window doclear  i fwd bwd swin;
-    if (f && b) {
-        if (window) swin = 5-window; ! 4 for TextGrid, 3 for TextBuffer
+    if (window) swin = 5-window; ! 4 for TextGrid, 3 for TextBuffer
 
-        if (clr_on) {
-            fwd = MakeColourWord(f);
-            bwd = MakeColourWord(b);
-            for (i=0 : i<=10: i++) {
-                if (f == CLR_DEFAULT || b == CLR_DEFAULT) { ! remove style hints
-                    glk($00B1, swin, i, 7);
-                    glk($00B1, swin, i, 8);
-                }
-                else {
-                    glk($00B0, swin, i, 7, fwd);
-                    glk($00B0, swin, i, 8, bwd);
-                }
+    if (clr_on) {
+        fwd = MakeColourWord(f);
+        bwd = MakeColourWord(b);
+        for (i=0 : i<=10: i++) {
+            if (f == CLR_DEFAULT || b == CLR_DEFAULT) { ! remove style hints
+                glk($00B1, swin, i, 7);
+                glk($00B1, swin, i, 8);
             }
-            ! Now re-open the windows to apply the hints
-            if (gg_statuswin) glk($0024, gg_statuswin, 0); ! close_window
-
-            if (doclear || ( window ~= 1 && (clr_fg ~= f || clr_bg ~= b) ) ) {
-                glk($0024, gg_mainwin, 0);
-                gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
-                if (gg_scriptstr ~= 0)
-                    glk($002D, gg_mainwin, gg_scriptstr); ! window_set_echo_stream
+            else {
+                glk($00B0, swin, i, 7, fwd);
+                glk($00B0, swin, i, 8, bwd);
             }
+        }
+        ! Now re-open the windows to apply the hints
+        if (gg_statuswin) glk($0024, gg_statuswin, 0); ! close_window
 
-            gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize,
-               4, GG_STATUSWIN_ROCK); ! window_open
-            if (statuswin_current && gg_statuswin)
-                MoveCursor(); else MainWindow();
+        if (doclear || ( window ~= 1 && (clr_fg ~= f || clr_bg ~= b) ) ) {
+            glk($0024, gg_mainwin, 0);
+            gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
+            if (gg_scriptstr ~= 0)
+                glk($002D, gg_mainwin, gg_scriptstr); ! window_set_echo_stream
         }
 
-        if (window ~= 2) {
-            clr_fgstatus = f;
-            clr_bgstatus = b;
-        }
-        if (window ~= 1) {
-            clr_fg = f;
-            clr_bg = b;
-        }
+        gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize,
+           4, GG_STATUSWIN_ROCK); ! window_open
+        if (statuswin_current && gg_statuswin)
+            MoveCursor(); else MainWindow();
+    }
+
+    if (window ~= 2) {
+        clr_fgstatus = f;
+        clr_bgstatus = b;
+    }
+    if (window ~= 1) {
+        clr_fg = f;
+        clr_bg = b;
     }
 ];
 #Endif; ! COLOUR
