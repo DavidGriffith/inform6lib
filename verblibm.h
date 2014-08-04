@@ -1657,6 +1657,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
 [ ImplicitTake obj
     res ks supcon;
+    switch (metaclass(obj)) { Class, String, Routine, nothing: rfalse; }
     if (obj in actor) rfalse;
     if (action_to_be == ##Drop) rfalse;
     res = CheckImplicitAction(##Take, obj);
