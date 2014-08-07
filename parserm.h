@@ -2223,7 +2223,7 @@ Object  InformParser "(Inform Parser)"
     if (etype == NUMBER_PE)     L__M(##Miscellany, 29);
     if (etype == CANTSEE_PE) {  L__M(##Miscellany, 30); oops_from=saved_oops; }
     if (etype == TOOLIT_PE)     L__M(##Miscellany, 31);
-    if (etype == NOTHELD_PE) {  L__M(##Miscellany, 32, noun); oops_from=saved_oops; }
+    if (etype == NOTHELD_PE) {  L__M(##Miscellany, 32); oops_from=saved_oops; }
     if (etype == MULTI_PE)      L__M(##Miscellany, 33);
     if (etype == MMULTI_PE)     L__M(##Miscellany, 34);
     if (etype == VAGUE_PE)      L__M(##Miscellany, 35, pronoun_word);
