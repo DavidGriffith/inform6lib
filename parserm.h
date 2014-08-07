@@ -2980,6 +2980,10 @@ Constant UNLIT_BIT  =  32;
     if (match_from <= num_words) {
         if (number_matched == 1) {
             i=match_list-->0;
+            if (indef_mode) {
+                if ((indef_type & LIT_BIT) && i hasnt light) rfalse;
+                if ((indef_type & UNLIT_BIT) && i has light) rfalse;
+            }
             return i;
         }
 
