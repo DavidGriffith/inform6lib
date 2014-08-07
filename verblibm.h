@@ -2501,7 +2501,10 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
 [ DrinkSub; L__M(##Drink, 1, noun); ];
 
-[ FillSub; L__M(##Fill, 1, noun, second); ];
+[ FillSub;
+    if (second == nothing) return L__M(##Fill, 1, noun);
+    L__M(##Fill, 2, noun, second);
+];
 
 [ JumpSub; L__M(##Jump, 1, noun); ];
 

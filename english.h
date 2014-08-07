@@ -826,9 +826,14 @@ Constant COMMA__TX      = ", ";
               " ", (the) x1, ")";
         6:  CSubjectVerb(actor,false,false,"stand",0,"stands"); " up.";
     }
-  Fill:     print "Filling ", (the) x1, " from ", (the) x2;
+  Fill: switch (n) {
+        1:  print "There ";
+            Tense("isn't", "wasn't");
+            " anything obvious with which to fill ", (the) x1, ".";
+        2:  print "Filling ", (the) x1, " from ", (the) x2;
             Tense(" doesn't", " didn't");
             " make sense.";
+    }
   FullScore: switch (n) {
         1:  if (deadflag) print "The score was "; else print "The score is ";
                 "made up as follows:^";

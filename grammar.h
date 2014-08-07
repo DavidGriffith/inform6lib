@@ -258,6 +258,7 @@ Verb 'exit' 'out' 'outside'
     * noun                                      -> Exit;
 
 Verb 'fill'
+    * noun                                      -> Fill
     * noun 'from' noun                          -> Fill;
 
 Verb 'get'
