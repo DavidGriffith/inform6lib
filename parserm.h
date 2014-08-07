@@ -2120,9 +2120,9 @@ Object  InformParser "(Inform Parser)"
                     ! i = 1: Take the object, don't tell the player
                     ! i = 2: don't Take the object, continue
                     ! i = 3: don't Take the object, don't continue
-                    if (i > 2) { best_etype = NOTHELD_PE; jump GiveError; }
+                    if (i > 2 || no_implicit_actions) { best_etype = NOTHELD_PE; jump GiveError; }
                     ! perform the implicit Take
-                    if (i < 2 && ~~no_implicit_actions) {
+                    if (i < 2) {
                         if (i ~= 1)     ! and tell the player
                             L__M(##Miscellany, 26, not_holding);
                         notheld_mode = 1;
