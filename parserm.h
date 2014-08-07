@@ -1603,7 +1603,7 @@ Object  InformParser "(Inform Parser)"
         ! must be begun again...
 
         wn = verb_wordnum; indef_mode = false; token_filter = 0;
-        l = NounDomain(compass, 0, 0);
+        l = NounDomain(compass, 0, NOUN_TOKEN);
         if (l == REPARSE_CODE) jump ReParse;
 
         ! If it is a direction, send back the results:
@@ -1657,7 +1657,7 @@ Object  InformParser "(Inform Parser)"
 
         wn = 1; lookahead = HELD_TOKEN;
         scope_reason = TALKING_REASON;
-        l = NounDomain(player,actors_location,6);
+        l = NounDomain(player,actors_location,CREATURE_TOKEN);
         scope_reason = PARSING_REASON;
         if (l == REPARSE_CODE) jump ReParse;
         if (l == 0) {
@@ -2716,9 +2716,9 @@ Constant UNLIT_BIT  =  32;
 
         #Ifdef DEBUG;
         if (parser_trace >= 3) {
-            if (l > 1) print "  [ND returned ", (the) l, "]^";
+            if (l > 1) print "  [NounDomain returned ", (the) l, "]^";
             else {
-                print "  [ND appended to the multiple object list:^";
+                print "  [NounDomain appended to the multiple object list:^";
                 k = multiple_object-->0;
                 for (j=i+1 : j<=k : j++)
                     print "  Entry ", j, ": ", (The) multiple_object-->j,
@@ -2938,7 +2938,7 @@ Constant UNLIT_BIT  =  32;
                                         answer_words;
     #Ifdef DEBUG;
     if (parser_trace >= 4) {
-        print "   [NounDomain called at word ", wn, "^";
+        print "   [NounDomain called at word ", wn, "]^";
         print "   ";
         if (indef_mode) {
             print "seeking indefinite object: ";
@@ -2964,7 +2964,7 @@ Constant UNLIT_BIT  =  32;
     SearchScope(domain1, domain2, context);
 
     #Ifdef DEBUG;
-    if (parser_trace >= 4) print "   [ND made ", number_matched, " matches]^";
+    if (parser_trace >= 4) print "   [NounDomain made ", number_matched, " matches]^";
     #Endif; ! DEBUG
 
     wn = match_from+match_length;
@@ -2977,7 +2977,6 @@ Constant UNLIT_BIT  =  32;
     ! Suppose that there really were some words being parsed (i.e., we did
     ! not just infer).  If so, and if there was only one match, it must be
     ! right and we return it...
-
     if (match_from <= num_words) {
         if (number_matched == 1) {
             i=match_list-->0;
@@ -3010,7 +3009,7 @@ Constant UNLIT_BIT  =  32;
         i = Adjudicate(context);
         if (i == -1) rfalse;
         if (i == 1) rtrue;       !  Adjudicate has made a multiple
-                             !  object, and we pass it on
+                                 !  object, and we pass it on
     }
 
     ! If i is non-zero here, one of two things is happening: either
@@ -3307,7 +3306,7 @@ Constant SCORE__DIVISOR     = 20;
 [ Adjudicate context i j k good_flag good_ones last n flag offset sovert;
     #Ifdef DEBUG;
     if (parser_trace >= 4) {
-        print "   [Adjudicating match list of size ", number_matched, " in context ", context, "^";
+        print "   [Adjudicating match list of size ", number_matched, " in context ", context, "]^";
         print "   ";
         if (indef_mode) {
             print "indefinite type: ";
