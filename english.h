@@ -352,6 +352,7 @@ Constant CANTGO__TX     = "You can't go that way.";
 Constant FORMER__TX     = "your former self";
 Constant MYFORMER__TX   = "my former self";
 Constant YOURSELF__TX   = "yourself";
+Constant MYSELF__TX     = "myself";
 Constant YOU__TX        = "You";
 Constant DARKNESS__TX   = "Darkness";
 
@@ -547,7 +548,7 @@ Constant COMMA__TX      = ", ";
 [ OnesSelf obj;
     if (obj == player) {
         if (player provides narrative_voice) switch(player.narrative_voice) {
-            1:  print "myself"; return;
+            1:  print (string) MYSELF__TX; return;
             2:  ! Do nothing.
             3:  if (obj has female) {print "herself"; return;}
                 print "himself"; return;
@@ -1002,7 +1003,7 @@ Constant COMMA__TX      = ", ";
             print " pitch dark, and ", (theActor) actor;
             Tense(" can't", " couldn't");
             " see a thing.";
-        18: print "Joe";
+        18: print "yourself";
         19: "As good-looking as ever.";
         20: "To repeat a command like ~frog, jump~, just say ~again~, not ~frog, again~.";
         21: "You can hardly repeat that.";

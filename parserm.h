@@ -6854,8 +6854,8 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
         if (o == player) {
             if (player provides narrative_voice) {
                 switch (player.narrative_voice) {
-                  1:  print (address) ME1__WD;
-                  2:  ThatOrThose(player);
+                  1:  print (string) MYSELF__TX;
+                  2:  print (string) YOURSELF__TX;
                   3:  print (PSN__) o;
                   default: RunTimeError(16, player.narrative_voice);
                 }
