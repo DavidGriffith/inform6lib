@@ -4938,7 +4938,7 @@ Object  InformLibrary "(Inform Library)"
                 if ((i == 0) ||
                     (i == 1 && inp1 ~= 0) ||
                     (i == 2 && inp1 ~= 0 && inp2 ~= 0)) {
-                    if (self.actor_act(actor, action, noun, second)) jump begin__action;
+                    self.actor_act(actor, action, noun, second);
                     jump turn__end;
                 }
 
@@ -4970,12 +4970,12 @@ Object  InformLibrary "(Inform Library)"
                     print (name) l, ": ";
                     if (inp1 == 0) {
                         inp1 = l;
-                        if (self.actor_act(actor, action, l, second)) jump begin__action;
+                        if (self.actor_act(actor, action, l, second)) jump turn__end;
                         inp1 = 0;
                     }
                     else {
                         inp2 = l;
-                        if (self.actor_act(actor, action, noun, l)) jump begin__action;
+                        self.actor_act(actor, action, noun, l);
                         inp2 = 0;
                     }
                 }
@@ -5035,7 +5035,10 @@ Object  InformLibrary "(Inform Library)"
                             inputobjs-->3 = actor; actor = player; action = ##Answer;
                             rtrue; ! abort, not resetting action globals
                         }
-                        if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
+                        if (RunLife(actor, ##Order) == 0) {
+                            L__M(##Order, 1, actor);
+                            rtrue;
+                        }
                     }
                 }
                 action = sa; noun = sn; second = ss;
