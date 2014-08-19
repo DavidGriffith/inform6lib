@@ -6728,7 +6728,7 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
 
 [ CapitRule str no_caps;
     if (no_caps) print (string) str;
-    else         PrintCapitalised(str);
+    else         PrintCapitalised(str,0,true);
 ];
 
 [ PrefaceByArticle o acode pluralise capitalise  i artform findout artval;
