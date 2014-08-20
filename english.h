@@ -1280,6 +1280,7 @@ Constant COMMA__TX      = ", ";
         10: CSubjectIs  (x1,true); " hardly portable.";
         11: CSubjectIs  (x1,true); " fixed in place.";
         12: CSubjectIs  (actor,true); " carrying too many things already.";
+        13: "(putting ", (the) x1, " into ", (the) x2, " to make room)";
     }
   Taste: switch (n) {
         1:  CSubjectVerb(actor,true,false,"taste",0,"tastes","tasted"); " nothing unexpected.";
