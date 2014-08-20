@@ -593,6 +593,10 @@ Global saved_oops;                  ! Used in working this out
 Constant OOPS_WORKSPACE_LEN 64;     ! Used temporarily by "oops" routine
 Array  oops_workspace -> OOPS_WORKSPACE_LEN;
 
+Global held_back_mode;              ! Flag: is there some input from last time
+Global hb_wn;                       ! left over?  (And a save value for wn.)
+                                    ! (Used for full stops and "then".)
+
 Global caps_mode;                   ! Keep track of (The) with 'proper' caps
 Global print_anything_result;       ! Return value from a PrintAny() routine
 Global initial_lookmode;            ! Default, or set in Initialise()
@@ -1385,14 +1389,10 @@ Object  InformParser "(Inform Parser)"
 !   The strategic points (A) to (K) are marked in the commentary.
 !
 !   Note that there are three different places where a return can happen.
-!
-! held_back_mode       Flag: is there some input from last time left over?
-! hb_wn                        (And a save value for wn.)
-!                      (Used for full stops and "then".)
 ! ----------------------------------------------------------------------------
 
 [ Parser__parse  results   syntax line num_lines line_address i j k
-                           token l m line_etype vw held_back_mode hb_wn;
+                           token l m line_etype vw;
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
