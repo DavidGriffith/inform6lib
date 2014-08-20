@@ -1611,8 +1611,12 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ AtFullCapacity n s
     obj k;
     n = n; ! suppress compiler warning
-    if (s == actor) objectloop (obj in s) if (obj hasnt worn) k++;
-    else            k = children(s);
+    if (s == actor) {
+        objectloop (obj in s)
+            if (obj hasnt worn) k++;
+    } else
+        k = children(s);
+
     if (k < RunRoutines(s, capacity) || (s == player && RoomInSack())) rfalse;
 ];
 
