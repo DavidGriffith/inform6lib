@@ -3049,7 +3049,7 @@ Constant UNLIT_BIT  =  32;
 
     if (best_etype == NOTHING_PE && pattern-->1 == 0) rfalse; ! for DROP when empty-handed
     if (context == CREATURE_TOKEN) L__M(##Miscellany, 48);
-    else                           L__M(##Miscellany, 49);
+    else                           L__M(##Miscellany, 49, actor);
 
     #Ifdef TARGET_ZCODE;
     for (i=2 : i<INPUT_BUFFER_LEN : i++) buffer2->i = ' ';
