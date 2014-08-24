@@ -372,6 +372,7 @@ Constant AND__TX        = " and ";
 Constant WHOM__TX       = "whom ";
 Constant WHICH__TX      = "which ";
 Constant COMMA__TX      = ", ";
+Constant COLON__TX      = ": ";
 
 
 [ ThatOrThose obj;      ! Used in the accusative

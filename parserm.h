@@ -4969,7 +4969,7 @@ Object  InformLibrary "(Inform Library)"
                     }
                     l = multiple_object-->k;
                     PronounNotice(l);
-                    print (name) l, ": ";
+                    print (name) l, (string) COLON__TX;
                     if (inp1 == 0) {
                         inp1 = l;
                         if (self.actor_act(actor, action, l, second)) jump turn__end;

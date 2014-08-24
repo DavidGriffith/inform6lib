@@ -1891,7 +1891,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         }
         if (k-- == 0) flag = 1;
         if (flag) break;
-        if (keep_silent == 0) print (name) i, ": ";
+        if (keep_silent == 0) print (name) i, (string) COLON__TX;
         <Transfer i second, actor>;
         i = j;
     }
