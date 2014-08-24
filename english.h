@@ -907,7 +907,6 @@ Constant COLON__TX      = ": ";
             " no more room in ", (the) x1, ".";
         8:  "Done.";
         9:  CSubjectVerb(actor,false,false,"put",0,"puts","put"); " ", (the) x1, " into ", (the) x2, ".";
-        10: CSubjectIs  (x1,true); " too big to fit ", (nop) SupportObj(x2,"on","in"), " ", (the) x2, ".";
     }
   Inv: switch (n) {
         1:  CSubjectIs  (actor,false); " carrying nothing.";
