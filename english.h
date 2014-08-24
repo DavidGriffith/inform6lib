@@ -364,6 +364,10 @@ Constant IS__TX         = " is";
 Constant ARE__TX        = " are";
 Constant IS2__TX        = "is ";
 Constant ARE2__TX       = "are ";
+Constant WAS__TX        = " was";
+Constant WERE__TX       = " were";
+Constant WAS2__TX       = "was ";
+Constant WERE2__TX      = "were ";
 Constant AND__TX        = " and ";
 Constant WHOM__TX       = "whom ";
 Constant WHICH__TX      = "which ";
@@ -443,6 +447,27 @@ Constant COMMA__TX      = ", ";
    else
         if (obj has pluralname) { print (The) obj, " ", (string) v2; return;}
         else                    { print (The) obj, " ", (string) v3; return;}
+];
+
+[ CSubjectVoice obj v1 v2 v3 past;
+    if (past && player.narrative_tense == PAST_TENSE) {
+        v1 = past;
+        v2 = past;
+        v3 = past;
+    } else {
+        if (v2 == 0) v2 = v1;
+        if (v3 == 0) v3 = v1;
+    }
+    if (obj ~= player) { print (string) v3; return; }
+
+    if (player provides narrative_voice) switch (player.narrative_voice) {
+      1:  print (string) v1; return;
+      2:  ! Do nothing.
+      3:  print (string) v3; return;
+      default: RunTimeError(16, player.narrative_voice);
+    }
+
+    print (string) v2; return;
 ];
 
 [ CSubjectVerb obj reportage nocaps v1 v2 v3 past;
@@ -949,7 +974,8 @@ Constant COMMA__TX      = ", ";
         5,6:
             if (x1 ~= location) {
                 if (x1 has supporter) print "^On "; else print "^In ";
-                print (the) x1, " ", (theActor) actor, " can";
+                print (the) x1, " ", (theActor) actor, " ";
+                Tense("can", "could");
             }
             else { new_line; CSubjectCan(actor,false); }
             if (n == 5) print " also";
@@ -969,8 +995,10 @@ Constant COMMA__TX      = ", ";
   Miscellany: switch (n) {
         1:  "(considering the first sixteen objects only)^";
         2:  "Nothing to do!";
-        3:  print " You have died ";
-        4:  print " You have won ";
+        3:  print " "; CSubjectVerb(player, false, false, "died", "have died", "has died");
+	    print " ";
+        4:  print " "; CSubjectVerb(player, false, false, "won", "have won", "has won");
+            print " ";
         5:  print "^Would you like to RESTART, RESTORE a saved game";
             #Ifdef DEATH_MENTION_UNDO;
             print ", UNDO your last move";
@@ -1006,18 +1034,21 @@ Constant COMMA__TX      = ", ";
         18: print "yourself";
         19: "As good-looking as ever.";
         20: "To repeat a command like ~frog, jump~, just say ~again~, not ~frog, again~.";
-        21: "You can hardly repeat that.";
-        22: "You can't begin with a comma.";
-        23: "You seem to want to talk to someone, but I can't see whom.";
-        24: "You can't talk to ", (the) x1, ".";
+        21: CSubjectCan(actor,true); " hardly repeat that.";
+        22: CSubjectCant(actor, true); " begin with a comma.";
+        23: CSubjectVerb(actor, true, false, "seem", "seem", "seems", "seemed");
+            print " to want to talk to someone, but I ";
+            Tense("can't", "couldn't"); " see whom.";
+        24: CSubjectCant(actor, true); " talk to ", (the) x1, ".";
         25: "To talk to someone, try ~someone, hello~ or some such.";
         26: "(first taking ", (the) x1, ")";
         27: "I didn't understand that sentence.";
         28: print "I only understood you as far as wanting to ";
         29: "I didn't understand that number.";
         30: CSubjectCant(actor,true); " see any such thing.";
-        31: "You seem to have said too little!";
-        32: CSubjectIsnt(actor,false); " holding that!";
+        31: CSubjectVerb(actor, true, false, "seem", "seem", "seems", "seemed");
+            " to have said too little!";
+        32: CSubjectIsnt(actor); " holding that!";
         33: "You can't use multiple objects with that verb.";
         34: "You can only use multiple objects once on a line.";
         35: "I'm not sure what ~", (address) x1, "~ refers to.";
@@ -1045,10 +1076,13 @@ Constant COMMA__TX      = ", ";
         48: print "Whom do you want";
             if (x1 ~= player && x1 ~= nothing) print " ", (the) x1;
             print " to "; PrintCommand(); "?";
-        49: print "What do you want";
+        49: print "What ";
+            CSubjectVoice(player, "do", "do", "does", "did");
+            print " ";
+            CSubjectVerb(player, false, true, "want", "want", "want", "want");
             if (x1 ~= player && x1 ~= nothing) print " ", (the) x1;
             print " to "; PrintCommand(); "?";
-        50: print "Your score has just gone ";
+        50: print "The score has just gone ";
             if (x1 > 0) print "up"; else { x1 = -x1; print "down"; }
             print " by ", (number) x1, " point";
             if (x1 > 1) print "s";

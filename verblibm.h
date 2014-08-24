@@ -315,8 +315,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     }
 
     if (c_style & ISARE_BIT) {
-        if (j == 1 && o hasnt pluralname) print (string) IS__TX;
-        else                              print (string) ARE__TX;
+        if (j == 1 && o hasnt pluralname) Tense(IS__TX, WAS__TX);
+        else                              Tense(ARE__TX, WERE__TX);
         if (c_style & NEWLINE_BIT)   print ":^";
         else                              print (char) ' ';
         c_style = c_style - ISARE_BIT;
@@ -655,8 +655,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     }
 
     if (recurse_flag && (c_style & ENGLISH_BIT))
-        if (child_count > 1 || eldest_child has pluralname) print (string) ARE2__TX;
-        else                                                print (string) IS2__TX;
+        if (child_count > 1 || eldest_child has pluralname) Tense(ARE2__TX, WERE2__TX);
+        else                                                Tense(IS2__TX, WAS2__TX);
 
     if (c_style & NEWLINE_BIT) new_line;
 
