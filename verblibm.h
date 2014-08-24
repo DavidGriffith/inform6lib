@@ -576,7 +576,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 ];
 
 [ WriteAfterEntry o depth stack_p
-    p recurse_flag parenth_flag eldest_child child_count combo;
+    p recurse_flag parenth_flag eldest_child child_count combo i j;
 
     inventory_stage = 2;
     if (c_style & PARTINV_BIT) {
@@ -586,8 +586,13 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         combo = 0;
         if (o has light && location hasnt light) combo=combo+1;
         if (o has container && o hasnt open)     combo=combo+2;
-        if ((o has container && (o has open || o has transparent))
-            && (child(o)==0))                    combo=combo+4;
+        if ((o has container && (o has open || o has transparent))) {
+            objectloop(i in o) {
+                if (i has concealed or scenery) j = false;
+                if (i hasnt concealed && i hasnt scenery) j = true;
+            }
+            if (~~j) combo=combo+4;
+        }
         if (combo) L__M(##ListMiscellany, combo, o);
     }   ! end of PARTINV_BIT processing
 
