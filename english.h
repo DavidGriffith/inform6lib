@@ -811,7 +811,7 @@ Constant COLON__TX      = ": ";
             " already ", (nop) SupportObj(x1,"on ","in "), (the) x1, ".";
         2:  CSubjectIs(x1,true);
             print " not something ", (theActor) actor;
-            Tense(" can", " could");
+            Tense(" can ", " could ");
             switch (x2) {
               'stand':  "stand on.";
               'sit':    "sit down on.";
@@ -959,7 +959,10 @@ Constant COLON__TX      = ": ";
             "~superbrief~ mode, which always gives short descriptions
              of locations (even if you haven't been there before).";
   Lock: switch (n) {
-        1:  CSubjectDont(x1,true); " seem to be something ", (theActor) actor, " can lock.";
+        1:  CSubjectDont(x1,true);
+            print " seem to be something ", (theActor) actor;
+            Tense(" can", " could");
+            " lock.";
         2:  CSubjectIs  (x1,true); " locked at the moment.";
         3:  CSubjectWill(actor,true); " first have to close ", (the) x1, ".";
         4:  CSubjectDont(x1,true); " seem to fit the lock.";
