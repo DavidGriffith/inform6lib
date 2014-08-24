@@ -664,6 +664,12 @@ Constant PRESENT_TENSE 0;
 Constant PAST_TENSE    1;
 
 ! ============================================================================
+! For InformLibrary.actor_act() to control what happens when it aborts.
+! ----------------------------------------------------------------------------
+Constant ACTOR_ACT_ABORT_NOTUNDERSTOOD 1;
+Constant ACTOR_ACT_ABORT_ORDER 2;
+
+! ============================================================================
 ! "Darkness" is not really a place: but it has to be an object so that the
 !  location-name on the status line can be "Darkness".
 ! ----------------------------------------------------------------------------
@@ -4938,7 +4944,8 @@ Object  InformLibrary "(Inform Library)"
                 if ((i == 0) ||
                     (i == 1 && inp1 ~= 0) ||
                     (i == 2 && inp1 ~= 0 && inp2 ~= 0)) {
-                    self.actor_act(actor, action, noun, second);
+                    if (self.actor_act(actor, action, noun, second) == ACTOR_ACT_ABORT_NOTUNDERSTOOD)
+                        jump begin__action;
                     jump turn__end;
                 }
 
@@ -4970,12 +4977,16 @@ Object  InformLibrary "(Inform Library)"
                     print (name) l, (string) COLON__TX;
                     if (inp1 == 0) {
                         inp1 = l;
-                        if (self.actor_act(actor, action, l, second)) jump turn__end;
+                        switch (self.actor_act(actor, action, l, second)) {
+                          ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
+                          ACTOR_ACT_ABORT_ORDER: jump turn__end;
+                        }
                         inp1 = 0;
                     }
                     else {
                         inp2 = l;
-                        self.actor_act(actor, action, noun, l);
+                        if (self.actor_act(actor, action, noun, l) == ACTOR_ACT_ABORT_NOTUNDERSTOOD)
+                            jump begin__action;
                         inp2 = 0;
                     }
                 }
@@ -5033,11 +5044,11 @@ Object  InformLibrary "(Inform Library)"
                     if (j == 0) {
                         if (action == ##NotUnderstood) {
                             inputobjs-->3 = actor; actor = player; action = ##Answer;
-                            rtrue; ! abort, not resetting action globals
+                            return 1; ! abort, not resetting action globals
                         }
                         if (RunLife(actor, ##Order) == 0) {
                             L__M(##Order, 1, actor);
-                            rtrue;
+                            return 2;
                         }
                     }
                 }
