@@ -3070,7 +3070,6 @@ Constant UNLIT_BIT  =  32;
     ! (that is, VERB ... or XXX,VERB ...), give it to the parser to get
     ! on with and forget about the question...
 
-    first_word = UnknownVerb(first_word);
     if (first_word) {
         if ((first_word->#dict_par1) & DICT_VERB) {
             CopyBuffer(buffer, buffer2);
@@ -3079,7 +3078,6 @@ Constant UNLIT_BIT  =  32;
         if (NumberWords(parse2) > 2) {
             j = WordValue(2, parse2);
             k = WordValue(3, parse2);
-            k = UnknownVerb(k);
             if (j == ',//' && k && (k->#dict_par1) & DICT_VERB) {
                 CopyBuffer(buffer, buffer2);
                 return REPARSE_CODE;
