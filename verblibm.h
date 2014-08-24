@@ -273,6 +273,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ WriteListFrom o style depth
     s1 s2 s3 s4 s5 s6;
 
+    if (o == nothing) return 0;
+
     s1 = c_style;      s2 = lt_value;   s3 = listing_together;
     s4 = listing_size; s5 = wlf_indent; s6 = inventory_stage;
 
@@ -282,7 +284,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     }
     c_style = style;
     wlf_indent = 0;
-    WriteListR(o, depth);
+    if (WriteListR(o, depth) == 0) return 0;
 
     c_style = s1;      lt_value = s2;   listing_together = s3;
     listing_size = s4; wlf_indent = s5; inventory_stage = s6;
@@ -2402,9 +2404,10 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     give noun open;
 
     if (AfterRoutines() || keep_silent) return;
-    if (noun has container && noun hasnt transparent && location ~= thedark
-        && VisibleContents(noun) && IndirectlyContains(noun, player) == 0)
-        return L__M(##Open, 4, noun);
+    if ((noun has container && location ~= thedark && VisibleContents(noun)
+         && IndirectlyContains(noun, player)) == 0) {
+         if (noun hasnt transparent) return L__M(##Open, 4, noun);
+    }
     L__M(##Open, 5, noun);
 ];
 
