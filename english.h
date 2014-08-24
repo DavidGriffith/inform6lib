@@ -810,13 +810,14 @@ Constant COLON__TX      = ": ";
         1:  print "But "; CSubjectIs(actor,true,true);
             " already ", (nop) SupportObj(x1,"on ","in "), (the) x1, ".";
         2:  CSubjectIs(x1,true);
-            print " not something ", (theActor) actor, " can ";
-                switch (x2) {
-                  'stand':  "stand on.";
-                  'sit':    "sit down on.";
-                  'lie':    "lie down on.";
-                  default:  "enter.";
-                }
+            print " not something ", (theActor) actor;
+            Tense(" can", " could");
+            switch (x2) {
+              'stand':  "stand on.";
+              'sit':    "sit down on.";
+              'lie':    "lie down on.";
+              default:  "enter.";
+            }
         3:  CSubjectCant(actor,true);
             " get into the closed ", (name) x1, ".";
         4:  CSubjectCan(actor,true);
@@ -886,7 +887,7 @@ Constant COLON__TX      = ": ";
         3:  CSubjectIs  (actor,true); " unable to climb ", (the) x1, ".";
         4:  CSubjectIs  (actor,true); " unable to descend by ", (the) x1, ".";
         5:  CSubjectCant(actor,true); " since ", (the) x1, " ", (IsOrAre) x1, " in the way.";
-        6:  CSubjectCant(actor,true); " since ", (the) x1, " ", (nop) PluralObj(x1,"lead","leads","led"), "nowhere.";
+        6:  CSubjectCant(actor,true); " since ", (the) x1, " ", (nop) PluralObj(x1,"lead","leads","led"), " nowhere.";
         7:  CSubjectVerb(actor,false,false,"depart",0,"departs","departed"); ".";
     }
   Insert: switch (n) {
@@ -906,7 +907,7 @@ Constant COLON__TX      = ": ";
             " no more room in ", (the) x1, ".";
         8:  "Done.";
         9:  CSubjectVerb(actor,false,false,"put",0,"puts","put"); " ", (the) x1, " into ", (the) x2, ".";
-        10: CSubjectIs  (x1,true); " too big to fit ", (nop) SupportObj(x2,"on","in"), (the) x2, ".";
+        10: CSubjectIs  (x1,true); " too big to fit ", (nop) SupportObj(x2,"on","in"), " ", (the) x2, ".";
     }
   Inv: switch (n) {
         1:  CSubjectIs  (actor,false); " carrying nothing.";
