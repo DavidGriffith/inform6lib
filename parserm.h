@@ -4995,8 +4995,6 @@ Object  InformLibrary "(Inform Library)"
 
               .turn__end;
 
-                keep_silent = 0;    ! should be zero anyway, but just in case...
-
                 ! No time passes if either (i) the verb was meta, or
                 ! (ii) we've only had the implicit take before the "real"
                 ! action to follow.
