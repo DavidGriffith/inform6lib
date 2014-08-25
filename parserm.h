@@ -535,8 +535,8 @@ Array  buffer3 -> INPUT_BUFFER_LEN + 1;      ! Retaining input for "AGAIN"
 Array  parse   buffer (MAX_BUFFER_WORDS * 4) + 3;   ! Parsed data from 'buffer'
 Array  parse2  buffer (MAX_BUFFER_WORDS * 4) + 3;   ! Parsed data from 'buffer2'
 #Ifnot;
-+Array  parse   -> 2 + (MAX_BUFFER_WORDS * 4) + 3;
-+Array  parse2  -> 2 + (MAX_BUFFER_WORDS * 4) + 3;
+Array  parse   -> 2 + (MAX_BUFFER_WORDS * 4) + 3;
+Array  parse2  -> 2 + (MAX_BUFFER_WORDS * 4) + 3;
 #Endif; ! VN_
 
 #Ifnot; ! TARGET_GLULX
