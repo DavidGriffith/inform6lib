@@ -1131,7 +1131,7 @@ Constant COLON__TX      = ": ";
         5:  CSubjectVerb(actor,false,false,"open",0,"opens","opened"); " ", (the) x1, ".";
         6:  "(first opening ", (the) x1, ")";
     }
-  Order:    CSubjectHas(actor,false); " better things to do.";
+  Order:    CSubjectHas(x1,false); " better things to do.";
   Places: switch (n) {
         1:  print "You have visited: ";
         2:  ".^";
