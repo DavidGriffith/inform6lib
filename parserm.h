@@ -5596,6 +5596,8 @@ Object  InformLibrary "(Inform Library)"
 
 [ ChangePlayer obj flag i;
 !   if (obj.&number == 0) return RunTimeError(7, obj);
+
+    if (obj == nothing) obj = selfobj;
     if (actor == player) actor=obj;
     give player ~transparent ~concealed;
     i = obj; while (parent(i) ~= 0) {
