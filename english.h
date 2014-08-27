@@ -394,7 +394,7 @@ Constant COLON__TX      = ": ";
 ];
 
 [ IsOrAre obj;
-    if (player.narrative_tense == PAST_TENSE) {
+    if (player provides narrative_tense && player.narrative_tense == PAST_TENSE) {
         if (obj has pluralname || obj == player) print "were"; else print "was";
         return;
     }
@@ -428,7 +428,7 @@ Constant COLON__TX      = ": ";
 [ nop x; x = x; ];      ! print rule to absorb unwanted return value
 
 [ SubjectNotPlayer obj reportage v2 v3 past;
-    if (past && player.narrative_tense == PAST_TENSE) {
+    if (past && player provides narrative_tense && player.narrative_tense == PAST_TENSE) {
         v2 = past;
         v3 = past;
     }
@@ -451,7 +451,7 @@ Constant COLON__TX      = ": ";
 ];
 
 [ CSubjectVoice obj v1 v2 v3 past;
-    if (past && player.narrative_tense == PAST_TENSE) {
+    if (past && player provides narrative_tense && player.narrative_tense == PAST_TENSE) {
         v1 = past;
         v2 = past;
         v3 = past;
@@ -472,7 +472,7 @@ Constant COLON__TX      = ": ";
 ];
 
 [ CSubjectVerb obj reportage nocaps v1 v2 v3 past;
-    if (past && player.narrative_tense == PAST_TENSE) {
+    if (past && player provides narrative_tense && player.narrative_tense == PAST_TENSE) {
         v1 = past;
         v2 = past;
         v3 = past;
@@ -637,7 +637,7 @@ Constant COLON__TX      = ": ";
 ];
 
 [ PluralObj obj s1 s2 past;
-    if (player.narrative_tense == PAST_TENSE) {
+    if (player provides narrative_tense && player.narrative_tense == PAST_TENSE) {
         print (string) past;
         return;
     }
