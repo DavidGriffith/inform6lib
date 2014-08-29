@@ -2365,7 +2365,7 @@ Constant UNLIT_BIT  =  32;
     indef_nspec_at = 0;
 ];
 
-[ Descriptors  o x flag cto type m;
+[ Descriptors  allows_multiple o x flag cto type m n;
     ResetDescriptors();
     if (wn > num_words) return 0;
     m = wn;
@@ -2399,6 +2399,16 @@ Constant UNLIT_BIT  =  32;
             indef_mode = 1; flag = 1; indef_wanted = 100;
             if (take_all_rule == 1) take_all_rule = 2;
             indef_type = indef_type | PLURAL_BIT;
+        }
+        if (allow_plurals && allows_multiple) {
+            n = TryNumber(wn-1);
+            if (n == 1) { indef_mode = 1; flag = 1; indef_wanted = 1; }
+            if (n > 1) {
+                indef_guess_p = 1;
+                indef_mode = 1; flag = 1; indef_wanted = n;
+                indef_nspec_at = wn-1;
+                indef_type = indef_type | PLURAL_BIT;
+            }
         }
         if (flag == 1 && NextWordStopped() ~= OF1__WD or OF2__WD or OF3__WD or OF4__WD)
             wn--;  ! Skip 'of' after these
@@ -2664,7 +2674,7 @@ Constant UNLIT_BIT  =  32;
   .TryAgain;
 
     ! First, we parse any descriptive words (like "the", "five" or "every"):
-    l = Descriptors();
+    l = Descriptors(token_allows_multiple);
     if (l ~= 0) { etype = l; return GPR_FAIL; }
 
   .TryAgain2;
