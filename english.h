@@ -1106,7 +1106,7 @@ Constant COLON__TX      = ": ";
             "Score notification off.";
   NotifyOn: "Score notification on.";
   Objects: switch (n) {
-        1:  "Objects you have handled:^";
+        1:  "Objects ", (nop) CSubjectVerb(actor, false, true, "have", "have", "has"), " handled:^";
         2:  "None.";
         3:  print "   (worn)";
         4:  print "   (held)";
