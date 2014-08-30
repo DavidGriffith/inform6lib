@@ -146,8 +146,7 @@ instance:
     This vase was very expensive-looking.
 
 
-Examples of using CSubjectVerb() can be seen in the english.h file.
-Here's an example:
+Here's an example of using CSubjectVerb():
    CSubjectVerb(actor,false,true,"close",0,"closes","closed"); " ", 
      (the) x1, ".";
 
@@ -157,7 +156,7 @@ change it to PRESENT_TENSE.  If you're doing something more complicated,
 like going back and forth between the present and the past, it can be 
 handy to create a "past PC" with its own posessions and properties.  
 That one always has its narrative_tense set to PAST_TENSE.  Then when 
-you want to flash back, simply call ChangePlayer().
+you want to flash back, simply call ChangePlayer() appropriately.
 
 There are frequent situations where you need to select between present 
 and past tense forms of phrases in ways that CSubjectVerb() is not 
@@ -167,12 +166,21 @@ uses Tense() to keep things straight.  Here's how to use it:
     Tense("isn't", "wasn't"); 
     " enough rainfall.";
 
-The rest of the CSubject functions are wrappers for commonly used verbs: 
-"is", "isn't", "has", "will", "can", "can't", and "don't".  These have 
-only three parameters: obj, reportage, and nocaps.  You can call these 
-with two or one parameters if you like.  The functions will receive 0 
-(also false) for missing trailing parameters.  Here they are along with 
-sample calls:
+There is a helper function called Tense() that doesn't quite fit in with the CSubject 
+functions.  This one takes two parameters: present and past.  Its purpose is to keep the 
+tense of various verbs straight.  It's not meant for sorting out narrative voices, but 
+instead is applied after that has been sorted out.  In fact, Tense() is used extensively 
+in the CSubject helper functions to do just that.
+
+Most of the rest of the CSubject functions are wrappers for commonly used verbs: "is", 
+"isn't", "has", "will", "can", "can't", and "don't".  These have only three parameters: 
+obj, reportage, and nocaps.  You can call these with two or one parameters if you like.  
+The functions will receive 0 (also false) for missing trailing parameters.  
+CSubjectVoice() is similar to CSubjectVerb() except that the name of the subject is not 
+printed.
+
+Here they are 
+along with sample calls:
 
 CSubjectIs()
     CSubjectIs(x1,true,true); " already closed.";
@@ -198,5 +206,12 @@ CSubjectCant()
 
 CSubjectDont()
     CSubjectDont(x1,true,true); " seem to fit the lock.";
+
+CSubjectVoice()
+     print "What ";
+     CSubjectVoice(player, "do", "do", "does", "did");
+     print " ";
+     CSubjectVerb(player, false, true, "want", "want", "want", "want");
+     " to do?";
 
 
