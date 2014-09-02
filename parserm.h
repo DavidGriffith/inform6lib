@@ -5614,7 +5614,7 @@ Object  InformLibrary "(Inform Library)"
         if (i has animate) give i transparent;
         i = parent(i);
     }
-    if (player == selfobj && player.nameless == true) {
+    if (player == selfobj && player provides nameless && player.nameless == true) {
         if (player provides narrative_voice) {
             if (player.narrative_voice == 1) {
                 player.short_name = MYFORMER__TX;
@@ -5628,16 +5628,12 @@ Object  InformLibrary "(Inform Library)"
                 (player.&name)-->2 = 'self';
             }
         }
-        player.short_name = FORMER__TX;
     }
 
 
     player = obj;
 
-    if (player == selfobj && player.nameless == true)
-	player.short_name = NULL;
-
-    give player transparent concealed animate proper;
+    give player transparent concealed animate;
     i = player; while (parent(i) ~= 0) i = parent(i);
     location = i; real_location = location;
     if (parent(player) == 0) return RunTimeError(10);
