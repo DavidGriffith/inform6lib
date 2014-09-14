@@ -2641,7 +2641,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
 [ TurnSub;
     if (ObjectIsUntouchable(noun)) return;
-    if (noun == player)    return L__M(##Push, 1, noun);
+    if (noun == player)    return L__M(##Turn, 1, noun);
     if (noun == actor)     return L__M(##Turn, 5, noun);
     if (noun has static)   return L__M(##Turn, 2, noun);
     if (noun has scenery)  return L__M(##Turn, 3, noun);
