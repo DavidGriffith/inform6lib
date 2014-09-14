@@ -2301,7 +2301,7 @@ Object  InformParser "(Inform Parser)"
     if (wn > num_words) rtrue;
 
     i = NextWord();
-    if (l == THEN1__WD or THEN2__WD or THEN3__WD or comma_word or AND1__WD) {
+    if (i == THEN1__WD or THEN2__WD or THEN3__WD or comma_word or AND1__WD) {
         if (wn > num_words) {
            held_back_mode = false;
            return;
