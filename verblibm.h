@@ -2661,14 +2661,12 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     if (RunLife(noun, ##WakeOther)) return;
     L__M(##WakeOther, 1, noun);
 ];
-!FIXME I'm not sure I like these defaults from 2006 that say "You decide 
-! that's not a good idea" instead of "You look ridiculous waving the 
-! thing".  I'll have to revisit this when the merge from 2006 is complete.
+
 [ WaveSub;
-    if (noun == player) return L__M(##Wave, 2 ,noun);
-    if (noun == actor) return L__M(##Wave, 3, noun);
+    if (noun == player) return L__M(##Wave, 2 ,noun, second);
+    if (noun == actor) return L__M(##Wave, 3, noun, second);
     if (noun notin actor && ImplicitTake(noun)) return L__M(##Wave, 1, noun);
-    L__M(##Wave, 2, noun);
+    L__M(##Wave, 2, noun, second);
 ];
 
 [ WaveHandsSub;

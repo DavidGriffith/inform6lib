@@ -1148,9 +1148,14 @@ Constant COLON__TX      = ": ";
         5:  ".";
     }
   Pull,Push,Turn: switch (n) {
-        1:  print "Punishing ", (OnesSelf) player, " that way ";
-            Tense("isn't", "wasn't");
-            " likely to help matters.";
+        1:  if (player provides narrative_voice && player.narrative_voice == 3) {
+                print_ret (The) player, " ", (nop) Tense("isn't", "wasn't"),
+                  " likely to help matters by punishing ",
+                              (OnesSelf) player, " that way.";
+            } else {
+                "Punishing ", (OnesSelf) player, " that way ",
+                              (nop) Tense("isn't", "wasn't"), " likely to help matters.";
+            }
         2:  CSubjectIs  (x1,true); " fixed in place.";
         3:  CSubjectIs  (actor,true); " unable to.";
         4:  print "Nothing obvious ";
@@ -1383,7 +1388,11 @@ Constant COLON__TX      = ": ";
   Wave: switch (n) {
         1:  print "But ";
             CSubjectIsnt(actor,true,true); " holding ", (ThatOrThose) x1, ".";
-        2:  CSubjectVerb(actor,false,false,"look",0,"looks","looked"); " ridiculous waving ", (the) x1, ".";
+        2:  CSubjectVerb(actor,false,false,"look",0,"looks","looked");
+            print " ridiculous waving ", (the) x1;
+            if (x2)
+                " at ", (the) x2, ".";
+            ".";
         3:  DecideAgainst();
     }
   WaveHands:
