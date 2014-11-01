@@ -1031,7 +1031,7 @@ Constant COLON__TX      = ": ";
         15: "Think nothing of it.";
         16: "~Oops~ can only correct a single word.";
         17: print "It ";
-            Tense("was", "is");
+            Tense("is", "was");
             print " pitch dark, and ", (theActor) actor;
             Tense(" can't", " couldn't");
             " see a thing.";
