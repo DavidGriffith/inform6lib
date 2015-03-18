@@ -6890,9 +6890,8 @@ Array StorageForShortName -> WORDSIZE + SHORTNAMEBUF_LEN;
             else ThatOrThose(player);
         } else {
             print (PSN__) o;
-            indef_mode = saveIndef;
         }
-
+        indef_mode = saveIndef;
         return;
     }
     PrefaceByArticle(o, 1);
