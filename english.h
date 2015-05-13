@@ -822,7 +822,7 @@ Constant COLON__TX      = ": ";
             " get into the closed ", (name) x1, ".";
         4:  CSubjectCan(actor,true);
             " only get into something free-standing.";
-        5:  CSubjectVerb(actor,false,false,"get",0,"gets");
+        5:  CSubjectVerb(actor,false,false,"get",0,"gets","got");
             SupportObj(x1," onto"," into"); " ", (the) x1, ".";
         6:  "(getting ", (nop) SupportObj(x1,"off","out of"), (the) x1, ")";
         7:  if (x1 has supporter) "(getting onto ", (the) x1, ")";
@@ -844,7 +844,7 @@ Constant COLON__TX      = ": ";
             " in anything at the moment.";
         2:  CSubjectCant(actor,false);
             " get out of the closed ", (name) x1, ".";
-        3:  CSubjectVerb(actor,false,false,"get",0,"gets");
+        3:  CSubjectVerb(actor,false,false,"get",0,"gets", "got");
             print " ";
             SupportObj(x1,"off","out of"); " ", (the) x1, ".";
         4:  CSubjectIsnt(actor,true);
@@ -852,7 +852,7 @@ Constant COLON__TX      = ": ";
             SupportObj(x1,"on","in"); " ", (the) x1, ".";
         5:  "(first getting ", (nop) SupportObj(x1,"off","out of"),
               " ", (the) x1, ")";
-        6:  CSubjectVerb(actor,false,false,"stand",0,"stands"); " up.";
+        6:  CSubjectVerb(actor,false,false,"stand",0,"stands","stood"); " up.";
     }
   Fill: switch (n) {
         1:  print "There ";
@@ -876,7 +876,7 @@ Constant COLON__TX      = ": ";
         2:  CSubjectVerb(actor,false,false,"juggle",0,"juggles","juggled");
             " ", (the) x1, " for a while, but don't achieve much.";
         3:  CSubjectDont(x1,true); " seem interested.";
-        4:  CSubjectVerb(actor,false,"hand over",0,"hands over","handed over");
+        4:  CSubjectVerb(actor,false,false,"hand over",0,"hands over","handed over");
             " ", (the) x1, ".";
     }
   Go: switch (n) {
@@ -914,13 +914,13 @@ Constant COLON__TX      = ": ";
         3:  ":";
         4:  ".";
     }
-  Jump:     CSubjectVerb(actor,false,false,"jump",0,"jumps"); " on the spot, fruitlessly.";
+  Jump:     CSubjectVerb(actor,false,false,"jump",0,"jumps","jumped"); " on the spot, fruitlessly.";
   JumpOver: switch (n) {
-        1:  CSubjectVerb(actor,true,false,"would",0,0); " achieve nothing by this.";
+        1:  CSubjectVerb(actor,true,false,"achieve",0,"achieve","achieved"); " nothing by this.";
         2:  DecideAgainst();
     }
   Kiss:     "Keep your mind on the game.";
-  Listen:   CSubjectVerb(actor,true,"hear",0,"hears"); " nothing unexpected.";
+  Listen:   CSubjectVerb(actor,true,false,"hear",0,"hears","heard"); " nothing unexpected.";
   ListMiscellany: switch (n) {
         1:  print " (providing light)";
         2:  print " (which ", (IsOrAre) x1, " closed)";
