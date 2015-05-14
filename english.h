@@ -758,8 +758,8 @@ Constant COLON__TX      = ": ";
             Tense("is", "was");
             " on sale.";
   Climb: switch (n) {
-        1:  print "Climbing ", (ThatOrThose) x1;
-            Tense(" would achieve", " would have achieved");
+        1:  print "Climbing ", (ThatOrThose) x1, " would ";
+            Tense(" achieve", " have achieved");
             " little.";
         2:  DecideAgainst();
     }
