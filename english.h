@@ -374,9 +374,23 @@ Constant WHICH__TX      = "which ";
 Constant COMMA__TX      = ", ";
 Constant COLON__TX      = ": ";
 
+! ----------------------------------------------------------------------------
+! FYI on nominative pronouns versus accusative pronouns...
+! Consider the sentence "She hit him.".
+! "She" is in the nominative case.  It appears at the beginning of a sentence.
+! "him" is in the accusative case.  It won't appear at the beginning.
+! ----------------------------------------------------------------------------
 
-[ ThatOrThose obj;      ! Used in the accusative
-    if (obj == player)            { print "you"; return; }
+! Accusative
+[ ThatOrThose obj;
+    if (obj == player) {
+	if (player provides narrative_voice) {
+	    if (player.narrative_voice == 1) { print "me"; return; }
+	    if (player.narrative_voice == 3) { CDefart(player); return; }
+	}
+	print "you";
+	return;
+    }
     if (obj has pluralname)       { print "those"; return; }
     if (obj has female)           { print "her"; return; }
     if (obj has male or animate)
@@ -384,13 +398,57 @@ Constant COLON__TX      = ": ";
     print "that";
 ];
 
+! Accusative
 [ ItOrThem obj;
-    if (obj == player)            { print "yourself"; return; }
+    if (obj == player) {
+	if (player provides narrative_voice) {
+	    if (player.narrative_voice == 1) { print "myself"; return; }
+	    if (player.narrative_voice == 3) { CDefart(player); return; }
+	}
+	print "yourself";
+	return;
+    }
     if (obj has pluralname)       { print "them"; return; }
     if (obj has female)           { print "her"; return; }
     if (obj has male or animate)
         if (obj hasnt neuter)     { print "him"; return; }
     print "it";
+];
+
+! Nominative
+[ CThatOrThose obj;
+    if (obj == player) {
+	if (player provides narrative_voice) {
+	    if (player.narrative_voice == 1) { print "I"; return; }
+	    if (player.narrative_voice == 3) { CDefart(player); return; }
+	}
+	print "You";
+	return;
+    }
+    if (obj has pluralname)		{ print "Those"; return; }
+    if (obj has female)			{ print "She"; return; }
+    if (obj has male or animate) {
+        if (obj hasnt neuter)		{ print "He"; return; }
+    }
+    print "That";
+];
+
+! Nominative
+[ CTheyreorThats obj;
+    if (obj == player) {
+	if (player provides narrative_voice) {
+	    if (player.narrative_voice == 1) { print "I'm"; return; }
+	    if (player.narrative_voice == 3) { CDefart(player); print "'s"; return; }
+	}
+	print "You're";
+	return;
+    }
+    if (obj has pluralname)		{ print "They're"; return; }
+    if (obj has female)			{ print "She's"; return; }
+    if (obj has male or animate) {
+        if (obj hasnt neuter)		{ print "He's"; return; }
+    }
+    print "That's";
 ];
 
 [ IsOrAre obj;
@@ -400,30 +458,6 @@ Constant COLON__TX      = ": ";
     }
     if (obj has pluralname || obj == player) print "are"; else print "is";
     return;
-];
-
-!FIXME
-! These functions need to take an optional boolean argument that will
-! optionally capitalize the leading word.  I'll leave that for the next
-! commit.
-
-[ CThatOrThose obj;     ! Used in the nominative
-    if (obj == player)            { print "You"; return; }
-    if (obj has pluralname)       { print "Those"; return; }
-    if (obj has female)           { print "She"; return; }
-    if (obj has male or animate)
-        if (obj hasnt neuter)     { print "He"; return; }
-    print "That";
-];
-
-[ CTheyreorThats obj;
-    if (obj == player)             { print "You're"; return; }
-    if (obj has pluralname)        { print "They're"; return; }
-    if (obj has animate) {
-        if (obj has female)        { print "She's"; return; }
-        else if (obj hasnt neuter) { print "He's"; return; }
-    }
-    print "That's";
 ];
 
 [ nop x; x = x; ];      ! print rule to absorb unwanted return value
