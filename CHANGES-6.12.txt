@@ -13,9 +13,13 @@ New things added in Release 6/12
 ================================
 
 First-person and third-person narrative voices are now natively 
-supported.  See narrative_voices.txt for information on how to use them.
+supported.  See voices_and_tenses.txt for information on how to use 
+them.
 
 The default mode is now VERBOSE.
+
+Added infglk.h for more convenient programming for the Glulx virtual 
+machine.
 
 There is now a Global "no_infer_message" which can be used in the 
 ChooseObjects() routine to suppress an inference message for a 
