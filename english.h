@@ -402,6 +402,7 @@ Constant COLON__TX      = ": ";
     return;
 ];
 
+!FIXME
 ! These functions need to take an optional boolean argument that will
 ! optionally capitalize the leading word.  I'll leave that for the next
 ! commit.
@@ -914,7 +915,15 @@ Constant COLON__TX      = ": ";
         3:  ":";
         4:  ".";
     }
-  Jump:     CSubjectVerb(actor,false,false,"jump",0,"jumps","jumped"); " on the spot, fruitlessly.";
+  Jump: CSubjectVerb(actor,false,false,"jump",0,"jumps","jumped"); " on the spot, fruitlessly.";
+  JumpIn:
+        print "Jumping in ", (the) x1, " ";
+        Tense("would achieve", "would have achieved");
+        " nothing here.";
+  JumpOn:
+        print "Jumping upon ", (the) x1, " ";
+        Tense("would achieve", "would have achieved");
+        " nothing here.";
   JumpOver: switch (n) {
         1:  CSubjectVerb(actor,true,false,"achieve",0,"achieve","achieved"); " nothing by this.";
         2:  DecideAgainst();

@@ -221,7 +221,10 @@ Verb 'cut' 'chop' 'prune' 'slice'
 
 Verb 'dig'
     * noun                                      -> Dig
-    * noun 'with' held                          -> Dig;
+    * noun 'with' held                          -> Dig
+    * 'in' noun                                 -> Dig
+    * 'in' noun 'with' held                     -> Dig;
+
 
 Verb 'disrobe' 'doff' 'shed'
     * held                                      -> Disrobe;
@@ -294,6 +297,10 @@ Verb 'inventory' 'inv' 'i//'
 
 Verb 'jump' 'hop' 'skip'
     *                                           -> Jump
+    * 'in' noun                                 -> JumpIn
+    * 'into' noun                               -> JumpIn
+    * 'on' noun                                 -> JumpOn
+    * 'upon' noun                               -> JumpOn
     * 'over' noun                               -> JumpOver;
 
 Verb 'kiss' 'embrace' 'hug'

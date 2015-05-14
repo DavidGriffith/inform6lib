@@ -2525,6 +2525,18 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
 [ JumpSub; L__M(##Jump, 1, noun); ];
 
+[ JumpInSub;
+    if (noun has animate) return L__M(##JumpIn, 2, noun);
+    if (noun has enterable) <<Enter noun>>;
+    L__M(##JumpOn, 1, noun);
+];
+
+[ JumpOnSub;
+    if (noun has animate) return L__M(##JumpOn, 2, noun);
+    if (noun has enterable && noun has supporter) <<Enter noun>>;
+    L__M(##JumpOn, 1, noun);
+];
+
 [ JumpOverSub;
     if (noun has animate) return L__M(##JumpOver, 2, noun);
     L__M(##JumpOver, 1, noun);
