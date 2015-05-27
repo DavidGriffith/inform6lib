@@ -2409,6 +2409,10 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     give noun open;
 
     if (AfterRoutines() || keep_silent) return;
+
+    if (noun hasnt container)
+	return L__M(##Open, 5, noun);
+
     if ((noun has container && location ~= thedark && VisibleContents(noun)
          && IndirectlyContains(noun, player)) == 0) {
          if (noun hasnt transparent && noun hasnt door) return L__M(##Open, 4, noun);
