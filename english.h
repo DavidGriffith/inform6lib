@@ -859,7 +859,7 @@ Constant COLON__TX      = ": ";
             " only get into something free-standing.";
         5:  CSubjectVerb(actor,false,false,"get",0,"gets","got");
             SupportObj(x1," onto"," into"); " ", (the) x1, ".";
-        6:  "(getting ", (nop) SupportObj(x1,"off","out of"), (the) x1, ")";
+        6:  "(getting ", (nop) SupportObj(x1,"off","out of"), " ", (the) x1, ")";
         7:  if (x1 has supporter) "(getting onto ", (the) x1, ")";
             if (x1 has container) "(getting into ", (the) x1, ")";
                                   "(entering ", (the) x1, ")";
