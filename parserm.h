@@ -1240,26 +1240,8 @@ Object  InformParser "(Inform Parser)"
     ! Undo handling
 
     if ((w == UNDO1__WD or UNDO2__WD or UNDO3__WD) && (nw==1)) {
-        if (turns == START_MOVE) {
-            L__M(##Miscellany, 11);
-            jump FreshInput;
-        }
-        if (undo_flag == 0) {
-            L__M(##Miscellany, 6);
-            jump FreshInput;
-        }
-        if (undo_flag == 1) jump UndoFailed;
-        #Ifdef TARGET_ZCODE;
-        @restore_undo i;
-        #Ifnot; ! TARGET_GLULX
-        @restoreundo i;
-        i = (~~i);
-        #Endif; ! TARGET_
-        if (i == 0) {
-          .UndoFailed;
-            L__M(##Miscellany, 7);
-        }
-        jump FreshInput;
+        i = PerformUndo();
+        if (i == 0) jump FreshInput;
     }
     #Ifdef TARGET_ZCODE;
     @save_undo i;
@@ -1376,6 +1358,21 @@ Object  InformParser "(Inform Parser)"
 !    saved_ml = 0;
     return nw;
 ]; ! end of Keyboard
+
+[ PerformUndo i;
+    if (turns == START_MOVE) { L__M(##Miscellany, 11); return 0; }
+    if (undo_flag == 0) {      L__M(##Miscellany, 6); return 0; }
+    if (undo_flag == 1) {      L__M(##Miscellany, 7); return 0; }
+    #Ifdef TARGET_ZCODE;
+    @restore_undo i;
+    #Ifnot; ! TARGET_GLULX
+    @restoreundo i;
+    i = (~~i);
+    #Endif; ! TARGET_
+    if (i == 0) {    L__M(##Miscellany, 7); return 0; }
+    L__M(##Miscellany, 1);
+    return 1;
+];
 
 ! ----------------------------------------------------------------------------
 !   To simplify the picture a little, a rough map of the main routine:
@@ -5300,22 +5297,8 @@ Object  InformLibrary "(Inform Library)"
     }
     #IfV5;
     if (i == UNDO1__WD or UNDO2__WD or UNDO3__WD) {
-        if (undo_flag == 0) {
-            L__M(##Miscellany, 6);
-            jump RRQPL;
-        }
-        if (undo_flag == 1) jump UndoFailed2;
-        #Ifdef TARGET_ZCODE;
-        @restore_undo i;
-        #Ifnot; ! TARGET_GLULX
-        @restoreundo i;
-        i = (~~i);
-        #Endif; ! TARGET_
-        if (i == 0) {
-          .UndoFailed2;
-            L__M(##Miscellany, 7);
-        }
-        jump RRQPL;
+        i = PerformUndo();
+        if (i == 0) jump RRQPL;
     }
     #Endif; ! V5
     L__M(##Miscellany, 8);
