@@ -18,6 +18,9 @@
 
 System_file;
 
+#Ifndef LIBRARY_STAGE;	! This file is the first one to define LIBRARY_STAGE.
+		! "This file already included" <=> "LIBRARY_STAGE exists"
+
 ! ------------------------------------------------------------------------------
 
 #Ifndef VN_1633;
@@ -138,4 +141,7 @@ Include "parserm";
 
 Undef LIBRARY_STAGE; Constant LIBRARY_STAGE = AFTER_PARSER;
 
+#Ifnot;
+Message "Warning: 'parser' included twice; ignoring second inclusion. (Ignore this if this is on purpose.)";
+#Endif;
 ! ==============================================================================
