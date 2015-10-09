@@ -1,3 +1,6 @@
+#Ifdef		LIBRARY_STAGE;
+#Iftrue		LIBRARY_STAGE == AFTER_PARSER;		! if it's the right time to include it
+
 ! ==============================================================================
 !   VERBLIB:  Front end to standard verbs library.
 !
@@ -53,5 +56,14 @@ Include "verblibm";
 ! ==============================================================================
 
 Undef LIBRARY_STAGE; Constant LIBRARY_STAGE = AFTER_VERBLIB;
+
+#Ifnot;		! LIBRARY_STAGE ~= AFTER_PARSER
+			! (this shouldn't happen because if 'parser' isn't there, LIBRARY_STAGE isn't defined)
+Message "Error: 'parser' needs to be correctly included before including 'verblib'. This will cause a big number of errors!";
+#Endif;
+
+#Ifnot;		! LIBRARY_STAGE is not defined (likely, 'parser' hasn't been included)
+Message "Error: 'parser' needs to be correctly included before including 'verblib'. This will cause a big number of errors!";
+#Endif;
 
 ! ==============================================================================

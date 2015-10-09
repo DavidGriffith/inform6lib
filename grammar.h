@@ -1,3 +1,6 @@
+#Ifdef		LIBRARY_STAGE;
+#Iftrue		LIBRARY_STAGE == AFTER_VERBLIB;		! if it's the right time to include it
+
 ! ==============================================================================
 !   GRAMMAR:  Grammar table entries for the standard verbs library.
 !
@@ -564,5 +567,13 @@ Include "infix";
 ! ==============================================================================
 
 Undef LIBRARY_STAGE; Constant LIBRARY_STAGE = AFTER_GRAMMAR;
+
+#Ifnot;		! LIBRARY_STAGE ~= AFTER_VERBLIB
+Message "Error: 'verblib' needs to be correctly included before including 'grammar'. This will cause a big number of errors!";
+#Endif;
+
+#Ifnot;		! LIBRARY_STAGE is not defined
+Message "Error: 'parser', then 'verblib' need to be correctly included before including 'grammar'. This will cause a big number of errors!";
+#Endif;
 
 ! ==============================================================================
