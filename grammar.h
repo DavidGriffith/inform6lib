@@ -1,7 +1,3 @@
-#Ifdef		LIBRARY_STAGE;
-#Iffalse	LIBRARY_STAGE >= AFTER_GRAMMAR;		! if it's not already included
-#Iftrue		LIBRARY_STAGE == AFTER_VERBLIB;		! if it's the right time to include it
-
 ! ==============================================================================
 !   GRAMMAR:  Grammar table entries for the standard verbs library.
 !
@@ -20,6 +16,10 @@
 ! ==============================================================================
 
 System_file;
+
+#Ifdef		LIBRARY_STAGE;
+#Iffalse	LIBRARY_STAGE >= AFTER_GRAMMAR;	! if not already included
+#Iftrue		LIBRARY_STAGE == AFTER_VERBLIB;	! if okay to include it
 
 ! ------------------------------------------------------------------------------
 !  The "meta-verbs", commands to the game rather than in the game, come first:

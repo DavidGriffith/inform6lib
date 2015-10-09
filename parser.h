@@ -1,6 +1,3 @@
-#Ifndef LIBRARY_STAGE;		! this file is the first one to define LIBRARY_STAGE
-							! so "this file is already included" <=> "LIBRARY_STAGE exists"
-
 ! ==============================================================================
 !   PARSER:  Front end to parser.
 !
@@ -20,6 +17,9 @@
 ! ==============================================================================
 
 System_file;
+
+#Ifndef LIBRARY_STAGE;	! This file is the first one to define LIBRARY_STAGE.
+		! "This file already included" <=> "LIBRARY_STAGE exists"
 
 ! ------------------------------------------------------------------------------
 

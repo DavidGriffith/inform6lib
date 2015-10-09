@@ -1,7 +1,3 @@
-#Ifdef		LIBRARY_STAGE;
-#Iffalse	LIBRARY_STAGE >= AFTER_VERBLIB;		! if it's not already included
-#Iftrue		LIBRARY_STAGE == AFTER_PARSER;		! if it's the right time to include it
-
 ! ==============================================================================
 !   VERBLIB:  Front end to standard verbs library.
 !
@@ -21,6 +17,10 @@
 ! ==============================================================================
 
 System_file;
+
+#Ifdef		LIBRARY_STAGE;
+#Iffalse	LIBRARY_STAGE >= AFTER_VERBLIB;	! if not already included
+#Iftrue		LIBRARY_STAGE == AFTER_PARSER;	! if okay to include it
 
 ! ------------------------------------------------------------------------------
 

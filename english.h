@@ -1,5 +1,3 @@
-#Ifndef LIBRARY_ENGLISH;	! if already included, don't try to include it again
-
 ! ==============================================================================
 !   ENGLISH:  Language Definition File
 !
@@ -22,6 +20,9 @@
 ! ==============================================================================
 
 System_file;
+
+#Ifndef LIBRARY_ENGLISH;	! if this file is already included,
+				! don't try to include it again.
 
 ! ------------------------------------------------------------------------------
 !   Part I.   Preliminaries
