@@ -21,6 +21,9 @@
 
 System_file;
 
+#Ifndef LIBRARY_ENGLISH;	! if this file is already included,
+				! don't try to include it again.
+
 ! ------------------------------------------------------------------------------
 !   Part I.   Preliminaries
 ! ------------------------------------------------------------------------------
@@ -289,7 +292,7 @@ Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
 ];
 
 ! ----------------------------------------------------------------------------
-!  LanguageVerbIsDebugging is called by SearchScope.  It should return true 
+!  LanguageVerbIsDebugging is called by SearchScope.  It should return true
 !  if word w is a debugging verb which needs all objects to be in scope.
 ! ----------------------------------------------------------------------------
 
@@ -317,7 +320,7 @@ Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
 ];
 
 ! ----------------------------------------------------------------------------
-!  LanguageVerbMayBeName is called by NounDomain when dealing with the 
+!  LanguageVerbMayBeName is called by NounDomain when dealing with the
 !  player's reply to a "Which do you mean, the short stick or the long
 !  stick?" prompt from the parser. If the reply is another verb (for example,
 !  LOOK) then then previous ambiguous command is discarded /unless/
@@ -750,7 +753,7 @@ Constant COLON__TX      = ": ";
             " usefully blow ", (thatorthose) x1, ".";
   Burn: switch (n) {
         1:  print "This dangerous act would ";
-            Tense("achieve", "have achieved"); 
+            Tense("achieve", "have achieved");
             " little.";
         2:  DecideAgainst();
     }
@@ -1457,5 +1460,6 @@ Constant COLON__TX      = ": ";
 ! ==============================================================================
 
 Constant LIBRARY_ENGLISH;       ! for dependency checking.
+#Endif;
 
 ! ==============================================================================

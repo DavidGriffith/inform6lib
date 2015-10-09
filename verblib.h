@@ -18,6 +18,10 @@
 
 System_file;
 
+#Ifdef		LIBRARY_STAGE;
+#Iffalse	LIBRARY_STAGE >= AFTER_VERBLIB;	! if not already included
+#Iftrue		LIBRARY_STAGE == AFTER_PARSER;	! if okay to include it
+
 ! ------------------------------------------------------------------------------
 
 Default AMUSING_PROVIDED    1;
@@ -53,5 +57,18 @@ Include "verblibm";
 ! ==============================================================================
 
 Undef LIBRARY_STAGE; Constant LIBRARY_STAGE = AFTER_VERBLIB;
+
+#Ifnot;		! LIBRARY_STAGE < AFTER_VERBLIB but ~= AFTER_PARSER
+			! (this shouldn't happen because if 'parser' isn't there, LIBRARY_STAGE isn't defined)
+Message "Error: 'parser' needs to be correctly included before including 'verblib'. This will cause a big number of errors!";
+#Endif;
+
+#Ifnot;		! LIBRARY_STAGE >= AFTER_VERBLIB: already included
+Message "Warning: 'verblib' included twice; ignoring second inclusion. (Ignore this if this is on purpose.)";
+#Endif;
+
+#Ifnot;		! LIBRARY_STAGE is not defined (likely, 'parser' hasn't been included)
+Message "Error: 'parser' needs to be correctly included before including 'verblib'. This will cause a big number of errors!";
+#Endif;
 
 ! ==============================================================================
