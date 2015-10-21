@@ -679,7 +679,7 @@ Object  thedark "(darkness object)"
         short_name DARKNESS__TX,
         description [;  return L__M(##Miscellany, 17); ];
 
-! If you want to use the third-person of the narrative voice, you will 
+! If you want to use the third-person of the narrative voice, you will
 ! need to replace this selfobj with your own.
 
 Object  selfobj	 "(self object)"
@@ -1636,11 +1636,11 @@ Object  InformParser "(Inform Parser)"
                 i=NextWord();
                 if (i == comma_word) jump Conversation;
             }
-            vw = verb_word;
-            verb_word = UnknownVerb(vw);
-            if (verb_word == false) verb_word = LibraryExtensions.RunWhile(ext_unknownverb, false, vw);
-            if (verb_word) jump VerbAccepted;
         }
+        vw = verb_word;
+        verb_word = UnknownVerb(vw);
+        if (verb_word == false) verb_word = LibraryExtensions.RunWhile(ext_unknownverb, false, vw);
+        if (verb_word) jump VerbAccepted;
         best_etype = VERB_PE;
         jump GiveError;
 
@@ -5255,7 +5255,7 @@ Object  InformLibrary "(Inform Library)"
 
   .RRQL;
 
-    print "> ";
+    L__M(##Prompt);
     #Ifdef TARGET_ZCODE;
     #IfV3; read buffer parse; #Endif; ! V3
     temp_global=0;
