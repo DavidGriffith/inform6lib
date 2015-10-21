@@ -1056,7 +1056,7 @@ Constant COLON__TX      = ": ";
             if (TASKS_PROVIDED == 0) print ", give the FULL score for that game";
             if (deadflag == 2 && AMUSING_PROVIDED == 0)
                 print ", see some suggestions for AMUSING things to do";
-            SerialComma(3); " or QUIT?";
+            SerialComma(3); print " or QUIT?";
         6:  "[Your interpreter does not provide ~undo~.  Sorry!]";
             #Ifdef TARGET_ZCODE;
         7:  "~Undo~ failed.  [Not all interpreters provide it.]";
