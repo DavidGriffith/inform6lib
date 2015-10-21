@@ -1636,11 +1636,11 @@ Object  InformParser "(Inform Parser)"
                 i=NextWord();
                 if (i == comma_word) jump Conversation;
             }
-            vw = verb_word;
-            verb_word = UnknownVerb(vw);
-            if (verb_word == false) verb_word = LibraryExtensions.RunWhile(ext_unknownverb, false, vw);
-            if (verb_word) jump VerbAccepted;
         }
+        vw = verb_word;
+        verb_word = UnknownVerb(vw);
+        if (verb_word == false) verb_word = LibraryExtensions.RunWhile(ext_unknownverb, false, vw);
+        if (verb_word) jump VerbAccepted;
         best_etype = VERB_PE;
         jump GiveError;
 
