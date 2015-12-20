@@ -122,7 +122,7 @@ Include "linklv";
       3:    print "Entry in property list not routine or string: ~", (property) p2, "~ list of ~",
                   (name) p1, "~ (", p1, ")";
       4:    print "Too many timers/daemons are active simultaneously.
-                  The limit is the library constant MAX_TIMERS 
+                  The limit is the library constant MAX_TIMERS
                   (currently ", MAX_TIMERS, ") and should be increased";
       5:    print "Object ~", (name) p1, "~ has no ~", (property) p2, "~ property";
       7:    print "The object ~", (name) p1, "~ can only be used as a player object if it has

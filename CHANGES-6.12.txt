@@ -1,10 +1,10 @@
 Life and Times of the Inform Library Release 6/12
 =================================================
 
-This release of the Inform Library marks the first release of the Inform 
-6 library after custody was taken over by David Griffith.  This release 
-focuses mainly on bugs reported at 
-http://www.inform-fiction.org/patches/library.html.  A few significant 
+This release of the Inform Library marks the first release of the Inform
+6 library after custody was taken over by David Griffith.  This release
+focuses mainly on bugs reported at
+http://www.inform-fiction.org/patches/library.html.  A few significant
 enhancements have been added as well.
 
 
@@ -12,49 +12,49 @@ enhancements have been added as well.
 New things added in Release 6/12
 ================================
 
-First-person and third-person narrative voices are now natively 
-supported.  See voices_and_tenses.txt for information on how to use 
+First-person and third-person narrative voices are now natively
+supported.  See voices_and_tenses.txt for information on how to use
 them.
 
 The default mode is now VERBOSE.
 
-Added infglk.h for more convenient programming for the Glulx virtual 
+Added infglk.h for more convenient programming for the Glulx virtual
 machine.
 
-There is now a Global "no_infer_message" which can be used in the 
-ChooseObjects() routine to suppress an inference message for a 
-particular match.  This global is reset to false after the turn is 
+There is now a Global "no_infer_message" which can be used in the
+ChooseObjects() routine to suppress an inference message for a
+particular match.  This global is reset to false after the turn is
 complete.
 
-There is now a Global "no_implicit_actions" which can be used to tell 
-the library not attempt to do things that implicitly must be done.  For 
-example, the PC is holding a sack containing an apple and the command 
-"DROP APPLE" is typed.  With no_implicit_actions set to true, the 
-Library will complain instead of taking the apple out of the sack before 
+There is now a Global "no_implicit_actions" which can be used to tell
+the library not attempt to do things that implicitly must be done.  For
+example, the PC is holding a sack containing an apple and the command
+"DROP APPLE" is typed.  With no_implicit_actions set to true, the
+Library will complain instead of taking the apple out of the sack before
 dropping it.  Once this global is set, it stays set.
 
-If you add "Constant NO_INITIAL_LOOK;" to the beginning of your code, 
-the library will not do an initial LOOK at the beginning of your 
+If you add "Constant NO_INITIAL_LOOK;" to the beginning of your code,
+the library will not do an initial LOOK at the beginning of your
 program.
 
-There is now an optional Epilogue() function.  This will execute when 
+There is now an optional Epilogue() function.  This will execute when
 the game ends.
 
-TAKE ALL has been modified such that scenery or animate objects will not 
-be taken.  To revert back to traditional behavior, add "Constant 
+TAKE ALL has been modified such that scenery or animate objects will not
+be taken.  To revert back to traditional behavior, add "Constant
 TRADITIONAL_TAKE_ALL;" at the beginning of your program.
 
-If you want to use color in your game, you must add "Constant COLOUR;" 
-or "Constant COLOR;" to the beginnning of your code.  This was required 
+If you want to use color in your game, you must add "Constant COLOUR;"
+or "Constant COLOR;" to the beginnning of your code.  This was required
 to fix L61105.
 
-To deal with L61126, a new global has been introduced: 
-parser_inflection_func.  Whenever parser_inflection is set as a 
-function, parser_inflection_func must be set to true.  When the parser 
-is done with it, parser_inflection_func is set back to false.  Under the 
-Z-machine, it is possible to tell if a global is a common property or a 
-function.  This is not so with the Glulx VM.  This change goes for both 
-Z-machine and Glulx.  For background on how one might use 
+To deal with L61126, a new global has been introduced:
+parser_inflection_func.  Whenever parser_inflection is set as a
+function, parser_inflection_func must be set to true.  When the parser
+is done with it, parser_inflection_func is set back to false.  Under the
+Z-machine, it is possible to tell if a global is a common property or a
+function.  This is not so with the Glulx VM.  This change goes for both
+Z-machine and Glulx.  For background on how one might use
 parser_inflection, see Section 35 of the DM4.
 
 
@@ -63,60 +63,60 @@ Issues addressed in Release 6/12
 
 Issue L61101
 each_turn property causes runtime error.
-Problem: An each_turn property with both a local routine and a routine 
+Problem: An each_turn property with both a local routine and a routine
 inherited from a Class causes a runtime error in Strict mode.
 Status: Fixed
 
 Issue L61102
 GET IN now matches Compass object
-Adding "in_obj.&name-->0 = '.ignore';" to Initialise() reverts back to 
-the previous behavior.  
+Adding "in_obj.&name-->0 = '.ignore';" to Initialise() reverts back to
+the previous behavior.
 Status: Fixed
 
 Issue L61103
 "statusline time;" statement isn't recognized
-Problem: When I compile Greystone with 6.30 and 6/11 my statusline time; 
-statement is seemingly ignored; the game runs by moves and not a clock. 
-If I revert back to 6.21 and 6/10 the statusline is indeed a clock again 
+Problem: When I compile Greystone with 6.30 and 6/11 my statusline time;
+statement is seemingly ignored; the game runs by moves and not a clock.
+If I revert back to 6.21 and 6/10 the statusline is indeed a clock again
 and not a move counter.
 Status: Unable to reproduce
 
 Issue L61104
 ListMaker doesn't support 'serial' commas
-Problem: The WriteListFrom() listmaker doesn't support 'serial' commas 
+Problem: The WriteListFrom() listmaker doesn't support 'serial' commas
 (aka Oxford or Harvard commas): Tom, Dick, and Harry.
 Status: Fixed
 
 Issue L61105
 'Game uses colour' bit is always set.
-Problem: Every game compiled with the 6/11 library has the 'game uses 
+Problem: Every game compiled with the 6/11 library has the 'game uses
 colour' bit set in the Flags2 header word.
-Fixed: From now on, if you want a game to use color, add "Constant 
+Fixed: From now on, if you want a game to use color, add "Constant
 COLOUR;" or "Constant COLOR;" to the beginning of your code.
 Status: Fixed
 
 Issue L61106
 Improvement to LibraryExtensions.RunUntil
-Problem: The LibraryExtensions.RunUntil property (new at 6/11 and not 
-currently used by the library) should return simply true or false if it 
+Problem: The LibraryExtensions.RunUntil property (new at 6/11 and not
+currently used by the library) should return simply true or false if it
 does nothing.
 Status: Fixed
 
 Issue L61107
 (The) with 'proper' should capitalise object name
-Problem: In the case of an object with the 'proper' attribute and a 
-lower-case name (such as "your nose", "your corduroy trousers", "your 
-mother's purse"), the (The) print rule should capitalise the first 
-letter of the object name, so that library messages such as (The) x1, " 
-", (isorare) x1, " empty." correctly produce "Your mother's purse is 
+Problem: In the case of an object with the 'proper' attribute and a
+lower-case name (such as "your nose", "your corduroy trousers", "your
+mother's purse"), the (The) print rule should capitalise the first
+letter of the object name, so that library messages such as (The) x1, "
+", (isorare) x1, " empty." correctly produce "Your mother's purse is
 empty."
 Status: Fixed
 
 Issue L61108
 indef_mode not restored
-Problem: When printing an object with the proper attribute, the 
-functions IndefArt( ) and CIndefArt( ) temporarily modify -- but do not 
-restore -- the value of the global variable indef_mode (see lines 6305 
+Problem: When printing an object with the proper attribute, the
+functions IndefArt( ) and CIndefArt( ) temporarily modify -- but do not
+restore -- the value of the global variable indef_mode (see lines 6305
 and 6315 in parserm.h).
 Status: Fixed
 
@@ -126,31 +126,31 @@ Status: Fixed
 
 Issue L61110
 Inference message inconsistency
-Problem: In a pile of several indistinguishable objects, taking them 
-from the floor does not generate an (inference) message, but it does 
+Problem: In a pile of several indistinguishable objects, taking them
+from the floor does not generate an (inference) message, but it does
 when the final one is taken. (See also Suggestion 48)
 Status: Fixed
 
-Issue L61111  
+Issue L61111
 Multiple AGAINs treated as one
 Status: Fixed
 
-Issue L61112 
+Issue L61112
 WITHOUT_DIRECTIONS causes compilation error
-Problem: Version 6/11 of the Inform Library fails to compile if the 
-constant WITHOUT_DIRECTIONS is set and the objects 'u_obj' and 'd_obj' 
-aren't defined, because a few library routines expect those objects to 
+Problem: Version 6/11 of the Inform Library fails to compile if the
+constant WITHOUT_DIRECTIONS is set and the objects 'u_obj' and 'd_obj'
+aren't defined, because a few library routines expect those objects to
 exist.
 Status: Fixed
 
 Issue L61113
 Size of upper window not restored properly on UNDO
-Problem: Compile and run a trivial game with Nitfol. When the game 
-begins, type WAIT and then UNDO. Nitfol displays the message [ERROR: 
-output]: illegal line for set_cursor (1) 46968 (1,1) This happens in 
-DrawStatusLine() and the reason is that the upper window has height 0, 
+Problem: Compile and run a trivial game with Nitfol. When the game
+begins, type WAIT and then UNDO. Nitfol displays the message [ERROR:
+output]: illegal line for set_cursor (1) 46968 (1,1) This happens in
+DrawStatusLine() and the reason is that the upper window has height 0,
 but the Library tries to position the cursor at (1,1).
-Comment: I couldn't get Nitfol to complain like this, but applied the 
+Comment: I couldn't get Nitfol to complain like this, but applied the
 fix anyhow.
 Status: Fixed
 
@@ -167,14 +167,14 @@ Status: Fixed
 
 Issue L61115
 'multiheld' can match unholdable objects
-Problem: Contrary to the DM4, multiheld sometimes matches objects that 
-are not held. This would be OK if the objects were then implicitly 
+Problem: Contrary to the DM4, multiheld sometimes matches objects that
+are not held. This would be OK if the objects were then implicitly
 taken, like they are for held, but they are not.
 Status: Fixed
 
 Issue L61116
 Poor response from WAVE SELF
-Problem: The message produced by WAVE SELF -- "But you aren't holding 
+Problem: The message produced by WAVE SELF -- "But you aren't holding
 you" -- makes little sense.
 Status: Fixed
 
@@ -184,25 +184,25 @@ Status: Fixed
 
 Issue L61118
 'thedark.initial' is never called
-Problem: The library thoughtfully provides thedark.initial, but it is 
-never called unless you are diabolical enough to make thedark contained 
-by some location, which I'm sure is not what it was meant for. The DM is 
-a bit contradictory about the purpose of thedark.initial, but the 
-functionality that makes the most sense is that it is called at the 
-transition from lighted to darkened. This makes up a gap in 
-functionality: NewRoom() is called on light-to-light and dark-to-light; 
-DarkToDark() is called on dark-to-dark, but absolutely nothing is called 
+Problem: The library thoughtfully provides thedark.initial, but it is
+never called unless you are diabolical enough to make thedark contained
+by some location, which I'm sure is not what it was meant for. The DM is
+a bit contradictory about the purpose of thedark.initial, but the
+functionality that makes the most sense is that it is called at the
+transition from lighted to darkened. This makes up a gap in
+functionality: NewRoom() is called on light-to-light and dark-to-light;
+DarkToDark() is called on dark-to-dark, but absolutely nothing is called
 on light-to-dark.
 Status: Fixed
 
 Issue L61119
 TRACE should distinguish matched and inferred tokens
-Problem:  When the parser partially matches a phrase, the TRACE command 
-should not say "token resulted in success" for terms that it did not 
-match but sucessfully inferred; instead it should state that those 
-terms were inferred. This would avoid the phrase "token resulted in 
-success" phrase meaning two different things -- actually matching and 
-inferring. 
+Problem:  When the parser partially matches a phrase, the TRACE command
+should not say "token resulted in success" for terms that it did not
+match but sucessfully inferred; instead it should state that those
+terms were inferred. This would avoid the phrase "token resulted in
+success" phrase meaning two different things -- actually matching and
+inferring.
 Status: Won't fix.  Maybe will fix in 6/13.
 
 Issue L61120
@@ -211,8 +211,8 @@ Status: Fixed (by way of L61127)
 
 Issue L61121
 add_to_scope of parentless object causes error
-Problem: Consider an object which has no parent, and is brought into 
-scope by an add_to_scope property. An attempt to take that object causes 
+Problem: Consider an object which has no parent, and is brought into
+scope by an add_to_scope property. An attempt to take that object causes
 error messages:
   [** Programming error: tried to test "has" or "hasnt" of nothing **]
   [** Programming error: tried to test "has" or "hasnt" of nothing **]
@@ -221,79 +221,79 @@ Status: Fixed
 
 Issue L61122
 Conflict between 'describe' and 'initial' properties
-Problem: This object displays its 'initial' message even though it has a 
-'moved' attribute; this is because of the presence of the 'describe' 
+Problem: This object displays its 'initial' message even though it has a
+'moved' attribute; this is because of the presence of the 'describe'
 property, even though it returns false.
 Status: Fixed
 
 Issue L61123
 Minor problem with parse_name
-Problem: A (rather minor) error with the parse_name routine. On page 
+Problem: A (rather minor) error with the parse_name routine. On page
 209, the DM4 states: ...
 Status: Fixed
 
 Issue L61124
 Spurious space with 'articles' property
-Problem: The rarely-used articles property defines an array of strings. 
-(The property is provided for non-English languages where irregular 
-nouns may have unusual vowel-contraction rules with articles.) The DM4 
-gives an example appropriate for a French game, with three strings in 
+Problem: The rarely-used articles property defines an array of strings.
+(The property is provided for non-English languages where irregular
+nouns may have unusual vowel-contraction rules with articles.) The DM4
+gives an example appropriate for a French game, with three strings in
 the array:
 Object  "haricot"
     with  name 'haricot' 'legume',
           articles "Le "   "le "   "un ",
           ... ;
-Note that each string includes its individual trailing space, if 
-appropriate. This is important, because a definite article like l' must 
-be followed immediately by the object's name, without any intervening 
+Note that each string includes its individual trailing space, if
+appropriate. This is important, because a definite article like l' must
+be followed immediately by the object's name, without any intervening
 space. However, in fact a space does appear.
 Status: Fixed
 
 Issue L61125
 match_list and match_scores over-run
-Problem: The problem is that match_list-->number_matched is being 
-accessed, when match_list has length only number_matched (that is, 
-entries 0..number_matched-1). In particular this causes errors when the 
+Problem: The problem is that match_list-->number_matched is being
+accessed, when match_list has length only number_matched (that is,
+entries 0..number_matched-1). In particular this causes errors when the
 match_list is of full length (64 entries). Similarly for match_scores.
 Status: Fixed
 
 Issue L61126
 parser_inflection requires common properties in Glulx
-Problem: Glulx cannot distinguish between a global that is a function or 
-a common property.  They must be addressed differently.  Code has been 
-introduced to require the author to explicity declare if 
+Problem: Glulx cannot distinguish between a global that is a function or
+a common property.  They must be addressed differently.  Code has been
+introduced to require the author to explicity declare if
 parser_inflection is a function or a common property.
 Status: Fixed
 
-Issue L61127 
+Issue L61127
 Improve multiexcept look-ahead
-Problem: When the parser processes a grammar line that uses multiexcept 
-or multiinside, it jumps ahead to match the second noun in order to 
-provide context for the first one. However, in doing so, it skips over 
-all the prepositions in the input, without caring whether they match the 
-prepositions in the grammar line. If the second noun is ambiguous, this 
-means the player may be asked a disambiguation question for a grammar 
-line that has no chance of succeeding, whereas the grammar line that 
-eventually succeeds might not even need disambiguation (thanks to a 
+Problem: When the parser processes a grammar line that uses multiexcept
+or multiinside, it jumps ahead to match the second noun in order to
+provide context for the first one. However, in doing so, it skips over
+all the prepositions in the input, without caring whether they match the
+prepositions in the grammar line. If the second noun is ambiguous, this
+means the player may be asked a disambiguation question for a grammar
+line that has no chance of succeeding, whereas the grammar line that
+eventually succeeds might not even need disambiguation (thanks to a
 different token type or ChooseObjects).
 This also fixes L61120
 Status: Fixed
-I have also applied a fix submitted by Nathan Schwartzman at 
+I have also applied a fix submitted by Nathan Schwartzman at
 http://inform7.com/mantis/view.php?id=636.
 
 Issue L61128
 OOPS sometimes changes wrong word
-Problem: The OOPS command doesn't necessarily change the faulty word. In 
-the examples below, 'ZZZ' should be corrected to 'RUBY'. This happens in 
+Problem: The OOPS command doesn't necessarily change the faulty word. In
+the examples below, 'ZZZ' should be corrected to 'RUBY'. This happens in
 the first example, but not the second.
 Status: Fixed
 
 Issue L61129
 Results from 'grammar' property are misplaced.
-Problem: An animate or talkable object's grammar property can return 1 
-to mean (quoting from DM4) "you can stop parsing now because I have done 
-it all, and put the resulting order into the variables action, noun and 
-second". However, the library code to handle this return value does not 
+Problem: An animate or talkable object's grammar property can return 1
+to mean (quoting from DM4) "you can stop parsing now because I have done
+it all, and put the resulting order into the variables action, noun and
+second". However, the library code to handle this return value does not
 work correctly.
 Status: Fixed
 

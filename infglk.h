@@ -129,7 +129,7 @@ Constant imagealign_MarginLeft $04;
 Constant imagealign_MarginRight $05;
 
 ! The actual glk functions.
-[ glk_exit 
+[ glk_exit
       ret;
   ! Must push arguments onto the stack in reverse order
   ! And now the @glk call
@@ -146,7 +146,7 @@ Constant imagealign_MarginRight $05;
   return ret;
 ];
 
-[ glk_tick 
+[ glk_tick
       ret;
   ! Must push arguments onto the stack in reverse order
   ! And now the @glk call
@@ -194,7 +194,7 @@ Constant imagealign_MarginRight $05;
   return ret;
 ];
 
-[ glk_window_get_root 
+[ glk_window_get_root
       ret;
   ! Must push arguments onto the stack in reverse order
   ! And now the @glk call
@@ -444,7 +444,7 @@ Constant imagealign_MarginRight $05;
   return ret;
 ];
 
-[ glk_stream_get_current 
+[ glk_stream_get_current
       ret;
   ! Must push arguments onto the stack in reverse order
   ! And now the @glk call
