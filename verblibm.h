@@ -2317,7 +2317,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     i = noun.description;
     if (i == 0) {
         if (noun has container)
-            if (noun has open) <<Search noun, actor>>;
+            if (noun has open or transparent) <<Search noun, actor>>;
             else return L__M(##Search, 5, noun);
         if (noun has switchable) { L__M(##Examine, 3, noun); rfalse; }
         return L__M(##Examine, 2, noun);
