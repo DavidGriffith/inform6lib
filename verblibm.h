@@ -1852,6 +1852,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
     move noun to second;
 
+    if (AfterRoutines()) rtrue;
+
     if (second ~= ancestor) {
         action = ##Receive;
         if (RunRoutines(second, after)) { action = ##Insert; rtrue; }
