@@ -798,15 +798,16 @@ Array InfixRV_commas --> 32;
     else   @astorebit noun t 1; ! give noun second;
     #Endif; ! TARGET_
     if (t);  ! quell unused n variable warning
+    new_line;
 ];
 
 [ InfixMoveSub;
-    print "; move (", (the) noun, ") to (", (the) second, ")";
+    print "; move (", (the) noun, ") to (", (the) second, ")^";
     move noun to second;
 ];
 
 [ InfixRemoveSub;
-    print "; remove (", (the) noun, ")";
+    print "; remove (", (the) noun, ")^";
     remove noun;
 ];
 
@@ -994,6 +995,7 @@ Array InfixRV_commas --> 32;
         if (noun == true) "; true"; if (noun == false) "; false";
         "; ", noun;
     }
+    new_line;
 ]; ! end of InfixExamineP
 
 [ InfixDescribeWatchSub x y z s flag aflag;
