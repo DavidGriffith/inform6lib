@@ -1718,7 +1718,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 ];
 
 [ ImplicitOpen obj
-    res ks;
+    res temp;
     if (obj has open) rfalse;
     res = CheckImplicitAction(##Open, obj);
     ! 0 = Open object, Tell the user (normal default)
@@ -1727,9 +1727,10 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     ! 3 = don't Take object, don't continue
     if (res >= 2) rtrue;
     if (obj has locked) rtrue;
-    ks = keep_silent; keep_silent = 2; <Open obj, actor>; keep_silent = ks;
+    temp = keep_silent; keep_silent = 2; <Open obj, actor>; keep_silent = temp;
     if (obj hasnt open) rtrue;
     if (res == 0 && ~~keep_silent) L__M(##Open, 6, obj);
+    temp = action; action = ##Open; AfterRoutines(); action = temp;
     rfalse;
 ];
 
@@ -2410,7 +2411,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     if (noun has open)       return L__M(##Open, 3, noun);
     give noun open;
 
-    if (AfterRoutines() || keep_silent) return;
+    if (keep_silent || AfterRoutines()) return;
 
     if (noun hasnt container)
 	return L__M(##Open, 5, noun);
