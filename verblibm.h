@@ -349,7 +349,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         m = sizes_p->i;
         if (j == 0) mr = 0;
         else {
-            if (j.list_together ~= 0 or lt_value && ZRegion(j.list_together) == Routine or String &&
+            if (j.list_together ~= 0 or lt_value && metaclass(j.list_together) == Routine or String &&
                 j.list_together == mr) senc--;
             mr = j.list_together;
         }
@@ -468,7 +468,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
     n = j;
     for (i=1,j=o : i<=n : j=NextEntry(j,depth),i++,senc++) {
-        if (j.list_together ~= 0 or lt_value && ZRegion(j.list_together) == 2 or 3 &&
+        if (j.list_together ~= 0 or lt_value && metaclass(j.list_together) == Routine or String &&
             j.list_together==mr) senc--;
         mr = j.list_together;
     }
