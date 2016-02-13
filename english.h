@@ -840,8 +840,8 @@ Constant COLON__TX      = ": ";
         1:  CSubjectCant(x1,true); " contain things.";
         2:  CSubjectIs(x1,true); " closed.";
         3:  CSubjectIs(x1,true); " empty already.";
-        4:  print "That would ";
-            Tense("empty", "emptied");
+        4:  print "That wouldn't ";
+            Tense("empty", "have emptied");
             " anything.";
     }
   Enter: switch (n) {
