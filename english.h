@@ -1180,7 +1180,7 @@ Constant COLON__TX      = ": ";
   Order:    CSubjectHas(x1,false); " better things to do.";
   Places: switch (n) {
         1:  print "You have visited: ";
-        2:  ".^";
+        2:  ".";
     }
   Pray:     print "Nothing practical ";
             Tense("results", "resulted");
