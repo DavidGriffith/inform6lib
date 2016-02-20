@@ -36,7 +36,7 @@ Include "linklv";
         #IfV5; style roman; #Endif;
         #Ifnot; ! TARGET_GLULX;
         glk($0086, 3); ! set header style
-        print (string) Story;
+        print "^", (string) Story;
         glk($0086, 0); ! set normal style
         #Endif; ! TARGET_
     }
