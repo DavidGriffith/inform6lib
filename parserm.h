@@ -5075,11 +5075,12 @@ Object  InformLibrary "(Inform Library)"
                     if (j == 0) {
                         if (action == ##NotUnderstood) {
                             inputobjs-->3 = actor; actor = player; action = ##Answer;
-                            return 1; ! abort, not resetting action globals
+                            ! abort, not resetting action globals
+                            return ACTOR_ACT_ABORT_NOTUNDERSTOOD;
                         }
                         if (RunLife(actor, ##Order) == 0) {
                             L__M(##Order, 1, actor);
-                            return 2;
+                            return ACTOR_ACT_ABORT_ORDER;
                         }
                     }
                 }
