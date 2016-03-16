@@ -666,6 +666,7 @@ Constant PAST_TENSE    1;
 ! ============================================================================
 ! For InformLibrary.actor_act() to control what happens when it aborts.
 ! ----------------------------------------------------------------------------
+Constant ACTOR_ACT_OK 0;
 Constant ACTOR_ACT_ABORT_NOTUNDERSTOOD 1;
 Constant ACTOR_ACT_ABORT_ORDER 2;
 
@@ -4946,30 +4947,9 @@ Object  InformLibrary "(Inform Library)"
 
                 !  -------------------------------------------------------------
 
-                if (actor ~= player) {
-
-                ! The player's "orders" property can refuse to allow
-                ! conversations here, by returning true.  If not, the order is
-                ! sent to the other person's "orders" property.  If that also
-                ! returns false, then: if it was a misunderstood command
-                ! anyway, it is converted to an Answer action (thus
-                ! "floyd, grrr" ends up as "say grrr to floyd").  If it was a
-                ! good command, it is finally offered to the Order: part of
-                ! the other person's "life" property, the old-fashioned
-                ! way of dealing with conversation.
-
-                    j = RunRoutines(player, orders);
-                    if (j == 0) {
-                        j = RunRoutines(actor, orders);
-                        if (j == 0) {
-                            if (action == ##NotUnderstood) {
-                                inputobjs-->3 = actor; actor = player; action = ##Answer;
-                                jump begin__action;
-                            }
-                            if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
-                        }
-                    }
-                    jump turn__end;
+                switch (self.actor_act(actor, action, noun, second, 1)) {
+                    ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
+                    ACTOR_ACT_ABORT_ORDER: jump turn__end;
                 }
 
                 ! --------------------------------------------------------------
@@ -5054,9 +5034,30 @@ Object  InformLibrary "(Inform Library)"
             NoteObjectAcquisitions();
         ],
 
-        actor_act [ p a n s  j sp sa sn ss;
+        actor_act [ p a n s ft  j sp sa sn ss;
             sp = actor; actor = p;
-            if (p ~= player) {
+            sa = action; sn = noun; ss = second;
+            action = a; noun = n; second = s;
+
+            if (ft) {
+                if (p ~= player && inp1) {
+                    j = RunRoutines(player, orders);
+                    if (j == 0) {
+                        j = RunRoutines(actor, orders);
+                        if (j == 0) {
+                            if (action == ##NotUnderstood) {
+                                inputobjs-->3 = actor; actor = player; action = ##Answer;
+                                return ACTOR_ACT_ABORT_NOTUNDERSTOOD;
+                            }
+                            if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
+                        }
+                    }
+                    return ACTOR_ACT_ABORT_ORDER;
+                }
+		return ACTOR_ACT_OK;
+            }
+
+            if (p ~= player && inp1 > 1) {
                 ! The player's "orders" property can refuse to allow
                 ! conversation here, by returning true.  If not, the order is
                 ! sent to the other person's "orders" property.  If that also
