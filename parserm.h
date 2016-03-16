@@ -664,6 +664,12 @@ Constant PRESENT_TENSE 0;
 Constant PAST_TENSE    1;
 
 ! ============================================================================
+! For InformLibrary.actor_act() to control what happens when it aborts.
+! ----------------------------------------------------------------------------
+Constant ACTOR_ACT_ABORT_NOTUNDERSTOOD 1;
+Constant ACTOR_ACT_ABORT_ORDER 2;
+
+! ============================================================================
 ! "Darkness" is not really a place: but it has to be an object so that the
 !  location-name on the status line can be "Darkness".
 ! ----------------------------------------------------------------------------
@@ -5004,12 +5010,16 @@ Object  InformLibrary "(Inform Library)"
                     print (name) l, (string) COLON__TX;
                     if (inp1 == 0) {
                         inp1 = l;
-                        self.begin_action(action, l, second, 0);
+                        switch (self.actor_act(actor, action, l, second)) {
+                          ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
+                          ACTOR_ACT_ABORT_ORDER: jump turn__end;
+                        }
                         inp1 = 0;
                     }
                     else {
                         inp2 = l;
-                        self.begin_action(action, noun, l, 0);
+                        if (self.actor_act(actor, action, noun, l) == ACTOR_ACT_ABORT_NOTUNDERSTOOD)
+                            jump begin__action;
                         inp2 = 0;
                     }
                 }
@@ -5042,6 +5052,42 @@ Object  InformLibrary "(Inform Library)"
                                         if (deadflag) return;
             AdjustLight();              if (deadflag) return;
             NoteObjectAcquisitions();
+        ],
+
+        actor_act [ p a n s  j sp sa sn ss;
+            sp = actor; actor = p;
+            if (p ~= player) {
+                ! The player's "orders" property can refuse to allow
+                ! conversation here, by returning true.  If not, the order is
+                ! sent to the other person's "orders" property.  If that also
+                ! returns false, then: if it was a misunderstood command
+                ! anyway, it is converted to an Answer action (thus
+                ! "floyd, grrr" ends up as "say grrr to floyd").  If it was a
+                ! good command, it is finally offered to the Order: part of
+                ! the other person's "life" property, the old-fashioned
+                ! way of dealing with conversation.
+
+                sa = action; sn = noun; ss = second;
+                action = a; noun = n; second = s;
+                j = RunRoutines(player, orders);
+                if (j == 0) {
+                    j = RunRoutines(actor, orders);
+                    if (j == 0) {
+                        if (action == ##NotUnderstood) {
+                            inputobjs-->3 = actor; actor = player; action = ##Answer;
+                            return 1; ! abort, not resetting action globals
+                        }
+                        if (RunLife(actor, ##Order) == 0) {
+                            L__M(##Order, 1, actor);
+                            return 2;
+                        }
+                    }
+                }
+                action = sa; noun = sn; second = ss;
+            }
+            else
+                self.begin_action(a, n, s, 0);
+            actor = sp;
         ],
 
         begin_action [ a n s source   sa sn ss;
