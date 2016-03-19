@@ -5034,30 +5034,13 @@ Object  InformLibrary "(Inform Library)"
             NoteObjectAcquisitions();
         ],
 
+        ! The first time we call self.actor_act(), set the fifth
+        ! parameter to true.  Details can be seen in
+        ! 1d95759b1bd6674509d6cf9161e6db3da3831f10 and in Issues #23 and
+        ! #30 (Mantis 1813 and 1885)
         actor_act [ p a n s ft  j sp sa sn ss;
             sp = actor; actor = p;
-            sa = action; sn = noun; ss = second;
-            action = a; noun = n; second = s;
-
-            if (ft) {
-                if (p ~= player && inp1) {
-                    j = RunRoutines(player, orders);
-                    if (j == 0) {
-                        j = RunRoutines(actor, orders);
-                        if (j == 0) {
-                            if (action == ##NotUnderstood) {
-                                inputobjs-->3 = actor; actor = player; action = ##Answer;
-                                return ACTOR_ACT_ABORT_NOTUNDERSTOOD;
-                            }
-                            if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
-                        }
-                    }
-                    return ACTOR_ACT_ABORT_ORDER;
-                }
-		return ACTOR_ACT_OK;
-            }
-
-            if (p ~= player && inp1 > 1) {
+            if (p ~= player && inp1) {
                 ! The player's "orders" property can refuse to allow
                 ! conversation here, by returning true.  If not, the order is
                 ! sent to the other person's "orders" property.  If that also
@@ -5081,15 +5064,21 @@ Object  InformLibrary "(Inform Library)"
                         }
                         if (RunLife(actor, ##Order) == 0) {
                             L__M(##Order, 1, actor);
-                            return ACTOR_ACT_ABORT_ORDER;
+                            if (~~ft)
+                                return ACTOR_ACT_ABORT_ORDER;
                         }
                     }
                 }
                 action = sa; noun = sn; second = ss;
+                if (ft)
+                    return ACTOR_ACT_ABORT_ORDER;
             }
             else
-                self.begin_action(a, n, s, 0);
+                if (~~ft)
+                    self.begin_action(a, n, s, 0);
+
             actor = sp;
+            return ACTOR_ACT_OK;
         ],
 
         begin_action [ a n s source   sa sn ss;
