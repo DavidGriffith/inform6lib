@@ -3,7 +3,7 @@
 !
 !   Supplied for use with Inform 6 -- Release 6/12 -- Serial number 151220
 !
-!   Copyright Graham Nelson 1993-2004 and David Griffith 2012-2015
+!   Copyright Graham Nelson 1993-2004 and David Griffith 2012-2016
 !   This code is licensed under either the traditional Inform license as
 !   described by the DM4 or the Artistic License version 2.0.  See the
 !   file COPYING in the distribution archive or at
