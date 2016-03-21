@@ -1671,7 +1671,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res ks supcon;
     switch (metaclass(obj)) { Class, String, Routine, nothing: rfalse; }
     if (obj in actor) rfalse;
-    if (action_to_be == ##Drop) rfalse;
+    if (action_to_be == ##Drop && ~~IndirectlyContains(player, obj)) rfalse;
     res = CheckImplicitAction(##Take, obj);
     ! 0 = Take object, Tell the user (normal default)
     ! 1 = Take object, don't Tell
