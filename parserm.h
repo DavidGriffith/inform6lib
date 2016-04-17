@@ -1567,7 +1567,7 @@ Object  InformParser "(Inform Parser)"
         }
 
         #Ifnot; ! TARGET_GLULX
-        if (i < 0) { usual_grammar_after = verb_wordnum; i=-i; }
+        if (i < 0) { usual_grammar_after = j; i=-i; }
         #Endif;
 
         if (i == 1) {
