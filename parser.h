@@ -28,7 +28,7 @@ Message fatalerror "*** Library 6/12 needs Inform v6.33 or later to work ***";
 #Endif; ! VN_
 
 Constant LibSerial       "151229";
-Constant LibRelease      "6/12.1";
+Constant LibRelease      "6.12.1";
 Constant LIBRARY_VERSION  612;
 Constant Grammar__Version 2;
 

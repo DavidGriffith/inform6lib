@@ -1,3 +1,22 @@
+The Inform Standard Library
+===========================
+
+The standard header files are stored in lower-case here.  Symbolic links
+to other semi-standard names get created upon installation (e.g.
+verblib.h gets symlinked to Verblib.h and VerbLib.h) -- except on
+Cygwin, where case doesn't seem to matter.
+
+Version 6.12.1 (xx xxx 2016)
+============================
+
+This is a maintenance release focusing entirely on bug fixes.  No new
+features have been added.
+
+Bugs fixed
+----------
+
+
+
 Version 6.12.0 (19 December 2015)
 =================================
 

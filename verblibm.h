@@ -52,7 +52,7 @@ Include "linklv";
     for (i=0 : i<6 : i++) print (char) ROM_GAMESERIAL->i;
     #Endif; ! TARGET_
     print " / Inform v"; inversion;
-    print " Library ", (string) LibRelease, " ";
+    print " Library v", (string) LibRelease, " ";
     #Ifdef STRICT_MODE;
     print "S";
     #Endif; ! STRICT_MODE

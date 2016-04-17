@@ -1,4 +1,4 @@
-This is version 6/12 of the Inform Library,
+This is version 6.12.1 of the Inform Library,
 Copyright Graham Nelson 1993-2004, David Griffith 2012-2016
 Full release notes and instructions are available at
 http://www.inform-fiction.org
