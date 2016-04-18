@@ -4947,15 +4947,12 @@ Object  InformLibrary "(Inform Library)"
 
                 !  -------------------------------------------------------------
 
+!	This if fixes #30 (GIRL, TAKE ROCKS), but breaks #34 (DAN, X CONSCIENCE)
+!		if (actor ~= player && inp1) {
 
-!	This chunk fixes #30 (GIRL, TAKE ROCKS), but breaks #34 (DAN, X CONSCIENCE)
-!                switch (self.actor_act(actor, action, noun, second, 1)) {
-!                    ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
-!                    ACTOR_ACT_ABORT_ORDER: jump turn__end;
-!                }
-
-!	This chunk fixes #34 (DAN, X CONSCIENCE), but breaks #30 (GIRL, TAKE ROCKS)
+!	This if fixes #34 (DAN, X CONSCIENCE), but breaks #30 (GIRL, TAKE ROCKS)
 		if (actor ~= player) {
+
                     j = RunRoutines(player, orders);
                     if (j == 0) {
                         j = RunRoutines(actor, orders);
