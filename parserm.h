@@ -4947,14 +4947,26 @@ Object  InformLibrary "(Inform Library)"
 
                 !  -------------------------------------------------------------
 
-		if ((actor ~= player && inp1 ~= nothing) ||
-			(actor ~= player && (inp1 == nothing && metaclass(inputobjs-->1) == nothing)) ) {
+print "inp1:          ", (name) inp1, "^";
+print "inp2:          ", (name) inp2, "^";
+print "inputobjs-->1: ", (name) inputobjs-->1, "^";
+print "inputobjs-->2: ", (name) inputobjs-->2, "^";
+print "inputobjs-->3: ", (name) inputobjs-->3, "^";
+print "noun:          ", (name) noun, "^";
+print "second:        ", (name) second, "^";
+print "actor:         ", (name) actor, "^";
+print "---^";
+
+		if (actor ~= player && (inp1 ~= nothing || metaclass(i) == nothing)) {
+
+print "FOO^";
                     j = RunRoutines(player, orders);
                     if (j == 0) {
                         j = RunRoutines(actor, orders);
                         if (j == 0) {
                             if (action == ##NotUnderstood) {
                                 inputobjs-->3 = actor; actor = player; action = ##Answer;
+print "BAR^";
                                 jump begin__action;
                             }
                             if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
@@ -4963,12 +4975,14 @@ Object  InformLibrary "(Inform Library)"
                     jump turn__end;
 		}
 
+print "BAZ^";
                 ! --------------------------------------------------------------
                 ! Generate the action...
 
                 if ((i == 0) ||
                     (i == 1 && inp1 ~= 0) ||
                     (i == 2 && inp1 ~= 0 && inp2 ~= 0)) {
+print "ZOOM^";
                     self.begin_action(action, noun, second, 0);
                     jump turn__end;
                 }
@@ -5001,6 +5015,7 @@ Object  InformLibrary "(Inform Library)"
                     print (name) l, (string) COLON__TX;
                     if (inp1 == 0) {
                         inp1 = l;
+print "AAA^";
                         switch (self.actor_act(actor, action, l, second)) {
                           ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
                           ACTOR_ACT_ABORT_ORDER: jump turn__end;
@@ -5009,6 +5024,7 @@ Object  InformLibrary "(Inform Library)"
                     }
                     else {
                         inp2 = l;
+print "BBB^";
                         if (self.actor_act(actor, action, noun, l) == ACTOR_ACT_ABORT_NOTUNDERSTOOD)
                             jump begin__action;
                         inp2 = 0;
