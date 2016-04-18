@@ -4947,10 +4947,25 @@ Object  InformLibrary "(Inform Library)"
 
                 !  -------------------------------------------------------------
 
-                switch (self.actor_act(actor, action, noun, second, 1)) {
-                    ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
-                    ACTOR_ACT_ABORT_ORDER: jump turn__end;
-                }
+!                switch (self.actor_act(actor, action, noun, second, 1)) {
+!                    ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
+!                    ACTOR_ACT_ABORT_ORDER: jump turn__end;
+!                }
+
+		if (actor ~= player) {
+                    j = RunRoutines(player, orders);
+                    if (j == 0) {
+                        j = RunRoutines(actor, orders);
+                        if (j == 0) {
+                            if (action == ##NotUnderstood) {
+                                inputobjs-->3 = actor; actor = player; action = ##Answer;
+                                jump begin__action;
+                            }
+                            if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
+                        }
+                    }
+                    jump turn__end;
+		}
 
                 ! --------------------------------------------------------------
                 ! Generate the action...
