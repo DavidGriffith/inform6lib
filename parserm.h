@@ -4947,12 +4947,8 @@ Object  InformLibrary "(Inform Library)"
 
                 !  -------------------------------------------------------------
 
-!	This if fixes #30 (GIRL, TAKE ROCKS), but breaks #34 (DAN, X CONSCIENCE)
-!		if (actor ~= player && inp1) {
-
-!	This if fixes #34 (DAN, X CONSCIENCE), but breaks #30 (GIRL, TAKE ROCKS)
-		if (actor ~= player) {
-
+		if ((actor ~= player && inp1 ~= nothing) ||
+			(actor ~= player && (inp1 == nothing && metaclass(inputobjs-->1) == nothing)) ) {
                     j = RunRoutines(player, orders);
                     if (j == 0) {
                         j = RunRoutines(actor, orders);
