@@ -1572,9 +1572,11 @@ Object  InformParser "(Inform Parser)"
 
         if (i == 1) {
             results-->0 = action;
-            results-->1 = 2;		! Number of parameters
+            results-->1 = 0;		! Number of parameters
             results-->2 = noun;
+            if (noun ~= 0) (results-->1)++;
             results-->3 = second;
+            if (second ~= 0) (results-->1)++;
             rtrue;
         }
         if (i ~= 0) { verb_word = i; wn--; verb_wordnum--; }
@@ -4947,48 +4949,33 @@ Object  InformLibrary "(Inform Library)"
 
                 !  -------------------------------------------------------------
 
-print "inp1:          ", (name) inp1, "^";
-print "inp2:          ", (name) inp2, "^";
-print "inputobjs-->0: ", inputobjs-->1, "^";
-print "inputobjs-->1: ", inputobjs-->1, "^";
-print "inputobjs-->2: ", (name) inputobjs-->2, "^";
-print "inputobjs-->3: ", (name) inputobjs-->3, "^";
-print "i:             ",  i, "^";
-print "noun:          ", (name) noun, "^";
-print "second:        ", (name) second, "^";
-print "actor:         ", (name) actor, "^";
-print "---^";
+!print "inp1:          ", (name) inp1, "^";
+!print "inp2:          ", (name) inp2, "^";
+!print "inputobjs-->1: ", (name) inputobjs-->1, "^";
+!print "inputobjs-->2: ", (name) inputobjs-->2, "^";
+!print "inputobjs-->3: ", (name) inputobjs-->3, "^";
+!print "noun:          ", (name) noun, "^";
+!print "second:        ", (name) second, "^";
+!print "actor:         ", (name) actor, "^";
+!print "---^";
 
-!	This if fixes #30 (GIRL, TAKE ROCKS), but breaks #34 (DAN, X CONSCIENCE)
-!		if (actor ~= player && inp1) {
-
-!	This if fixes #34 (DAN, X CONSCIENCE), but breaks #30 (GIRL, TAKE ROCKS)
-		if (actor ~= player) {
-
-print "FOO^";
-                    j = RunRoutines(player, orders);
-                    if (j == 0) {
-                        j = RunRoutines(actor, orders);
-                        if (j == 0) {
-                            if (action == ##NotUnderstood) {
-                                inputobjs-->3 = actor; actor = player; action = ##Answer;
-print "BAR^";
-                                jump begin__action;
-                            }
-                            if (RunLife(actor, ##Order) == 0) L__M(##Order, 1, actor);
-                        }
-                    }
-                    jump turn__end;
-		}
-
-print "BAZ^";
                 ! --------------------------------------------------------------
                 ! Generate the action...
 
                 if ((i == 0) ||
                     (i == 1 && inp1 ~= 0) ||
                     (i == 2 && inp1 ~= 0 && inp2 ~= 0)) {
-print "ZOOM^";
+!print "ZOOM^";
+
+		    if (actor ~= player) {
+                         switch (self.actor_act(actor, action, noun, second)) {
+                             ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
+                             default: jump turn__end;
+                         }
+
+                    }
+
+
                     self.begin_action(action, noun, second, 0);
                     jump turn__end;
                 }
@@ -5073,7 +5060,7 @@ print "BBB^";
         ! #30 (Mantis 1813 and 1885)
         actor_act [ p a n s ft  j sp sa sn ss;
             sp = actor; actor = p;
-            if (p ~= player && inp1) {
+            if (p ~= player) {
                 ! The player's "orders" property can refuse to allow
                 ! conversation here, by returning true.  If not, the order is
                 ! sent to the other person's "orders" property.  If that also
