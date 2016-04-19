@@ -4949,15 +4949,21 @@ Object  InformLibrary "(Inform Library)"
 
 print "inp1:          ", (name) inp1, "^";
 print "inp2:          ", (name) inp2, "^";
-print "inputobjs-->1: ", (name) inputobjs-->1, "^";
+print "inputobjs-->0: ", inputobjs-->1, "^";
+print "inputobjs-->1: ", inputobjs-->1, "^";
 print "inputobjs-->2: ", (name) inputobjs-->2, "^";
 print "inputobjs-->3: ", (name) inputobjs-->3, "^";
+print "i:             ",  i, "^";
 print "noun:          ", (name) noun, "^";
 print "second:        ", (name) second, "^";
 print "actor:         ", (name) actor, "^";
 print "---^";
 
-		if (actor ~= player && (inp1 ~= nothing || metaclass(i) == nothing)) {
+!	This if fixes #30 (GIRL, TAKE ROCKS), but breaks #34 (DAN, X CONSCIENCE)
+!		if (actor ~= player && inp1) {
+
+!	This if fixes #34 (DAN, X CONSCIENCE), but breaks #30 (GIRL, TAKE ROCKS)
+		if (actor ~= player) {
 
 print "FOO^";
                     j = RunRoutines(player, orders);
