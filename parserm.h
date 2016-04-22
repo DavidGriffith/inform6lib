@@ -1574,9 +1574,9 @@ Object  InformParser "(Inform Parser)"
             results-->0 = action;
             results-->1 = 0;		! Number of parameters
             results-->2 = noun;
-            if (noun ~= 0) (results-->1)++;
             results-->3 = second;
-            if (second ~= 0) (results-->1)++;
+            if (noun) results-->1 = 1;
+            if (second) results-->1 = 2;
             rtrue;
         }
         if (i ~= 0) { verb_word = i; wn--; verb_wordnum--; }
