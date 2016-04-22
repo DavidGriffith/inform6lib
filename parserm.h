@@ -3403,7 +3403,7 @@ Constant SCORE__DIVISOR     = 20;
         i = 0; offset = multiple_object-->0; sovert = -1;
         for (j=BestGuess() : j~=-1 && i<indef_wanted && i+offset<63 : j=BestGuess()) {
             flag = 1;
-            if (j has concealed && j has worn) flag = 0;
+            if (j has concealed or worn) flag = 0;
             if (sovert == -1) sovert = bestguess_score/SCORE__DIVISOR;
             else {
                 if (indef_wanted == 100 && bestguess_score/SCORE__DIVISOR < sovert)
