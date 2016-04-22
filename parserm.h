@@ -5008,7 +5008,7 @@ Object  InformLibrary "(Inform Library)"
                     print (name) l, (string) COLON__TX;
                     if (inp1 == 0) {
                         inp1 = l;
-print "AAA^";
+!print "AAA^";
                         switch (self.actor_act(actor, action, l, second)) {
                           ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
                           ACTOR_ACT_ABORT_ORDER: jump turn__end;
@@ -5017,7 +5017,7 @@ print "AAA^";
                     }
                     else {
                         inp2 = l;
-print "BBB^";
+!print "BBB^";
                         if (self.actor_act(actor, action, noun, l) == ACTOR_ACT_ABORT_NOTUNDERSTOOD)
                             jump begin__action;
                         inp2 = 0;
