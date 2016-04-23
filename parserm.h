@@ -1574,9 +1574,9 @@ Object  InformParser "(Inform Parser)"
             results-->0 = action;
             results-->1 = 0;		! Number of parameters
             results-->2 = noun;
-            if (noun ~= 0) (results-->1)++;
             results-->3 = second;
-            if (second ~= 0) (results-->1)++;
+            if (noun) results-->1 = 1;
+            if (second) results-->1 = 2;
             rtrue;
         }
         if (i ~= 0) { verb_word = i; wn--; verb_wordnum--; }
@@ -3403,7 +3403,7 @@ Constant SCORE__DIVISOR     = 20;
         i = 0; offset = multiple_object-->0; sovert = -1;
         for (j=BestGuess() : j~=-1 && i<indef_wanted && i+offset<63 : j=BestGuess()) {
             flag = 1;
-            if (j has concealed && j has worn) flag = 0;
+            if (j has concealed or worn) flag = 0;
             if (sovert == -1) sovert = bestguess_score/SCORE__DIVISOR;
             else {
                 if (indef_wanted == 100 && bestguess_score/SCORE__DIVISOR < sovert)
@@ -5008,7 +5008,7 @@ Object  InformLibrary "(Inform Library)"
                     print (name) l, (string) COLON__TX;
                     if (inp1 == 0) {
                         inp1 = l;
-print "AAA^";
+!print "AAA^";
                         switch (self.actor_act(actor, action, l, second)) {
                           ACTOR_ACT_ABORT_NOTUNDERSTOOD: jump begin__action;
                           ACTOR_ACT_ABORT_ORDER: jump turn__end;
@@ -5017,7 +5017,7 @@ print "AAA^";
                     }
                     else {
                         inp2 = l;
-print "BBB^";
+!print "BBB^";
                         if (self.actor_act(actor, action, noun, l) == ACTOR_ACT_ABORT_NOTUNDERSTOOD)
                             jump begin__action;
                         inp2 = 0;
