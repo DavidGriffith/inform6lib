@@ -1742,7 +1742,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     if (res >= 2) rtrue;
     ks = keep_silent; keep_silent = 1; <Disrobe obj, actor>; keep_silent = ks;
     if (obj has worn && obj in actor) rtrue;
-    if (res == 0 && ~~keep_silent) L__M(##Drop, 3, noun);
+    if (res == 0 && ~~keep_silent) L__M(##Drop, 3, obj);
     rfalse;
 ];
 
