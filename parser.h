@@ -104,6 +104,8 @@ Constant ROM_COMPVERSION   $30;     ! four ASCII characters
 Constant ROM_GAMERELEASE   $34;     ! short word
 Constant ROM_GAMESERIAL    $36;     ! six ASCII characters
 
+Include "infglk";
+
 #Endif; ! TARGET_
 
 Include "linklpa";

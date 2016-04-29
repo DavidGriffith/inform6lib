@@ -733,8 +733,8 @@ Constant COLON__TX      = ": ";
 
 #Ifnot; ! TARGET_GLULX
 
-[ LowerCase c; return glk($00A0, c); ];
-[ UpperCase c; return glk($00A1, c); ];
+[ LowerCase c; return glk_char_to_lower(c); ];
+[ UpperCase c; return glk_char_to_upper(c); ];
 
 #Endif; ! TARGET_
 

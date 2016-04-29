@@ -35,9 +35,9 @@ Include "linklv";
         print "^", (string) Story;
         #IfV5; style roman; #Endif;
         #Ifnot; ! TARGET_GLULX;
-        glk($0086, 3); ! set header style
+        glk_set_style(style_Header);
         print "^", (string) Story;
-        glk($0086, 0); ! set normal style
+        glk_set_style(style_Normal);
         #Endif; ! TARGET_
     }
     if (Headline) print (string) Headline;
@@ -928,28 +928,27 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
   .ReDisplay;
 
-    glk($002A, gg_statuswin); ! window_clear
-    glk($002A, gg_mainwin); ! window_clear
-    glk($002F, gg_statuswin); ! set_window
+    glk_window_clear(gg_statuswin);
+    glk_window_clear(gg_mainwin);
+    glk_set_window(gg_statuswin);
     StatusLineHeight(lines+7);
-    glk($0025, gg_statuswin, gg_arguments, gg_arguments+4); ! window_get_size
+    glk_window_get_size(gg_statuswin, gg_arguments, gg_arguments+4);
     winwid = gg_arguments-->0;
     winhgt = gg_arguments-->1;
-    glk($0086, 4); ! set subheader style
-    glk($002B, gg_statuswin, winwid/2-main_wid, 0); ! window_move_cursor
+    glk_set_style(style_Subheader);
+    glk_window_move_cursor(gg_statuswin, winwid/2-main_wid, 0);
     print (string) main_title;
-    glk($002B, gg_statuswin, 1, 1); ! window_move_cursor
+    glk_window_move_cursor(gg_statuswin, 1, 1);
     print (string) NKEY__TX;
-    glk($002B, gg_statuswin, winwid-13, 1); ! window_move_cursor
+    glk_window_move_cursor(gg_statuswin, winwid-13, 1);
     print (string) PKEY__TX;
-    glk($002B, gg_statuswin, 1, 2); ! window_move_cursor
+    glk_window_move_cursor(gg_statuswin, 1, 2);
     print (string) RKEY__TX;
-    glk($002B, gg_statuswin, winwid-18, 2); ! window_move_cursor
+    glk_window_move_cursor(gg_statuswin, winwid-18, 2);
     if (menu_nesting == 1) print (string) QKEY1__TX;
     else                   print (string) QKEY2__TX;
-    glk($0086, 0); ! set normal style
-
-    glk($002B, gg_statuswin, 1, 4); ! window_move_cursor
+    glk_set_style(style_Normal);
+    glk_window_move_cursor(gg_statuswin, 1, 4);
     if (menu_choices ofclass String) print (string) menu_choices;
     else                             menu_choices();
 
@@ -959,11 +958,11 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         if (cl ~= oldcl) {
             if (cl < 0 || cl >= lines) cl = 0;
             if (oldcl >= 0) {
-                glk($002B, gg_statuswin, 3, oldcl+6);
+                glk_window_move_cursor(gg_statuswin, 3, oldcl+6);
                 print (char) ' ';
             }
             oldcl = cl;
-            glk($002B, gg_statuswin, 3, oldcl+6);
+            glk_window_move_cursor(gg_statuswin, 3, oldcl+6);
             print (char) '>';
         }
         pkey = KeyCharPrimitive(gg_statuswin, true);
@@ -980,24 +979,22 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         }
         if (pkey == QKEY1__KY or QKEY2__KY or $fffffff8 or $fffffffe) break;
         if (pkey == $fffffffa or $fffffffd) {
-            glk($002F, gg_mainwin); ! set_window
+            glk_set_window(gg_mainwin);
             new_line; new_line; new_line;
             menu_item = cl+1;
             EntryR();
-
-            glk($002A, gg_statuswin); ! window_clear
-            glk($002A, gg_mainwin); ! window_clear
-            glk($002F, gg_statuswin); ! set_window
+            glk_window_clear(gg_statuswin);
+            glk_window_clear(gg_mainwin);
+            glk_set_window(gg_statuswin);
             StatusLineHeight(1);
-            glk($0025, gg_statuswin, gg_arguments, gg_arguments+4); ! window_get_size
+            glk_window_get_size(gg_statuswin, gg_arguments, gg_arguments+4);
             winwid = gg_arguments-->0;
             winhgt = gg_arguments-->1;
-            glk($0086, 4); ! set subheader style
-            glk($002B, gg_statuswin, winwid/2-item_width, 0); ! window_move_cursor
+            glk_set_style(style_Subheader);
+            glk_window_move_cursor(gg_statuswin, winwid/2-item_width, 0);
             print (string) item_name;
-            glk($0086, 0); ! set normal style
-
-            glk($002F, gg_mainwin); ! set_window
+            glk_set_style(style_Normal);
+            glk_set_window(gg_mainwin);
             new_line;
             i = ChoiceR();
             if (i == 2) jump ReDisplay;
@@ -1011,8 +1008,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     ! done with this menu...
     menu_nesting--;
     if (menu_nesting > 0) rfalse;
-    glk($002F, gg_mainwin); ! set_window
-    glk($002A, gg_mainwin); ! window_clear
+    glk_set_window(gg_mainwin);
+    glk_window_clear(gg_mainwin);
     new_line; new_line; new_line;
     if (deadflag == 0) <<Look>>;
 ];
@@ -1193,23 +1190,23 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 ];
 
 [ RestoreSub res fref;
-    fref = glk($0062, $01, $02, 0); ! fileref_create_by_prompt
+    fref = glk_fileref_create_by_prompt($01, $02, 0);
     if (fref == 0) jump RFailed;
-    gg_savestr = glk($0042, fref, $02, GG_SAVESTR_ROCK); ! stream_open_file
-    glk($0063, fref); ! fileref_destroy
+    gg_savestr = glk_stream_open_file(fref, $02, GG_SAVESTR_ROCK);
+    glk_fileref_destroy(fref);
     if (gg_savestr == 0) jump RFailed;
     @restore gg_savestr res;
-    glk($0044, gg_savestr, 0); ! stream_close
+    glk_stream_close(gg_savestr, 0);
     gg_savestr = 0;
   .RFailed;
     L__M(##Restore, 1);
 ];
 
 [ SaveSub res fref;
-    fref = glk($0062, $01, $01, 0); ! fileref_create_by_prompt
+    fref = glk_fileref_create_by_prompt($01, $01, 0);
     if (fref == 0) jump SFailed;
-    gg_savestr = glk($0042, fref, $01, GG_SAVESTR_ROCK); ! stream_open_file
-    glk($0063, fref); ! fileref_destroy
+    gg_savestr = glk_stream_open_file(fref, $01, GG_SAVESTR_ROCK);
+    glk_fileref_destroy(fref);
     if (gg_savestr == 0) jump SFailed;
     @save gg_savestr res;
     if (res == -1) {
@@ -1218,11 +1215,11 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         ! now. But first, we have to recover all the Glk objects; the values
         ! in our global variables are all wrong.
         GGRecoverObjects();
-        glk($0044, gg_savestr, 0); ! stream_close
+        glk_stream_close(gg_savestr, 0);
         gg_savestr = 0;
         return L__M(##Restore, 2);
     }
-    glk($0044, gg_savestr, 0); ! stream_close
+    glk_stream_close(gg_savestr, 0);
     gg_savestr = 0;
     if (res == 0) return L__M(##Save, 2);
   .SFailed;
@@ -1238,14 +1235,12 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ ScriptOnSub;
     if (gg_scriptstr) return L__M(##ScriptOn, 1);
     if (gg_scriptfref == 0) {
-        ! fileref_create_by_prompt
-        gg_scriptfref = glk($0062, $102, $05, GG_SCRIPTFREF_ROCK);
+        gg_scriptfref = glk_fileref_create_by_prompt($102, $05, GG_SCRIPTFREF_ROCK);
         if (gg_scriptfref == 0) jump S1Failed;
     }
-    ! stream_open_file
-    gg_scriptstr = glk($0042, gg_scriptfref, $05, GG_SCRIPTSTR_ROCK);
+    gg_scriptstr = glk_stream_open_file(gg_scriptfref, $05, GG_SCRIPTSTR_ROCK);
     if (gg_scriptstr == 0) jump S1Failed;
-    glk($002D, gg_mainwin, gg_scriptstr); ! window_set_echo_stream
+    glk_window_set_echo_stream(gg_mainwin, gg_scriptstr);
     L__M(##ScriptOn, 2);
     VersionSub();
     return;
@@ -1256,7 +1251,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ ScriptOffSub;
     if (gg_scriptstr == 0) return L__M(##ScriptOff,1);
     L__M(##ScriptOff, 2);
-    glk($0044, gg_scriptstr, 0); ! stream_close
+    glk_stream_close(gg_scriptstr, 0);
     gg_scriptstr = 0;
 ];
 
@@ -1265,13 +1260,11 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         if (gg_command_reading) return L__M(##CommandsOn, 2);
         else                    return L__M(##CommandsOn, 3);
     }
-    ! fileref_create_by_prompt
-    fref = glk($0062, $103, $01, 0);
+    fref = glk_fileref_create_by_prompt($103, $01, 0);
     if (fref == 0) return L__M(##CommandsOn, 4);
     gg_command_reading = false;
-    ! stream_open_file
-    gg_commandstr = glk($0042, fref, $01, GG_COMMANDWSTR_ROCK);
-    glk($0063, fref); ! fileref_destroy
+    gg_commandstr = glk_stream_open_file(fref, $01, GG_COMMANDWSTR_ROCK);
+    glk_fileref_destroy(fref);
     if (gg_commandstr == 0) return L__M(##CommandsOn, 4);
     L__M(##CommandsOn, 1);
 ];
@@ -1279,7 +1272,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 [ CommandsOffSub;
     if (gg_commandstr == 0) return L__M(##CommandsOff, 2);
     if (gg_command_reading) return L__M(##CommandsRead, 5);
-    glk($0044, gg_commandstr, 0); ! stream_close
+    glk_stream_close(gg_commandstr, 0);
     gg_commandstr = 0;
     gg_command_reading = false;
     L__M(##CommandsOff, 1);
@@ -1290,13 +1283,11 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         if (gg_command_reading) return L__M(##CommandsRead, 2);
         else                    return L__M(##CommandsRead, 3);
     }
-    ! fileref_create_by_prompt
-    fref = glk($0062, $103, $02, 0);
+    fref = glk_fileref_create_by_prompt($103, $02, 0);
     if (fref == 0) return L__M(##CommandsRead, 4);
     gg_command_reading = true;
-    ! stream_open_file
-    gg_commandstr = glk($0042, fref, $02, GG_COMMANDRSTR_ROCK);
-    glk($0063, fref); ! fileref_destroy
+    gg_commandstr = glk_stream_open_file(fref, $02, GG_COMMANDRSTR_ROCK);
+    glk_fileref_destroy(fref);
     if (gg_commandstr == 0) return L__M(##CommandsRead, 4);
     L__M(##CommandsRead, 1);
 ];
@@ -2261,7 +2252,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     #Ifdef TARGET_ZCODE;
     style bold;
     #Ifnot; ! TARGET_GLULX;
-    glk($0086, 4); ! set subheader style
+    glk_set_style(style_Subheader);
     #Endif; ! TARGET_
     if (visibility_levels == 0) print (name) thedark;
     else {
@@ -2271,7 +2262,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     #Ifdef TARGET_ZCODE;
     style roman;
     #Ifnot; ! TARGET_GLULX;
-    glk($0086, 0); ! set normal style
+    glk_set_style(style_Normal);
     #Endif; ! TARGET_
 
     for (j=1,i=parent(player) : j<visibility_levels : j++,i=parent(i))
@@ -2843,10 +2834,10 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 #Ifdef TARGET_GLULX;
 
 [ GlkListSub id val;
-    id = glk($0020, 0, gg_arguments); ! window_iterate
+    id = glk_window_iterate(0, gg_arguments);
     while (id) {
         print "Window ", id, " (", gg_arguments-->0, "): ";
-        val = glk($0028, id); ! window_get_type
+        val = glk_window_get_type(id);
         switch (val) {
           1: print "pair";
           2: print "blank";
@@ -2855,32 +2846,32 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
           5: print "graphics";
           default: print "unknown";
         }
-        val = glk($0029, id); ! window_get_parent
+        val = glk_window_get_parent(id);
         if (val) print ", parent is window ", val;
         else     print ", no parent (root)";
-        val = glk($002C, id); ! window_get_stream
+        val = glk_window_get_stream(id);
         print ", stream ", val;
-        val = glk($002E, id); ! window_get_echo_stream
+        val = glk_window_get_echo_stream(id);
         if (val) print ", echo stream ", val;
         print "^";
-        id = glk($0020, id, gg_arguments); ! window_iterate
+        id = glk_window_iterate(id, gg_arguments);
     }
-    id = glk($0040, 0, gg_arguments); ! stream_iterate
+    id = glk_stream_iterate(0, gg_arguments);
     while (id) {
         print "Stream ", id, " (", gg_arguments-->0, ")^";
-        id = glk($0040, id, gg_arguments); ! stream_iterate
+        id = glk_stream_iterate(id, gg_arguments);
     }
-    id = glk($0064, 0, gg_arguments); ! fileref_iterate
+    id = glk_fileref_iterate(0, gg_arguments);
     while (id) {
         print "Fileref ", id, " (", gg_arguments-->0, ")^";
-        id = glk($0064, id, gg_arguments); ! fileref_iterate
+        id = glk_fileref_iterate(id, gg_arguments);
     }
-    val = glk($0004, 8, 0); ! gestalt, Sound
+    val = glk_gestalt(gestalt_Sound, 0);
     if (val) {
-        id = glk($00F0, 0, gg_arguments); ! schannel_iterate
+        id = glk_schannel_iterate(0, gg_arguments);
         while (id) {
             print "Soundchannel ", id, " (", gg_arguments-->0, ")^";
-            id = glk($00F0, id, gg_arguments); ! schannel_iterate
+            id = glk_schannel_iterate(id, gg_arguments);
         }
     }
 ];

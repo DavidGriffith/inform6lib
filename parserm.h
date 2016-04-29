@@ -926,7 +926,7 @@ Array gg_tokenbuf -> DICT_WORD_SIZE;
         ! characters and lower case.
         if (wlen > DICT_WORD_SIZE) wlen = DICT_WORD_SIZE;
         cx = wpos - WORDSIZE;
-        for (ix=0 : ix<wlen : ix++) gg_tokenbuf->ix = glk($00A0, buf->(cx+ix));
+        for (ix=0 : ix<wlen : ix++) gg_tokenbuf->ix = glk_char_to_lower(buf->(cx+ix));
         for (: ix<DICT_WORD_SIZE : ix++) gg_tokenbuf->ix = 0;
 
         val = #dictionary_table + WORDSIZE;
@@ -1019,9 +1019,9 @@ Object  InformParser "(Inform Parser)"
     if (win == 0) win = gg_mainwin;
     if (gg_commandstr ~= 0 && gg_command_reading ~= false) {
         ! get_line_stream
-        done = glk($0091, gg_commandstr, gg_arguments, 31);
+        done = glk_get_line_stream(gg_commandstr, gg_arguments, 31);
         if (done == 0) {
-            glk($0044, gg_commandstr, 0); ! stream_close
+            glk_stream_close(gg_commandstr, 0);
             gg_commandstr = 0;
             gg_command_reading = false;
             ! fall through to normal user input.
@@ -1052,13 +1052,13 @@ Object  InformParser "(Inform Parser)"
         }
     }
     done = false;
-    glk($00D2, win); ! request_char_event
+    glk_request_char_event(win);
     while (~~done) {
-        glk($00C0, gg_event); ! select
+        glk_select(gg_event);
         switch (gg_event-->0) {
           5: ! evtype_Arrange
             if (nostat) {
-                glk($00D3, win); ! cancel_char_event
+                glk_cancel_char_event(win);
                 res = $80000000;
                 done = true;
                 break;
@@ -1082,7 +1082,7 @@ Object  InformParser "(Inform Parser)"
     }
     if (gg_commandstr ~= 0 && gg_command_reading == false) {
         if (res < 32 || res >= 256 || (res == '\' or ' ')) {
-            glk($0081, gg_commandstr, '\'); ! put_buffer_char
+            glk_put_char_stream(gg_commandstr, '\');
             done = 0;
             jx = res;
             for (ix=0 : ix<8 : ix++) {
@@ -1093,24 +1093,24 @@ Object  InformParser "(Inform Parser)"
                 if (done) {
                     if (ch >= 0 && ch <= 9) ch = ch + '0';
                     else                    ch = (ch - 10) + 'A';
-                    glk($0081, gg_commandstr, ch); ! put_buffer_char
+                    glk_put_char_stream(gg_commandstr, ch);
                 }
             }
         }
         else {
-            glk($0081, gg_commandstr, res); ! put_buffer_char
+            glk_put_char_stream(gg_commandstr, res);
         }
-        glk($0081, gg_commandstr, 10); ! put_char_stream (newline)
+        glk_put_char_stream(gg_commandstr, 10);
     }
   .KCPContinue;
     return res;
 ];
 
 [ KeyDelay tenths  key done ix;
-    glk($00D2, gg_mainwin); ! request_char_event
-    glk($00D6, tenths*100); ! request_timer_events
+    glk_request_char_event(gg_mainwin);
+    glk_request_timer_events(tenths*100);
     while (~~done) {
-        glk($00C0, gg_event); ! select
+        glk_select(gg_event);
         ix = HandleGlkEvent(gg_event, 1, gg_arguments);
         if (ix == 0) ix = LibraryExtensions.RunWhile(ext_handleglkevent, 0, gg_event, 1, gg_arguments);
         if (ix == 2) {
@@ -1122,17 +1122,17 @@ Object  InformParser "(Inform Parser)"
             done = true;
         }
     }
-    glk($00D3, gg_mainwin); ! cancel_char_event
-    glk($00D6, 0); ! request_timer_events
+    glk_cancel_char_event(gg_mainwin);
+    glk_request_timer_events(0);
     return key;
 ];
 
 [ KeyboardPrimitive  a_buffer a_table done ix;
     if (gg_commandstr ~= 0 && gg_command_reading ~= false) {
         ! get_line_stream
-        done = glk($0091, gg_commandstr, a_buffer+WORDSIZE, (INPUT_BUFFER_LEN-WORDSIZE)-1);
+        done = glk_get_line_stream(gg_commandstr, a_buffer+WORDSIZE, (INPUT_BUFFER_LEN-WORDSIZE)-1);
         if (done == 0) {
-            glk($0044, gg_commandstr, 0); ! stream_close
+            glk_stream_close(gg_commandstr, 0);
             gg_commandstr = 0;
             gg_command_reading = false;
             ! L__M(##CommandsRead, 5); would come after prompt
@@ -1142,25 +1142,24 @@ Object  InformParser "(Inform Parser)"
             ! Trim the trailing newline
             if ((a_buffer+WORDSIZE)->(done-1) == 10) done = done-1;
             a_buffer-->0 = done;
-            glk($0086, 8); ! set input style
-            glk($0084, a_buffer+WORDSIZE, done); ! put_buffer
-            glk($0086, 0); ! set normal style
+            glk_set_style(style_Input);
+            glk_put_buffer(a_buffer+WORDSIZE, done);
+            glk_set_style(style_Normal);
             print "^";
             jump KPContinue;
         }
     }
     done = false;
-    glk($00D0, gg_mainwin, a_buffer+WORDSIZE, INPUT_BUFFER_LEN-WORDSIZE, 0); ! request_line_event
+    glk_request_line_event(gg_mainwin, a_buffer+WORDSIZE, INPUT_BUFFER_LEN-WORDSIZE, 0);
     while (~~done) {
-        glk($00C0, gg_event); ! select
+        glk_select(gg_event);
         switch (gg_event-->0) {
           5: ! evtype_Arrange
             DrawStatusLine();
           3: ! evtype_LineInput
             if (gg_event-->1 == gg_mainwin) {
                 a_buffer-->0 = gg_event-->2;
-                done = true;
-            }
+                done = true;            }
         }
         ix = HandleGlkEvent(gg_event, 0, a_buffer);
         if (ix == 0) ix = LibraryExtensions.RunWhile(ext_handleglkevent, 0, gg_event, 0, a_buffer);
@@ -1169,14 +1168,15 @@ Object  InformParser "(Inform Parser)"
     }
     if (gg_commandstr ~= 0 && gg_command_reading == false) {
         ! put_buffer_stream
-        glk($0085, gg_commandstr, a_buffer+WORDSIZE, a_buffer-->0);
-        glk($0081, gg_commandstr, 10); ! put_char_stream (newline)
+
+        glk_put_buffer_stream(gg_commandstr, a_buffer+WORDSIZE, a_buffer-->0);
+        glk_put_char_stream(gg_commandstr, 10);
     }
   .KPContinue;
     Tokenise__(a_buffer,a_table);
     ! It's time to close any quote window we've got going.
     if (gg_quotewin) {
-        glk($0024, gg_quotewin, 0); ! close_window
+        glk_window_close(gg_quotewin, 0);
         gg_quotewin = 0;
     }
 ];
@@ -1263,13 +1263,13 @@ Object  InformParser "(Inform Parser)"
         #Ifdef TARGET_ZCODE;
         style bold;
         #Ifnot; ! TARGET_GLULX
-        glk($0086, 4); ! set subheader style
+        glk_set_style(style_Subheader);
         #Endif; ! TARGET_
         print (name) location, "^";
         #Ifdef TARGET_ZCODE;
         style roman;
         #Ifnot; ! TARGET_GLULX
-        glk($0086, 0); ! set normal style
+        glk_set_style(style_Normal);
         #Endif; ! TARGET_
         L__M(##Miscellany, 13);
         just_undone = 1;
@@ -5186,7 +5186,7 @@ Object  InformLibrary "(Inform Library)"
     #Ifdef TARGET_ZCODE;
     #IfV5; style bold; #Endif; ! V5
     #Ifnot; ! TARGET_GLULX
-    glk($0086, 5); ! set alert style
+    glk_set_style(style_Alert);
     #Endif; ! TARGET_
     print "***";
     switch (deadflag) {
@@ -5201,7 +5201,7 @@ Object  InformLibrary "(Inform Library)"
     #Ifdef TARGET_ZCODE;
     #IfV5; style roman; #Endif; ! V5
     #Ifnot; ! TARGET_GLULX
-    glk($0086, 0); ! set normal style
+    glk_set_style(style_Normal);
     #Endif; ! TARGET_
     print "^^";
     #Ifndef NO_SCORE;
@@ -5548,11 +5548,11 @@ Object  InformLibrary "(Inform Library)"
 
 [ NotifyTheScore;
     #Ifdef TARGET_GLULX;
-    glk($0086, 6); ! set note style
+    glk_set_style(style_Note);
     #Endif; ! TARGET_GLULX
     print "^[";  L__M(##Miscellany, 50, score-last_score);  print ".]^";
     #Ifdef TARGET_GLULX;
-    glk($0086, 0); ! set normal style
+    glk_set_style(style_Normal);
     #Endif; ! TARGET_GLULX
 ];
 
@@ -6103,26 +6103,27 @@ Object  InformLibrary "(Inform Library)"
 
 [ ClearScreen window;
     if (window == WIN_ALL or WIN_MAIN) {
-        glk($002A, gg_mainwin);
+        glk_window_clear(gg_mainwin);
         if (gg_quotewin) {
-            glk($0024, gg_quotewin, 0); ! close_window
+            glk_window_close(gg_quotewin, 0);
             gg_quotewin = 0;
         }
     }
-    if (gg_statuswin && window == WIN_ALL or WIN_STATUS) glk($002A, gg_statuswin);
+    if (gg_statuswin && window == WIN_ALL or WIN_STATUS)
+        glk_window_clear(gg_statuswin);
 ];
 
 [ MoveCursor line column;  ! 0-based postion on text grid
     if (gg_statuswin) {
-        glk($002F, gg_statuswin); ! set_window
+        glk_set_window(gg_statuswin);
     }
     if (line == 0) { line = 1; column = 1; }
-    glk($002B, gg_statuswin, column-1, line-1); ! window_move_cursor
+    glk_window_move_cursor(gg_statuswin, column-1, line-1);
     statuswin_current=1;
 ];
 
 [ MainWindow;
-    glk($002F, gg_mainwin); ! set_window
+    glk_set_window(gg_mainwin);
     statuswin_current=0;
 ];
 
@@ -6135,12 +6136,12 @@ Object  InformLibrary "(Inform Library)"
 [ ScreenWidth  id;
     id=gg_mainwin;
     if (gg_statuswin && statuswin_current) id = gg_statuswin;
-    glk($0025, id, gg_arguments, 0); ! window_get_size
+    glk_window_get_size(id, gg_arguments, 0);
     return gg_arguments-->0;
 ];
 
 [ ScreenHeight;
-    glk($0025, gg_mainwin, 0, gg_arguments); ! window_get_size
+    glk_window_get_size(gg_mainwin, 0, gg_arguments);
     return gg_arguments-->0;
 ];
 
@@ -6153,26 +6154,26 @@ Object  InformLibrary "(Inform Library)"
         bwd = MakeColourWord(b);
         for (i=0 : i<=10: i++) {
             if (f == CLR_DEFAULT || b == CLR_DEFAULT) { ! remove style hints
-                glk($00B1, swin, i, 7);
-                glk($00B1, swin, i, 8);
+                glk_stylehint_clear(swin, i, 7);
+                glk_stylehint_clear(swin, i, 8);
             }
             else {
-                glk($00B0, swin, i, 7, fwd);
-                glk($00B0, swin, i, 8, bwd);
+                glk_stylehint_set(swin, i, 7, fwd);
+                glk_stylehint_set(swin, i, 8, bwd);
             }
         }
         ! Now re-open the windows to apply the hints
-        if (gg_statuswin) glk($0024, gg_statuswin, 0); ! close_window
+        if (gg_statuswin) glk_window_close(gg_statuswin, 0);
 
         if (doclear || ( window ~= 1 && (clr_fg ~= f || clr_bg ~= b) ) ) {
-            glk($0024, gg_mainwin, 0);
-            gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
+            glk_window_close(gg_mainwin, 0);
+            gg_mainwin = glk_window_open(0, 0, 0, 3, GG_MAINWIN_ROCK);
             if (gg_scriptstr ~= 0)
-                glk($002D, gg_mainwin, gg_scriptstr); ! window_set_echo_stream
+                glk_window_set_echo_stream(gg_mainwin, gg_scriptstr);
         }
 
-        gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize,
-           4, GG_STATUSWIN_ROCK); ! window_open
+        gg_statuswin = glk_window_open($12, gg_statuswin_cursize,
+           4, GG_STATUSWIN_ROCK);
         if (statuswin_current && gg_statuswin)
             MoveCursor(); else MainWindow();
     }
@@ -6348,8 +6349,8 @@ Object  InformLibrary "(Inform Library)"
 [ StatusLineHeight hgt parwin;
     if (gg_statuswin == 0) return;
     if (hgt == gg_statuswin_cursize) return;
-    parwin = glk($0029, gg_statuswin); ! window_get_parent
-    glk($0026, parwin, $12, hgt, 0); ! window_set_arrangement
+    parwin = glk_window_get_parent(gg_statuswin);
+    glk_window_set_arrangement(parwin, $12, hgt, 0);
     gg_statuswin_cursize = hgt;
 ];
 
@@ -6362,32 +6363,32 @@ Object  InformLibrary "(Inform Library)"
         ix = InitGlkWindow(GG_QUOTEWIN_ROCK);
         if (ix == false) ix = LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, GG_QUOTEWIN_ROCK);
         if (ix == false)
-            gg_quotewin = glk($0023, gg_mainwin, $12, lines, 3,
+            gg_quotewin = glk_window_open(gg_mainwin, $12, lines, 3,
                 GG_QUOTEWIN_ROCK); ! window_open
     }
     else {
-        parwin = glk($0029, gg_quotewin); ! window_get_parent
-        glk($0026, parwin, $12, lines, 0); ! window_set_arrangement
+        parwin = glk_window_get_parent(gg_quotewin);
+        glk_window_set_arrangement(parwin, $12, lines, 0);
     }
 
     lastnl = true;
     if (gg_quotewin) {
-        glk($002A, gg_quotewin); ! window_clear
-        glk($002F, gg_quotewin); ! set_window
+        glk_window_clear(gg_quotewin);
+        glk_set_window(gg_quotewin);
         lastnl = false;
     }
 
     ! If gg_quotewin is zero here, the quote just appears in the story window.
 
-    glk($0086, 7); ! set blockquote style
+    glk_set_style(style_BlockQuote);
     for (ix=0 : ix<lines : ix++) {
         print (string) arr-->(ix+1);
         if (ix < lines-1 || lastnl) new_line;
     }
-    glk($0086, 0); ! set normal style
+    glk_set_style(style_Normal);
 
     if (gg_quotewin) {
-        glk($002F, gg_mainwin); ! set_window
+        glk_set_window(gg_mainwin);
     }
 ];
 
@@ -6447,7 +6448,7 @@ Object  InformLibrary "(Inform Library)"
         res = InitGlkWindow(GG_MAINWIN_ROCK);
         if (res == false) res = LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, GG_MAINWIN_ROCK);
         if (res == false)
-            gg_mainwin = glk($0023, 0, 0, 0, 3, GG_MAINWIN_ROCK); ! window_open
+            gg_mainwin = glk_window_open(0, 0, 0, 3, GG_MAINWIN_ROCK);
         if (gg_mainwin == 0) {
             ! If we can't even open one window, there's no point in going on.
             quit;
@@ -6455,7 +6456,7 @@ Object  InformLibrary "(Inform Library)"
     }
     else {
         ! There was already a story window. We should erase it.
-        glk($002A, gg_mainwin); ! window_clear
+        glk_window_clear(gg_mainwin);
     }
 
     if (gg_statuswin == 0) {
@@ -6463,14 +6464,14 @@ Object  InformLibrary "(Inform Library)"
         if (res == false) res = LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, GG_STATUSWIN_ROCK);
         if (res == false) {
             gg_statuswin_cursize = gg_statuswin_size;
-            gg_statuswin = glk($0023, gg_mainwin, $12, gg_statuswin_cursize,
-                4, GG_STATUSWIN_ROCK); ! window_open
+            gg_statuswin = glk_window_open(gg_mainwin, $12,
+                gg_statuswin_cursize, 4, GG_STATUSWIN_ROCK);
         }
     }
     ! It's possible that the status window couldn't be opened, in which case
     ! gg_statuswin is now zero. We must allow for that later on.
 
-    glk($002F, gg_mainwin); ! set_window
+    glk_set_window(gg_mainwin);
 
     if (InitGlkWindow(1) == false) LibraryExtensions.RunWhile(ext_InitGlkWindow, 0, 1);
 ];
@@ -6494,7 +6495,7 @@ Object  InformLibrary "(Inform Library)"
     ! Also tell the game to clear its object references.
     if (IdentifyGlkObject(0) == false) LibraryExtensions.RunWhile(ext_identifyglkobject, 0, 0);
 
-    id = glk($0040, 0, gg_arguments); ! stream_iterate
+    id = glk_stream_iterate(0, gg_arguments);
     while (id) {
         switch (gg_arguments-->0) {
             GG_SAVESTR_ROCK: gg_savestr = id;
@@ -6508,10 +6509,10 @@ Object  InformLibrary "(Inform Library)"
             default: if (IdentifyGlkObject(1, 1, id, gg_arguments-->0) == false)
                          LibraryExtensions.RunWhile(ext_identifyglkobject, false, 1, 1, id, gg_arguments-->0);
         }
-        id = glk($0040, id, gg_arguments); ! stream_iterate
+        id = glk_stream_iterate(id, gg_arguments);
     }
 
-    id = glk($0020, 0, gg_arguments); ! window_iterate
+    id = glk_window_iterate(0, gg_arguments);
     while (id) {
         switch (gg_arguments-->0) {
             GG_MAINWIN_ROCK: gg_mainwin = id;
@@ -6520,17 +6521,17 @@ Object  InformLibrary "(Inform Library)"
             default: if (IdentifyGlkObject(1, 0, id, gg_arguments-->0) == false)
                         LibraryExtensions.RunWhile(ext_identifyglkobject, false, 1, 0, id, gg_arguments-->0);
         }
-        id = glk($0020, id, gg_arguments); ! window_iterate
+        id = glk_window_iterate(id, gg_arguments);
     }
 
-    id = glk($0064, 0, gg_arguments); ! fileref_iterate
+    id = glk_fileref_iterate(0, gg_arguments);
     while (id) {
         switch (gg_arguments-->0) {
             GG_SCRIPTFREF_ROCK: gg_scriptfref = id;
             default: if (IdentifyGlkObject(1, 2, id, gg_arguments-->0) == false)
                         LibraryExtensions.RunWhile(ext_identifyglkobject, false, 1, 2, id, gg_arguments-->0);
         }
-        id = glk($0064, id, gg_arguments); ! fileref_iterate
+        id = glk_fileref_iterate(id, gg_arguments);
     }
 
     ! Tell the game to tie up any loose ends.
@@ -6612,18 +6613,18 @@ Object  InformLibrary "(Inform Library)"
     @copy sp arrlen;
     _vararg_count = _vararg_count - 2;
 
-    oldstr = glk($0048); ! stream_get_current
-    str = glk($0043, arr, arrlen, 1, 0); ! stream_open_memory
+    oldstr = glk_stream_get_current(); ! stream_get_current
+    str = glk_stream_open_memory(arr, arrlen, 1, 0);
     if (str == 0) return 0;
 
-    glk($0047, str); ! stream_set_current
+    glk_stream_set_current(str);
 
     @call PrintAnything _vararg_count 0;
 
-    glk($0047, oldstr); ! stream_set_current
+    glk_stream_set_current(oldstr);
     @copy $ffffffff sp;
     @copy str sp;
-    @glk $0044 2 0; ! stream_close
+    @glk $0044 2 0;
     @copy sp len;
     @copy sp 0;
 
@@ -7017,7 +7018,7 @@ Array magic_array -->         ! This is so nitfol can do typo correction /
     ! it wanted, instead of doing this itself.
     if (wlen > DICT_WORD_SIZE) wlen = DICT_WORD_SIZE;
     for (ix=0 : ix<wlen : ix++) {
-        gg_tokenbuf->ix = glk($00A0, buf->ix);
+        gg_tokenbuf->ix = glk_char_to_lower(buf->ix);
     }
     for (: ix<DICT_WORD_SIZE : ix++) {
         gg_tokenbuf->ix = 0;
