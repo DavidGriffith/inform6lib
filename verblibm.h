@@ -590,8 +590,9 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         if (o has container && o hasnt open)     combo=combo+2;
         if ((o has container && (o has open || o has transparent))) {
             objectloop(i in o) {
-                if (i has concealed or scenery) j = false;
-                if (i hasnt concealed && i hasnt scenery) j = true;
+                if (i hasnt concealed && i hasnt scenery) {
+                    j = true; break;
+                }
             }
             if (~~j) combo=combo+4;
         }
