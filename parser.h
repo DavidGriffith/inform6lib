@@ -1,7 +1,7 @@
 ! ==============================================================================
 !   PARSER:  Front end to parser.
 !
-!   Supplied for use with Inform 6 -- Release 6/12 -- Serial number 151220
+!   Supplied for use with Inform 6 -- Release 6.12.1 -- Serial number 160429
 !
 !   Copyright Graham Nelson 1993-2004 and David Griffith 2012-2016
 !
@@ -27,8 +27,8 @@ System_file;
 Message fatalerror "*** Library 6/12 needs Inform v6.33 or later to work ***";
 #Endif; ! VN_
 
-Constant LibSerial       "151229";
-Constant LibRelease      "6.12.1";
+Constant LibSerial       "160429";
+Constant LibRelease      "6.12.1pre";
 Constant LIBRARY_VERSION  612;
 Constant Grammar__Version 2;
 

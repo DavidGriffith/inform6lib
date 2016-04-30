@@ -1,7 +1,7 @@
 ! ==============================================================================
 !   VERBLIBM:  Core of standard verbs library.
 !
-!   Supplied for use with Inform 6 -- Release 6/12 -- Serial number 151220
+!   Supplied for use with Inform 6 -- Release 6.12.1 -- Serial number 160429
 !
 !   Copyright Graham Nelson 1993-2004 and David Griffith 2012-2016
 !
