@@ -1762,7 +1762,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
 [ RemoveSub i;
     i = parent(noun);
-    if (i && i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, noun);
+    if (i && i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, i);
     if (i ~= second)   return L__M(##Remove, 2, noun);
     if (i has animate) return L__M(##Take, 6, i, noun);
 
