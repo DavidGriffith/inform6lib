@@ -590,8 +590,9 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
         if (o has container && o hasnt open)     combo=combo+2;
         if ((o has container && (o has open || o has transparent))) {
             objectloop(i in o) {
-                if (i has concealed or scenery) j = false;
-                if (i hasnt concealed && i hasnt scenery) j = true;
+                if (i hasnt concealed && i hasnt scenery) {
+                    j = true; break;
+                }
             }
             if (~~j) combo=combo+4;
         }
@@ -1741,7 +1742,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     if (res >= 2) rtrue;
     ks = keep_silent; keep_silent = 1; <Disrobe obj, actor>; keep_silent = ks;
     if (obj has worn && obj in actor) rtrue;
-    if (res == 0 && ~~keep_silent) L__M(##Drop, 3, noun);
+    if (res == 0 && ~~keep_silent) L__M(##Drop, 3, obj);
     rfalse;
 ];
 
@@ -1761,7 +1762,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 
 [ RemoveSub i;
     i = parent(noun);
-    if (i && i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, noun);
+    if (i && i has container && i hasnt open && ImplicitOpen(i)) return L__M(##Remove, 1, i);
     if (i ~= second)   return L__M(##Remove, 2, noun);
     if (i has animate) return L__M(##Take, 6, i, noun);
 

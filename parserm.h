@@ -3063,7 +3063,7 @@ Constant UNLIT_BIT  =  32;
   .Incomplete;
 
     if (best_etype == NOTHING_PE && pattern-->1 == 0) rfalse; ! for DROP when empty-handed
-    if (context == CREATURE_TOKEN) L__M(##Miscellany, 48);
+    if (context == CREATURE_TOKEN) L__M(##Miscellany, 48, actor);
     else                           L__M(##Miscellany, 49, actor);
 
     #Ifdef TARGET_ZCODE;
