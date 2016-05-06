@@ -4965,7 +4965,6 @@ Object  InformLibrary "(Inform Library)"
                 if ((i == 0) ||
                     (i == 1 && inp1 ~= 0) ||
                     (i == 2 && inp1 ~= 0 && inp2 ~= 0)) {
-!print "ZOOM^";
 
 		    if (actor ~= player) {
                          switch (self.actor_act(actor, action, noun, second)) {
