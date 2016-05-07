@@ -2247,12 +2247,12 @@ Object  InformParser "(Inform Parser)"
     if (etype == NOTHING_PE) {
         if (results-->0 == ##Remove && results-->3 ofclass Object) {
             noun = results-->3; ! ensure valid for messages
-            if (noun has animate) L__M(##Take, 6, noun);
+            if (noun has animate) L__M(##Miscellany, 44, verb_word);
             else if (noun hasnt container or supporter) L__M(##Insert, 2, noun);
             else if (noun has container && noun hasnt open) L__M(##Take, 9, noun);
             else if (children(noun)==0) L__M(##Search, 6, noun);
             else results-->0 = 0;
-            }
+        }
         if (results-->0 ~= ##Remove) {
             if (multi_wanted == 100)    L__M(##Miscellany, 43);
             else {
@@ -4965,7 +4965,6 @@ Object  InformLibrary "(Inform Library)"
                 if ((i == 0) ||
                     (i == 1 && inp1 ~= 0) ||
                     (i == 2 && inp1 ~= 0 && inp2 ~= 0)) {
-!print "ZOOM^";
 
 		    if (actor ~= player) {
                          switch (self.actor_act(actor, action, noun, second)) {
