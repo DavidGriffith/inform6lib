@@ -15,4 +15,4 @@ Thanks go to:
 
 Sarganar, David Kinder, Fredrik Ramsberg, Roger Firth, Marshall
 Vandegrift, Nathan Summers, Emerick Rogul, Martin Bays, Cedrick Knight,
-Jesse McGrew, Nathan Schwartzman, Andrew Plotkin
+Jesse McGrew, Nathan Schwartzman, Andrew Plotkin, Vince Laviano
