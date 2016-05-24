@@ -822,12 +822,9 @@ Constant COLON__TX      = ": ";
             " nothing suitable to drink here.";
   Drop: switch (n) {
         1:  CSubjectIs(x1,true); " already here.";
-        2:  print "Perhaps ", (theActor) actor, " should ";
-            Tense("take", "have taken");
-            print " ", (the) x1;
-            if (parent(x1) has supporter) print " off ";
-	    else print " out of ";
-	    print_ret (the) parent(x1), " first.";
+        2:  CSubjectVerb(actor, false, false, "haven't got", 0, "hasn't got",
+                         "didn't have");
+            " ", (the) x1, ".";
         3:  "(first taking ", (the) x1, " off)";
         4:  "Dropped.";
     }
