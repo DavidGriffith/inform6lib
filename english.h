@@ -905,7 +905,7 @@ Constant COLON__TX      = ": ";
         4:  print "total (out of ", MAX_SCORE; ")";
     }
   GetOff:   print "But ";
-            CSubjectIsnt(actor,true,false); " on ", (the) x1, " at the moment.";
+            CSubjectIsnt(actor,true,true); " on ", (the) x1, " at the moment.";
   Give: switch (n) {
         1:  CSubjectIsnt(actor,true); " holding ", (the) x1, ".";
         2:  CSubjectVerb(actor,false,false,"juggle",0,"juggles","juggled");
