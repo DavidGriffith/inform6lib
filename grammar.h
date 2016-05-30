@@ -276,8 +276,8 @@ Verb 'get'
     * multiinside 'from'/'off' noun             -> Remove;
 
 Verb 'give' 'feed' 'offer' 'pay'
-    * held 'to' creature                        -> Give
     * creature held                             -> Give reverse
+    * held 'to' creature                        -> Give
     * 'over' held 'to' creature                 -> Give;
 
 Verb 'go' 'run' 'walk'

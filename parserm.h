@@ -2227,7 +2227,13 @@ Object  InformParser "(Inform Parser)"
         oops_from = wn-1;
     }
     if (etype == NUMBER_PE)     L__M(##Miscellany, 29);
-    if (etype == CANTSEE_PE) {  L__M(##Miscellany, 30); oops_from=saved_oops; }
+    if (etype == CANTSEE_PE) {
+	L__M(##Miscellany, 30);
+!FIXME debug prints
+	print "oops_from == ", oops_from, "^saved_oops == ", saved_oops, "^";
+	oops_from=saved_oops;
+    }
+
     if (etype == TOOLIT_PE)     L__M(##Miscellany, 31);
     if (etype == NOTHELD_PE) {  L__M(##Miscellany, 32, not_holding); oops_from=saved_oops; }
     if (etype == MULTI_PE)      L__M(##Miscellany, 33);
@@ -3862,6 +3868,9 @@ Constant SCORE__DIVISOR     = 20;
         Descriptors();  ! skip past THE etc
         if (i has visited && Refers(i,wn) == 1) e = SCENERY_PE;
     }
+
+!FIXME debug print
+print "match_from ==  ", match_from, "^";
 
     if (saved_ml)
         saved_oops = num_desc + match_from + saved_ml;
