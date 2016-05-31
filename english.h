@@ -909,7 +909,9 @@ Constant COLON__TX      = ": ";
   Give: switch (n) {
         1:  CSubjectIsnt(actor,true); " holding ", (the) x1, ".";
         2:  CSubjectVerb(actor,false,false,"juggle",0,"juggles","juggled");
-            " ", (the) x1, " for a while, but don't achieve much.";
+            print " ", (the) x1, " for a while, but ";
+            CSubjectVoice(actor,"don't","don't","doesn't","didn't");
+            " achieve much.";
         3:  CSubjectDont(x1,true); " seem interested.";
         4:  CSubjectVerb(actor,false,false,"hand over",0,"hands over","handed over");
             " ", (the) x1, ".";
