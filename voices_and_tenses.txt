@@ -59,6 +59,12 @@ must set player.short_name even if you use the old regular second-person
 voice.  Make sure the narrative_voice, short_name, and name properties
 are all sensibly set for all possible bodies the player might control.
 
+Changing bodies can be a handy technique for implement flashbacks.
+Create self2, self3, and so on for each time period you visit.  Just
+change the player global to the self you want to be in control.  The
+SelfClass class is provided with all the various properties a
+player-character needs.  Use this class whenever you create a new self.
+
 An interesting way of using the third-person voice is to give the PC a
 generic name like "detective" (put that in the short_name and name
 properties).  Then take away the PC's proper attribute.  This will cause
@@ -102,7 +108,6 @@ way, set player.nameless to false and set the name and short_name
 properties to something appropriate.  If third-person narrative voice is
 used, the nameless property is ignored.  "The detective" isn't
 namelessness.  It's just not a proper name.
-
 
 The Library uses the CSubject subroutines to figure out when to say "I",
 "You", or "George".  You can use them too.  The most important of these

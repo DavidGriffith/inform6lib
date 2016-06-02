@@ -683,7 +683,7 @@ Object  thedark "(darkness object)"
 ! If you want to use the third-person of the narrative voice, you will
 ! need to replace this selfobj with your own.
 
-Object  selfobj	 "(self object)"
+Class  SelfClass
   with name ',a' ',b' ',c' ',d' ',e',
         short_name  YOURSELF__TX,
         description [;  return L__M(##Miscellany, 19); ],
@@ -706,6 +706,7 @@ Object  selfobj	 "(self object)"
         before_implicit [;Take: return 2;],
   has   concealed animate proper transparent;
 
+SelfClass selfobj "(self object)";
 
 ! ============================================================================
 !  The definition of the token-numbering system used by Inform.
