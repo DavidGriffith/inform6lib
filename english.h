@@ -1329,7 +1329,9 @@ Constant COLON__TX      = ": ";
         1:  DecideAgainst();
         2:  CSubjectVerb(actor,true,false,"achieve",0,"achieves","achieved"); " nothing by this.";
     }
-  Strong:   "Real adventurers do not use such language.";
+  Strong:   print "Real adventurers ";
+            Tense ("do", "did");
+            " not use such language.";
   Swim:     print "There";
             Tense("'s not", " wasn't");
             " enough water to swim in.";
