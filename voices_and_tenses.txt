@@ -1,4 +1,4 @@
-The Inform Library version 6/12 introduces two fun new ways of
+The Inform Library version 6.12 introduces two fun new ways of
 storytelling.  First, you can use first-person and third person
 narrative voices.  Second, you can use past tense.  The typical way to
 write interactive fiction has been for the game to talk about the player
@@ -75,17 +75,17 @@ capitalize the word "the".  For instance:
 
 This results in a room description like this:
 
-  > PUT FOLDER ON TABLE
+  >PUT FOLDER ON TABLE
   The detective puts the folder on the table.
 
-  > LOOK
+  >LOOK
 
   Squad Room
   This is the 13th Precinct's squad room.
 
   The detective can see a table (upon which is a folder).
 
-  > INVENTORY
+  >INVENTORY
   The detective is carrying:
     a badge
     a revolver
@@ -119,10 +119,10 @@ actor.  These are its parameters:
 [1] In the Library itself, "reportage" is used in SubjectNotPlayer()
 which determines the correct conjugation for certain actions performed
 by NPCs.  If this is "false", then this will happen:
-    > SALLY, RUB LAMP
+    >SALLY, RUB LAMP
     Sally achieves nothing by this.
 If this is "true" then this happens:
-    > SALLY, RUB LAMP
+    >SALLY, RUB LAMP
     Sally observes that she achieves nothing by this.
 This sort of thing can be important if you want to imply that the NPC is
 aware of the result of an action.
@@ -130,7 +130,7 @@ aware of the result of an action.
 [2] When the second-person voice is used, responses very often begin
 with "You".  Suppose you want to put a conjunction like "but" in front
 of "you".  For instance:
-    > EAT PUDDING
+    >EAT PUDDING
     But you can't have any pudding if you don't eat your meat!
 See that "you" is not capitalised.  If you omit this parameter, it will
 be false and therefore the game will capitalise "you".  If you want to
@@ -142,12 +142,12 @@ have something special planned, pass 0 for v2.
 
 [4] Past tense can be useful for implementing a flashback.  For
 instance:
-    > EXAMINE VASE
-    This vase was very expensive-looking.
+    >EXAMINE VASE
+    The vase was very expensive-looking.
 
 
 Here's an example of using CSubjectVerb():
-   CSubjectVerb(actor,false,true,"close",0,"closes","closed"); " ",
+   CSubjectVerb(actor,false,false,"close",0,"closes","closed"); " ",
      (the) x1, ".";
 
 The default is to use the present tense.  If you want to change to the
@@ -158,32 +158,28 @@ handy to create a "past PC" with its own posessions and properties.
 That one always has its narrative_tense set to PAST_TENSE.  Then when
 you want to flash back, simply call ChangePlayer() appropriately.
 
-There are frequent situations where you need to select between present
-and past tense forms of phrases in ways that CSubjectVerb() is not
-appropriate.  Use the Tense() function for that.  The Library itself
-uses Tense() to keep things straight.  Here's how to use it:
+There is a helper function called Tense() that doesn't quite fit in with
+the CSubject functions.  This one takes two parameters: present and
+past.  Its purpose is to keep the tense of various verbs straight.  It's
+not meant for sorting out narrative voices, but instead is applied after
+that has been sorted out.  In fact, Tense() is used extensively in the
+CSubject helper functions to do just that.  Here's how to use it:
     print "After the storm, there still ";
     Tense("isn't", "wasn't");
     " enough rainfall.";
 
-There is a helper function called Tense() that doesn't quite fit in with the CSubject
-functions.  This one takes two parameters: present and past.  Its purpose is to keep the
-tense of various verbs straight.  It's not meant for sorting out narrative voices, but
-instead is applied after that has been sorted out.  In fact, Tense() is used extensively
-in the CSubject helper functions to do just that.
-
-Most of the rest of the CSubject functions are wrappers for commonly used verbs: "is",
-"isn't", "has", "will", "can", "can't", and "don't".  These have only three parameters:
-obj, reportage, and nocaps.  You can call these with two or one parameters if you like.
-The functions will receive 0 (also false) for missing trailing parameters.
-CSubjectVoice() is similar to CSubjectVerb() except that the name of the subject is not
+Most of the rest of the CSubject functions are wrappers for commonly
+used verbs: "is", "isn't", "has", "will", "can", "can't", and "don't".
+These have only three parameters: obj, reportage, and nocaps.  You can
+call these with two or one parameters if you like. The functions will
+receive 0 (also false) for missing trailing parameters. CSubjectVoice()
+is similar to CSubjectVerb() except that the name of the subject is not
 printed.
 
-Here they are
-along with sample calls:
+Here they are along with sample calls:
 
 CSubjectIs()
-    CSubjectIs(x1,true,true); " already closed.";
+    CSubjectIs(x1,true); " already closed.";
 
 CSubjectIsnt()
     print "But ";
@@ -191,21 +187,21 @@ CSubjectIsnt()
     " in anything at the moment.";
 
 CSubjectHas()
-    CSubjectHas(actor,false,true); " better things to do.";
+    CSubjectHas(actor,false); " better things to do.";
 
 CSubjectWill()
-    CSubjectWill(actor,true,true); " first have to close ", (the) x1, ".";
+    CSubjectWill(actor,true); " first have to close ", (the) x1, ".";
 
 CSubjectCan()
-    CSubjectCan(actor,true,true);
+    CSubjectCan(actor,true);
     " only get into something free-standing.";
 
 CSubjectCant()
-    CSubjectCant(actor,true, true);
+    CSubjectCant(actor,true);
     " usefully blow ", (thatorthose) x1, ".";
 
 CSubjectDont()
-    CSubjectDont(x1,true,true); " seem to fit the lock.";
+    CSubjectDont(x1,true); " seem to fit the lock.";
 
 CSubjectVoice()
      print "What ";
