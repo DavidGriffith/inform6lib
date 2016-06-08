@@ -1,7 +1,7 @@
 ! ==============================================================================
 !   GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!   Supplied for use with Inform 6 -- Release 6.12.1 -- Serial number 160605
+!   Supplied for use with Inform 6 -- Release 6.12.2-pre -- Serial number 160608
 !
 !   Copyright Graham Nelson 1993-2004 and David Griffith 2012-2016
 !   This code is licensed under either the traditional Inform license as

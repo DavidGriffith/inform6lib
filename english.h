@@ -1,7 +1,7 @@
 ! ==============================================================================
 !   ENGLISH:  Language Definition File
 !
-!   Supplied for use with Inform 6 -- Release 6.12.1 -- Serial number 160605
+!   Supplied for use with Inform 6 -- Release 6.12.2-pre -- Serial number 160608
 !
 !   Copyright Graham Nelson 1993-2004 and David Griffith 2012-2016
 !
