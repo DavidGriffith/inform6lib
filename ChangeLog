@@ -6,7 +6,7 @@ to other semi-standard names get created upon installation (e.g.
 verblib.h gets symlinked to Verblib.h and VerbLib.h) -- except on
 Cygwin, where case doesn't seem to matter.
 
-Version 6.12.1 (xx xxx 2016)
+Version 6.12.1 (7 June 2016)
 ============================
 
 This is a maintenance release focusing entirely on bug fixes.  No new
@@ -15,6 +15,21 @@ features have been added.
 Bugs fixed
 ----------
 
+* TAKE ROCKS, TAKE ALL, TAKE ROCKS mistakenly tried to take things from
+  an NPC if one was in the room.
+
+* DM4 Exercise 32 failure corrected.  Also fixed a problem that caused
+  Glulx to get stuck in a loop.
+
+* L__M(##Give, 2) wasn't correctly parameterized for voices and tenses.
+
+* Improved some nonsensical responses to DROP.
+
+* Corrected ordering NPC to take and drop multiple objects.
+
+* Corrected problems with DropSub and ImplicitTake.
+
+* Faulty OOPS correction partially fixed.
 
 
 Version 6.12.0 (19 December 2015)
