@@ -4497,7 +4497,7 @@ Constant SCORE__DIVISOR     = 20;
 ! ----------------------------------------------------------------------------
 
 [ Refers obj wnum   wd k l m;
-    if (obj == 0) rfalse;
+    if (obj == 0 || wnum <= 0) rfalse;
 
     #Ifdef LanguageRefers;
     k = LanguageRefers(obj,wnum); if (k >= 0) return k;
@@ -4573,7 +4573,7 @@ Constant SCORE__DIVISOR     = 20;
 #Ifdef TARGET_ZCODE;
 
 [ NextWord i j;
-    if (wn > parse->1) { wn++; rfalse; }
+    if (wn <= 0 || wn > parse->1) { wn++; rfalse; }
     i = wn*2-1; wn++;
     j = parse-->i;
     if (j == ',//') j = comma_word;
@@ -4621,7 +4621,7 @@ Constant SCORE__DIVISOR     = 20;
 #Ifnot; ! TARGET_GLULX
 
 [ NextWord i j;
-    if (wn > parse-->0) { wn++; rfalse; }
+    if (wn <= 0 || wn > parse-->0) { wn++; rfalse; }
     i = wn*3-2; wn++;
     j = parse-->i;
     if (j == ',//') j=comma_word;
