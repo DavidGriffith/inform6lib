@@ -1173,7 +1173,7 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     if (transcript_mode) return L__M(##ScriptOn, 1);
     @output_stream 2;
     if (((HDR_GAMEFLAGS-->0) & 1) == 0) return L__M(##ScriptOn, 3);
-    L__M(##ScriptOn, 2); VersionSub();
+    L__M(##ScriptOn, 2);
     transcript_mode = true;
 ];
 
@@ -2211,11 +2211,11 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
 !     isn't.  (Except that these are over-ridden by the player-set lookmode.)
 ! ----------------------------------------------------------------------------
 
-[ LMode1Sub; lookmode=1; print (string) Story; L__M(##LMode1); ];  ! Brief
+[ LMode1Sub; lookmode=1; L__M(##LMode1); ];  ! Brief
 
-[ LMode2Sub; lookmode=2; print (string) Story; L__M(##LMode2); ];  ! Verbose
+[ LMode2Sub; lookmode=2; L__M(##LMode2); ];  ! Verbose
 
-[ LMode3Sub; lookmode=3; print (string) Story; L__M(##LMode3); ];  ! Superbrief
+[ LMode3Sub; lookmode=3; L__M(##LMode3); ];  ! Superbrief
 
 [ LModeNormalSub;       ! 'normal' value: the default, or as set in Initialise()
     switch (initial_lookmode) {

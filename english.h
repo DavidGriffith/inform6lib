@@ -990,15 +990,15 @@ Constant COLON__TX      = ": ";
         21: print " (in ";
         22: print ", inside ";
     }
-  LMode1:   print " is now in its ";
+  LMode1:   print (string) Story, " is now in its ";
             if (initial_lookmode == 1) print "normal ";
             "~brief~ printing mode, which gives long descriptions
              of places never before visited and short descriptions otherwise.";
-  LMode2:   print " is now in its ";
+  LMode2:   print (string) Story, " is now in its ";
             if (initial_lookmode ~= 1 or 3) print "normal ";
             "~verbose~ mode, which always gives long descriptions
              of locations (even if you've been there before).";
-  LMode3:   print " is now in its ";
+  LMode3:   print (string) Story, " is now in its ";
             if (initial_lookmode == 3) print "normal ";
             "~superbrief~ mode, which always gives short descriptions
              of locations (even if you haven't been there before).";
@@ -1284,7 +1284,7 @@ Constant COLON__TX      = ": ";
     }
   ScriptOn: switch (n) {
         1:  "Transcripting is already on.";
-        2:  "Start of a transcript of";
+        2:  print "Start of a transcript of"; VersionSub();
         3:  "Attempt to begin transcript failed.";
     }
   Search: switch (n) {
