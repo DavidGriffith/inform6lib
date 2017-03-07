@@ -49,6 +49,11 @@ Object LibraryMessages;
 #Endif; ! NO_PLACES
 
 ! ------------------------------------------------------------------------------
+! Banner(), VersionSub(), and RunTimeError() are preempted by LanguageBanner(),
+! LanguageVersionSub(), and LanguageError() respectfully.  When converting
+! this library to support a different natural language, these three latter
+! functions should be created rather than editing this file.
+! ------------------------------------------------------------------------------
 
 [ Banner i;
     #Ifdef LanguageBanner;
