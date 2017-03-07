@@ -440,18 +440,18 @@ Constant COLON__TX      = ": ";
 [ CTheyreorThats obj;
     if (obj == player) {
 	if (player provides narrative_voice) {
-	    if (player.narrative_voice == 1) { print "I'm"; return; }
-	    if (player.narrative_voice == 3) { CDefart(player); print "'s"; return; }
+	    if (player.narrative_voice == 1) { Tense("I'm", "I was"); return; }
+	    if (player.narrative_voice == 3) { CDefart(player); Tense("'s", " was"); return; }
 	}
-	print "You're";
+	Tense("You're", "You were");
 	return;
     }
-    if (obj has pluralname)		{ print "They're"; return; }
-    if (obj has female)			{ print "She's"; return; }
+    if (obj has pluralname)		{ Tense("They're", "They were"); return; }
+    if (obj has female)			{ Tense("She's", "She was"); return; }
     if (obj has male or animate) {
-        if (obj hasnt neuter)		{ print "He's"; return; }
+        if (obj hasnt neuter)		{ Tense("He's", "He was"); return; }
     }
-    print "That's";
+    Tense("That's", "That was");
 ];
 
 [ IsOrAre obj;
