@@ -1731,8 +1731,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Close, obj);
     ! 0 = Close object, Tell the user (normal default)
     ! 1 = Close object, don't Tell
-    ! 2 = don't Take object  continue       (default with no_implicit_actions)
-    ! 3 = don't Take object, don't continue
+    ! 2 = don't Close object  continue       (default with no_implicit_actions)
+    ! 3 = don't Close object, don't continue
     if (res >= 2) rtrue;
     ks = keep_silent; keep_silent = 2; <Close obj, actor>; keep_silent = ks;
     if (obj has open) rtrue;
@@ -1746,8 +1746,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Open, obj);
     ! 0 = Open object, Tell the user (normal default)
     ! 1 = Open object, don't Tell
-    ! 2 = don't Take object  continue       (default with no_implicit_actions)
-    ! 3 = don't Take object, don't continue
+    ! 2 = don't Open object  continue       (default with no_implicit_actions)
+    ! 3 = don't Open object, don't continue
     if (res >= 2) rtrue;
     if (obj has locked) rtrue;
     temp = keep_silent; keep_silent = 2; <Open obj, actor>; keep_silent = temp;
@@ -1768,8 +1768,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Disrobe, obj);
     ! 0 = Take off object, Tell the user (normal default)
     ! 1 = Take off object, don't Tell
-    ! 2 = don't Take object  continue       (default with no_implicit_actions)
-    ! 3 = don't Take object, don't continue
+    ! 2 = don't Take off object  continue       (default with no_implicit_actions)
+    ! 3 = don't Take off object, don't continue
     if (res >= 2) rtrue;
     ks = keep_silent; keep_silent = 1; <Disrobe obj, actor>; keep_silent = ks;
     if (obj has worn && obj in actor) rtrue;
