@@ -1716,8 +1716,8 @@ Constant ID_BIT        $2000;       ! Print object id after each entry
     res = CheckImplicitAction(##Exit, obj);
     ! 0 = Exit object, Tell the user (normal default)
     ! 1 = Exit object, don't Tell
-    ! 2 = don't Take object  continue       (default with no_implicit_actions)
-    ! 3 = don't Take object, don't continue
+    ! 2 = don't Exit object  continue       (default with no_implicit_actions)
+    ! 3 = don't Exit object, don't continue
     if (res >= 2) rtrue;
     ks = keep_silent; keep_silent = 2; <Exit obj, actor>; keep_silent = ks;
     if (parent(actor) == obj) rtrue;
