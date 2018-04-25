@@ -968,7 +968,7 @@ Array InfixRV_commas --> 32;
         for (b=0 : b < #dictionary_table-->0 : b++) {
             w = #dictionary_table + WORDSIZE + b*(DICT_WORD_SIZE + 7);
             if ((w->#dict_par1) & 1) {
-                a = (#grammar_table)-->($100-(w->#dict_par2));
+                a = (#grammar_table)-->(DictionaryWordToVerbNum(w) + 1);
                 lines = a->0; a++;
                 for (: lines>0 : lines--) {
                     a = UnpackGrammarLine(a);

@@ -1489,6 +1489,24 @@ Object  InformParser "(Inform Parser)"
     return 1;
 ];
 
+! ==========================
+! Taken from I7's Parser.i6t
+! ==========================
+
+[ DictionaryWordToVerbNum dword verbnum;
+#Ifdef TARGET_ZCODE;
+    verbnum = $ff-(dword->#dict_par2);
+#Ifnot; ! GLULX
+    dword = dword + #dict_par2 - 1;
+    @aloads dword 0 verbnum;
+    verbnum = $ffff-verbnum;
+#Endif;
+    return verbnum;
+];
+
+! ==========================
+
+
 ! ----------------------------------------------------------------------------
 !   To simplify the picture a little, a rough map of the main routine:
 !
@@ -1857,7 +1875,7 @@ Object  InformParser "(Inform Parser)"
     ! Now let i be the corresponding verb number, stored in the dictionary entry
     ! (in a peculiar 255-n fashion for traditional Infocom reasons)...
 
-    i = $ff-(verb_word->#dict_par2);
+    i = DictionaryWordToVerbNum(verb_word);
 
     ! ...then look up the i-th entry in the verb table, whose address is at word
     ! 7 in the Z-machine (in the header), so as to get the address of the syntax
@@ -5932,7 +5950,7 @@ Object  InformLibrary "(Inform Library)"
 
 #Ifnot; ! TARGET_GLULX
 
-[ ShowVerbSub grammar lines j wd dictlen entrylen;
+[ ShowVerbSub grammar lines i j wd dictlen entrylen;
     if (noun == 0 || ((noun->#dict_par1) & DICT_VERB) == 0)
         "Try typing ~showverb~ and then the name of a verb.";
     print "Verb";
@@ -5945,7 +5963,8 @@ Object  InformLibrary "(Inform Library)"
             print " '", (address) wd, "'";
     }
     new_line;
-    grammar = (#grammar_table)-->($ff-(noun->#dict_par2)+1);
+    i = DictionaryWordToVerbNum(noun);
+    grammar = (#grammar_table)-->(i+1);
     lines = grammar->0;
     grammar++;
     if (lines == 0) "has no grammar lines.";
