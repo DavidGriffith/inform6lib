@@ -1,5 +1,5 @@
-This is version 6.12.1 of the Inform Library,
-Copyright Graham Nelson 1993-2004, David Griffith 2012-2016
+This is version 6.12.2 of the Inform Library,
+Copyright Graham Nelson 1993-2004, David Griffith 2012-2018
 Full release notes and instructions are available at
 http://www.inform-fiction.org
 and
@@ -15,4 +15,4 @@ Thanks go to:
 
 Sarganar, David Kinder, Fredrik Ramsberg, Roger Firth, Marshall
 Vandegrift, Nathan Summers, Emerick Rogul, Martin Bays, Cedrick Knight,
-Jesse McGrew, Nathan Schwartzman, Andrew Plotkin, Vince Laviano
+Jesse McGrew, Nathan Schwartzman, Andrew Plotkin, Vince Laviano, Jesse Pavel
