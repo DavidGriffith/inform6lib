@@ -6,6 +6,34 @@ to other semi-standard names get created upon installation (e.g.
 verblib.h gets symlinked to Verblib.h and VerbLib.h) -- except on
 Cygwin, where case doesn't seem to matter.
 
+Version 6.12.2 (20 May 2018)
+============================
+
+This is a maintenance release focusing almost entirely on bug fixes.  A
+minor backport from I7's PArser.i6t has been added.
+
+Bugs fixed
+----------
+
+* Removed last vestiges of modules.
+
+* Fixed problem with invalid wordnum in Refers and NextWord.
+
+* Moved some responses to verbs into the language file.
+
+* Added notes about language-customized code for banner, version, and error
+  messages.
+
+* Fixed tenses problems in CTheyreorThats().
+
+* Fixed problem with ImplicitOpen() calling after routines on wrong object.
+
+* Backported Glulx 16-bit verb numbers from I7's Parser.i6t
+
+* Patched up infix.h with 16-bit Glulx verbnums, even though Glulx
+  doesn't support Infix.  Maybe someday Glulx will support it.
+
+
 Version 6.12.1 (7 June 2016)
 ============================
 
