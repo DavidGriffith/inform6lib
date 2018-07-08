@@ -1,4 +1,6 @@
-This is version 6.12.2 of the Inform Library,
+This project has moved to https://gitlab.com/DavidGriffith/inform6lib
+
+This version 6.12.2 of the Inform Library,
 Copyright Graham Nelson 1993-2004, David Griffith 2012-2018
 Full release notes and instructions are available at
 http://www.inform-fiction.org
